@@ -1,0 +1,216 @@
+<rml>
+<head>
+	<title>KEYS</title>
+    <link type="text/rcss" href="scrollbar.rcss"/>
+    <style>
+
+body {
+    font-family: DukeFont;
+    font-size: 33pt;
+    -display: block;
+    -position: absolute;
+    -left: 560px
+    -width: 800px;
+    -height: 800px
+    -top: 200px;
+    -background: green;
+    clip: auto;
+}
+
+.game-menu div {
+    display: block;
+    text-align: left;
+    height: 80pt;
+}
+
+.scrollbox {
+    display: block;
+    width:  100%;
+    height: 100%;
+    overflow-y: scroll;
+    -background: red;
+}
+
+.clipper {
+    position: absolute;
+    display: block;
+    width: 1250px;
+    left: 334px;
+    height: 800px;
+    top:218px;
+    -background: red;
+}
+
+.game-menu div {
+    display: block;
+    width: 100%;
+    font-family: DukeFont;
+    font-size: 33pt;
+    color: rgb(235,156,9);
+    text-align: left;
+    margin: 0px;
+    padding: 0px;
+    -background-color: blue;
+
+    outline-font-effect: outline;
+    outline-width: 3px;
+    outline-color: black;
+
+}
+
+.game-menu div caption {
+    display: block;
+    position: absolute;
+    width: 50%;
+}
+
+.game-menu div keys {
+    display: block;
+    position: absolute;
+    right: 40px;
+    width: 50%;
+    text-align: center;
+    -background: green;
+}
+
+keys key1 {
+    -background: blue;
+    width: 50%;
+    display: block;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+}
+keys key2 {
+    -background: yellow;
+    width: 50%;
+    display: block;
+    position: absolute;
+    right: 0px;
+    top: 0px;
+}
+
+keyval {
+    color: rgb(235,156,9);
+}
+
+.no-key-chosen {
+    color: rgb(128,128,128);
+}
+
+hdr {
+    display:block;
+    position:fixed;
+    left:0px;
+    width: 30px;
+}
+
+ftr {
+    display:block;
+    position:fixed;
+    right:0px;
+    top: 0px;
+    width: 30px;
+}
+
+title {
+    display: block;
+    position: absolute;
+    font-size: 79;
+    color: rgb(235,156,9);
+    left: 334px;
+    top: 63px;
+}
+    </style>
+</head>
+
+<body id="menu-keys-setup">
+
+<title>KEY BINDINGS</title>
+
+<div class="clipper">
+<div class="scrollbox">
+
+<div class="game-menu" id="menu" scroll>
+    <div id="Move_Forward" key-chooser>Move Forward</div>
+    <div id="Move_Backward" key-chooser>Move Backward</div>
+    <div id="Turn_Left" key-chooser>Turn Left</div>
+    <div id="Turn_Right" key-chooser>Turn Right</div>
+    <div id="Strafe" key-chooser>Strafe</div>
+    <div id="Fire" key-chooser>Fire</div>
+    <div id="Open" key-chooser>Use/Open</div>
+    <div id="Run" key-chooser>Run</div>
+    <div id="AutoRun" key-chooser>Toggle Run</div>
+    <div id="Jump" key-chooser>Jump</div>
+    <div id="Crouch" key-chooser>Crouch</div>
+
+<!--
+    <div id="Look_Up" key-chooser>Look Up</div>
+    <div id="Look_Down" key-chooser>Look Down</div>
+    <div id="Look_Left" key-chooser>Look Left</div>
+    <div id="Look_Right" key-chooser>Look Right</div>
+-->
+    <div id="Strafe_Left" key-chooser>Strafe Left</div>
+    <div id="Strafe_Right" key-chooser>Strafe Right</div>
+    <div id="Aim_Up" key-chooser>Aim Up</div>
+    <div id="Aim_Down" key-chooser>Aim Down</div>
+
+
+    <div id="Weapon_1" key-chooser>Mighty Foot</div>
+    <div id="Weapon_2" key-chooser>Pistol</div>
+    <div id="Weapon_3" key-chooser>Shotgun</div>
+    <div id="Weapon_4" key-chooser>Ripper</div>
+    <div id="Weapon_5" key-chooser>RPG</div>
+    <div id="Weapon_6" key-chooser>Pipebomb</div>
+    <div id="Weapon_7" key-chooser>Shrinker</div>
+    <div id="Weapon_8" key-chooser>Devastator</div>
+    <div id="Weapon_9" key-chooser>Laser Tripbomb</div>
+    <div id="Weapon_10" key-chooser>Freezethrower</div>
+
+    <div id="Inventory" key-chooser>Use Item</div>
+    <div id="Inventory_Left" key-chooser>Next Item</div>
+    <div id="Inventory_Right" key-chooser>Previous Item</div>
+    <div id="Holo_Duke" key-chooser>Holo Duke</div>
+    <div id="Jetpack" key-chooser>Jetpack</div>
+    <div id="NightVision" key-chooser>NightVision</div>
+    <div id="MedKit" key-chooser>MedKit</div>
+
+<!--    <div id="TurnAround" key-chooser>Turn Around</div> -->
+<!--    <div id="SendMessage" key-chooser>Send Message</div> -->
+
+    <div id="Map" key-chooser>Map</div>
+    <div id="Shrink_Screen" key-chooser>Map Zoom Out</div>
+    <div id="Enlarge_Screen" key-chooser>Map Zoom In</div>
+
+<!--
+    <div id="Shrink_Screen" key-chooser>Shrink_Screen</div>
+    <div id="Enlarge_Screen" key-chooser>Enlarge_Screen</div>
+-->
+
+    <div id="Center_View" key-chooser>Center View</div>
+
+<!--
+    <div id="Holster_Weapon" key-chooser>Holster_Weapon</div>
+    <div id="Show_Opponents_Weapon" key-chooser>Show_Opponents_Weapon</div>
+    <div id="Map_Follow_Mode" key-chooser>Map_Follow_Mode</div>
+    <div id="See_Coop_View" key-chooser>See_Coop_View</div>
+    <div id="Mouse_Aiming" key-chooser>Mouse_Aiming</div>
+    <div id="Toggle_Crosshair" key-chooser>Toggle_Crosshair</div>
+-->
+
+    <div id="Steroids" key-chooser>Steroids</div>
+    <div id="Quick_Kick" key-chooser>Quick Kick</div>
+    <div id="Next_Weapon" key-chooser>Next Weapon</div>
+    <div id="Previous_Weapon" key-chooser>Previous Weapon</div>
+
+    <div id="Quick_Load" key-chooser>Quick Load</div>
+    <div id="Quick_Save" key-chooser>Quick Save</div>
+
+<!--    <div id="Show_Console" key-chooser>Show_Console</div>-->
+</div>
+
+</div>
+</div>
+
+</body>
+</rml>

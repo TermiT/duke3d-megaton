@@ -1,0 +1,19 @@
+<rml>
+<head>
+    <link type="text/css" href="menu.rcss"/>
+    <link type="text/css" href="confirmation.rcss"/>
+</head>
+
+<body id="video-confirm" closecmd="restore-video-mode-esc" default-item="no">
+
+<cursor id="cursor-left"/>
+
+<div id="question">Keep this mode?</div>
+
+<div class="game-menu">
+    <div id="yes" command="save-video-mode">YES</div>
+    <div id="no" command="restore-video-mode">NO</div>
+</div>
+
+</body>
+</rml>

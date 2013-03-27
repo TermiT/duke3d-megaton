@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "duke3d", "duke3d\duke3d.vcproj", "{0B353432-DE88-43AD-A116-DCCDB763C7D8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_CMENU|Win32 = Debug_CMENU|Win32
+		Debug_NOSTEAM|Win32 = Debug_NOSTEAM|Win32
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0B353432-DE88-43AD-A116-DCCDB763C7D8}.Debug_CMENU|Win32.ActiveCfg = Debug_CMENU|Win32
+		{0B353432-DE88-43AD-A116-DCCDB763C7D8}.Debug_CMENU|Win32.Build.0 = Debug_CMENU|Win32
+		{0B353432-DE88-43AD-A116-DCCDB763C7D8}.Debug_NOSTEAM|Win32.ActiveCfg = Debug_NOSTEAM|Win32
+		{0B353432-DE88-43AD-A116-DCCDB763C7D8}.Debug_NOSTEAM|Win32.Build.0 = Debug_NOSTEAM|Win32
+		{0B353432-DE88-43AD-A116-DCCDB763C7D8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0B353432-DE88-43AD-A116-DCCDB763C7D8}.Debug|Win32.Build.0 = Debug|Win32
+		{0B353432-DE88-43AD-A116-DCCDB763C7D8}.Release|Win32.ActiveCfg = Release|Win32
+		{0B353432-DE88-43AD-A116-DCCDB763C7D8}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

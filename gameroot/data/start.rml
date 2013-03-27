@@ -1,0 +1,13 @@
+<rml>
+<head>
+    <link type="text/css" href="menu.rcss"/>
+</head>
+
+<body id="menu-start">
+
+<div class="game-menu" style="top:900px;">
+    <div id="start" command="start" submenu="menu-main" noref>PRESS ENTER</div>
+</div>
+
+</body>
+</rml>

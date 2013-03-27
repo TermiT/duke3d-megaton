@@ -1,0 +1,35 @@
+<rml>
+<head>
+    <link type="text/css" href="menu.rcss"/>
+    <link type="text/css" href="saveload.rcss"/>
+    <title>SAVE GAME</title>
+</head>
+
+<body id="menu-save">
+
+<cursor id="cursor-left"/>
+
+<div class="game-menu">
+    <div id="slot0" command="save-game">QUICK SLOT</div>
+    <div id="slot1" command="save-game">EMPTY</div>
+    <div id="slot2" command="save-game">EMPTY</div>
+    <div id="slot3" command="save-game">EMPTY</div>
+    <div id="slot4" command="save-game">EMPTY</div>
+    <div id="slot5" command="save-game">EMPTY</div>
+    <div id="slot6" command="save-game">EMPTY</div>
+    <div id="slot7" command="save-game">EMPTY</div>
+    <div id="slot8" command="save-game">EMPTY</div>
+    <div id="slot9" command="save-game">EMPTY</div>
+</div>
+
+<div id="thumbnail">
+</div>
+
+<div id="info">
+<div id="level">level</div>
+<div id="skill">skill</div>
+<div id="episode">episode</div>
+</div>
+
+</body>
+</rml>

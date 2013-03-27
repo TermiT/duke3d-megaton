@@ -1,0 +1,3 @@
+#!/bin/sh
+echo g++ $* >> $HOME/build.sh
+/usr/bin/g++ $*

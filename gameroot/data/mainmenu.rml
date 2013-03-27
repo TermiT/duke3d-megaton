@@ -1,0 +1,29 @@
+<rml>
+<head>
+	<link type="text/css" href="menu.rcss"/>
+	<title>DUKE NUKEM</title>
+</head>
+
+<body id="menu-main">
+
+<img src="assets/logo_dukenukem.tga" class="abspos" style="left:192px; top:40px; width:1536px; height:192px;"/>
+<img src="assets/logo_3D.tga" class="abspos" style="left:768px; top:200px; width:384px; height:96px;"/>
+<!--<img src="assets/atomic_glow.tga" class="abspos" style="left:1150px; top:80px;"/>-->
+<img src="assets/atomic.tga" class="abspos" style="left:1150px; top:80px;"/>
+
+<cursor id="cursor-left"/>
+<cursor id="cursor-right"/>
+
+<div class="game-menu" style="top:400px;">
+    <div id="new-game" submenu="menu-episodes">NEW GAME</div>
+    <div id="options" submenu="menu-options">OPTIONS</div>
+    <div id="load-game" submenu="menu-load">LOAD GAME</div>
+    <div id="help" command="open-hub">COMMUNITY HUB</div>
+    <div id="credits" submenu="menu-credits">CREDITS</div>
+    <div id="quit" command="game-quit">QUIT GAME</div>
+</div>
+
+<div id="version-footer" class="abspos">Version: X.Y</div>
+
+</body>
+</rml>

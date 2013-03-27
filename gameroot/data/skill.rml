@@ -1,0 +1,23 @@
+<rml>
+<head>
+    <link type="text/css" href="menu.rcss"/>
+    <link type="text/css" href="skillep.rcss"/>
+    <title>SELECT SKILL</title>
+</head>
+
+<body id="menu-skill" default-item="skill-2">
+
+<title>DIFFICULTY</title>
+
+<cursor id="cursor-left"/>
+<cursor id="cursor-right"/>
+
+<div class="game-menu">
+    <div id="skill-1" command="game-start">PIECE OF CAKE</div>
+    <div id="skill-2" command="game-start">LET'S ROCK</div>
+    <div id="skill-3" command="game-start">COME GET SOME</div>
+    <div id="skill-4" command="game-start">DAMN I'M GOOD</div>
+</div>
+
+</body>
+</rml>

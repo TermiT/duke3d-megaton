@@ -1,0 +1,26 @@
+<rml>
+<head>
+	<link type="text/css" href="menu.rcss"/>
+	<title>DUKE NUKEM</title>
+</head>
+
+<body id="menu-main">
+
+<img src="assets/nw_head.tga" class="abspos" style="left:710px; top:10px;"/>
+
+<cursor id="cursor-left"/>
+<cursor id="cursor-right"/>
+
+<div class="game-menu" style="top:400px;">
+    <div id="new-game" submenu="menu-skill">NEW GAME</div>
+    <div id="options" submenu="menu-options">OPTIONS</div>
+    <div id="load-game" submenu="menu-load">LOAD GAME</div>
+    <div id="help" command="open-hub">COMMUNITY HUB</div>
+    <div id="credits" submenu="menu-credits">CREDITS</div>
+    <div id="quit" command="game-quit">QUIT GAME</div>
+</div>
+
+<div id="version-footer" class="abspos">Version: X.Y</div>
+
+</body>
+</rml>

@@ -1,0 +1,33 @@
+<rml>
+<head>
+    <link type="text/css" href="menu.rcss"/>
+    <link type="text/css" href="skillep.rcss"/>
+    <title>OPTIONS</title>
+    <style>
+        div.game-menu {
+            -width: 1100px;
+            height: 800px;
+            -left: 440px;
+            -top: 200px;
+        }
+    </style>
+</head>
+
+<body id="menu-options">
+
+<title>OPTIONS</title>
+
+<cursor id="cursor-left"/>
+<cursor id="cursor-right"/>
+
+<div class="game-menu">
+    <div id="game-options" submenu="menu-game-options">GAME OPTIONS</div>
+    <div id="sound-options" submenu="menu-sound">SOUND OPTIONS</div>
+    <div id="video-settings" submenu="menu-video">VIDEO SETTINGS</div>
+    <div id="keys-setup" submenu="menu-keys-setup">KEYS SETUP</div>
+    <div id="mouse-setup" submenu="menu-mouse-setup">MOUSE SETUP</div>
+<!--    <div id="gamepad-setup" class="disabled">GAMEPAD SETUP</div> -->
+</div>
+
+</body>
+</rml>

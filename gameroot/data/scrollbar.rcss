@@ -1,0 +1,43 @@
+scrollbarvertical
+{
+	-margin-top: -6px;
+	-margin-bottom: -6px;
+	-margin-right: -11px;
+	margin-left: 30px;
+	width: 40px;
+}
+
+scrollbarvertical slidertrack
+{
+    background-decorator: tiled-vertical;
+    background-top-image: assets/scrollbarrail.tga 0px 0px 40px 7px;
+    background-center-image: assets/scrollbarrail.tga stretch 0px 7px 40px 10px;
+    background-bottom-image: assets/scrollbarrail.tga 0px 11px 40px 17px;
+}
+
+scrollbarvertical sliderbar
+{
+    -margin-left: 4px;
+    width: 40px;
+    min-height: 46px;
+    max-height: 100px;
+
+    background-decorator: tiled-vertical;
+    background-top-image: assets/scrollbargrip.tga 0px 0x 40px 7px;
+    background-center-image: assets/scrollbargrip.tga stretch 0px 7px 40px 12px;
+    background-bottom-image: assets/scrollbargrip.tga 0px 13px 40px 20px;
+}
+
+scrollbarvertical sliderarrowdec
+{
+    display: none;
+    width: 27px;
+    height: 2px;
+}
+
+scrollbarvertical sliderarrowinc
+{
+    display: none;
+    width: 27px;
+    height: 2px;
+}

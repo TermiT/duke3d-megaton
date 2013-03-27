@@ -1,0 +1,19 @@
+<rml>
+<head>
+    <style>
+        body {
+        	margin: auto;
+            font-size: 20pt;
+            font-family: DukeFont;
+            width: 1920px;
+            height: 1080px;
+            background-decorator: image;
+            background-image: assets/dcbg.tga 0px 0px 1920px 1080px;
+            z-index: -1;
+        }
+    </style>
+</head>
+
+<body id="menu-bg">
+</body>
+</rml>

@@ -1,0 +1,93 @@
+<rml>
+<head>
+	<link type="text/css" href="menu.rcss"/>
+	<link type="text/css" href="conf.rcss"/>
+	<title>GAME OPTIONS</title>
+	<!--
+    <style>
+
+.game-menu div {
+    font-size: 40pt;
+}
+.game-menu div options {
+    width: 30%;
+}
+.game-menu div {
+    height: 60pt;
+}
+
+    </style>
+    -->
+    
+        <style>
+.game-menu div options {
+    width: 460px;
+}
+
+.game-menu div range {
+    width: 460px;
+}
+    </style>
+
+</head>
+
+<body id="menu-game-options">
+
+<title>GAMEPLAY</title>
+
+<div class="game-menu">
+                    
+    <div id="crosshair" options>
+        <caption>CROSSHAIR</caption>
+        <options>
+            <option id="crosshair-on">ON</option>
+            <option id="crosshair-off">OFF</option>
+        </options>
+    </div>
+
+    <div id="level-stats" options>
+        <caption>LEVEL STATS</caption>
+        <options>
+            <option id="stats-on">ON</option>
+            <option id="stats-off">OFF</option>
+        </options>
+    </div>
+
+    <div id="statusbar" options>
+        <caption>STATUSBAR</caption>
+        <options>
+            <option id="statusbar-0">HIDDEN</option>
+            <option id="statusbar-1">BRIEF</option>
+            <option id="statusbar-2">FULL</option>
+        </options>
+    </div>
+
+    <div id="auto-aiming" options>
+        <caption>AUTO-AIMING</caption>
+        <options>
+            <option id="autoaim-on">ON</option>
+            <option id="autoaim-off">OFF</option>
+        </options>
+    </div>
+
+    <div id="run-key-style" options class="disabled" style="display:none;">
+        <caption>RUN KEY</caption>
+        <options>
+            <option id="runkey-classic">CLASSIC</option>
+            <option id="runkey-modern">MODERN</option>
+        </options>
+    </div>
+
+    <div id="weapon-switch" options>
+        <caption>WEAPON AUTO SWITCH</caption>
+        <options>
+            <option id="autoswitch-0">NEVER</option>
+            <option id="autoswitch-1">IF NEW</option>
+            <option id="autoswitch-2">IF EMPTY</option>
+            <option id="autoswitch-3">NEW/EMPTY</option>
+        </options>
+    </div>
+</div>
+
+</body>
+</rml>

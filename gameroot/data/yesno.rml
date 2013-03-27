@@ -1,0 +1,19 @@
+<rml>
+<head>
+    <link type="text/css" href="menu.rcss"/>
+    <link type="text/css" href="confirmation.rcss"/>
+</head>
+
+<body id="yesno">
+
+<cursor id="cursor-left"/>
+
+<div id="question">Question</div>
+
+<div class="game-menu">
+    <div id="yes" command="confirm-yes">YES</div>
+    <div id="no" command="confirm-no">NO</div>
+</div>
+
+</body>
+</rml>

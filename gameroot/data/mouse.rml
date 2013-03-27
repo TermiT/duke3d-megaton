@@ -1,0 +1,31 @@
+<rml>
+<head>
+	<link type="text/css" href="menu.rcss"/>
+	<link type="text/css" href="conf.rcss"/>
+	<title>MOUSE SETUP</title>
+</head>
+
+<body id="menu-mouse-setup">
+
+<title>MOUSE SETUP</title>
+
+<div class="game-menu">
+
+
+    <div id="mouse-sens" range>
+        <caption>SENSITIVITY</caption>
+        <range min="0" max="1" step="0.05" value="0.0"/>
+    </div>
+
+                    
+    <div id="invert-y-axis" options>
+        <caption>INVERT Y AXIS</caption>
+        <options>
+            <option id="invert-y-on">ON</option>
+            <option id="invert-y-off">OFF</option>
+        </options>
+    </div>
+
+</div>
+</body>
+</rml>

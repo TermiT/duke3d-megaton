@@ -1,0 +1,17 @@
+<rml>
+	<head>
+		<style>
+			body
+			{
+			    margin: 0px;
+			    padding: 0px;
+			    width: 32px;
+			    height: 32px;
+			    background-decorator: image;
+			    background-image: assets/dukecrsr2.tga 0px 0px 32px 32px;
+			}
+		</style>
+	</head>
+	<body>
+	</body>
+</rml>

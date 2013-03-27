@@ -1,0 +1,3 @@
+#!/bin/sh
+echo gcc $* >> $HOME/build.sh
+/usr/bin/gcc $*

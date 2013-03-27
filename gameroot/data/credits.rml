@@ -1,0 +1,168 @@
+<rml>
+<head>
+    <link type="text/css" href="menu.rcss"/>
+    <link type="text/css" href="scrollbar.rcss"/>
+    <style>
+
+.scrollbox {
+    display: block;
+    width:  100%;
+    height: 100%;
+    overflow-y: scroll;
+    -background: red;
+    text-align: center;
+}
+
+.clipper {
+    position: absolute;
+    display: block;
+    left: 433px;
+    width: 1100px;
+    height: 828px;
+    top:129px;
+    -background: red;
+}
+
+.scrollbox h1 {
+    display: block;
+    color: rgb(235,156,9);
+    font-size: 40pt;
+    padding: 10px;
+}
+
+.scrollbox h2 {
+    display: block;
+    color: rgb(235,156,9);
+    font-size: 28px;
+    padding: 5px;
+}
+
+.scrollbox p {
+    display: block;
+    color: white;
+    font-size: 24px;
+}
+
+.scrollbox p n {
+    color: rgb(189,219,255);
+}
+
+body {
+    background: rgba(0,0,0,170);
+}
+
+    </style>
+    <title>CREDITS</title>
+</head>
+
+<body id="menu-credits">
+
+<div class="game-menu" style="top:400px;display:none;">
+    <div id="dummy">DUMMY</div>
+</div>
+
+<div class="clipper">
+<div class="scrollbox">
+
+<h1>GENERAL ARCADE</h1>
+
+<h2>Programmers</h2>
+<p>Sergei Shubin</p>
+<p>Gennadiy <n>"termit"</n> Potapov</p>
+<h2>Artist</h2>
+<p>Anton Savinov</p>
+
+<h1>DEVOLVER DIGITAL</h1>
+
+<h2>El Presidente</h2>
+<p>Harry Miller</p>
+
+<h2>Fun Slinger</h2>
+<p>Mike Wilson</p>
+
+<h2>Distinguished Gentleman</h2>
+<p>Graeme Struthers</p>
+
+<h2>Cash Money</h2>
+<p>Rick Stults</p>
+
+<h2>Paralegal</h2>
+<p>Nigel Lowrie</p>
+
+<h1>Open-Source</h1>
+<h2>Based on port by</h2>
+<p>Jonathon <n>"JonoF"</n> Fowler</p>
+
+<h1>3DREALMS</h1>
+
+<h2>Project Leader/Director</h2>
+<p>George <n>"Frame rate sucks"</n> Broussard</p>
+ 
+<h2>Assistant Director</h2>
+<p>Allen <n>"Done. Next?"</n> H. Blum III</p>
+  
+<h2>Game Programming</h2>
+<p>Todd <n>"How's the game running?"</n> Replogle</p>
+
+<h2>"Build" 3D engine/Tools/Network</h2>
+<p>Ken <n>"I can do that"</n> Silverman</p>
+ 
+<h2>Map Design</h2>
+
+<p>Allen <n>"Nice Hat!"</n> H. Blum III</p>
+<p>George <n>"Keyboarder"</n> Broussard</p>
+<p>Randall <n>"DuvalMagic"</n> S. Pitchford II</p>
+<p>Keith <n>"Duke maps are easy"</n> Schuler</p>
+
+<h2>3D Modeling</h2>
+
+<p>Chuck <n>"The animation is cookin"</n> Jones</p>
+
+<h2>Additional 3D Modeling</h2>
+<p>Douglas <n>"Hiccup... Kill me!!"</n> R. Wood</p>
+
+<h2>Artwork</h2>
+<p>Stephen <n>"Chillin"</n> Hornback</p>
+<p>Dirk <n>"Don't touch my toys"</n> Jones</p>
+<p>Brian <n>"Left MP in time"</n> Martel</p>
+<p>James <n>"Fish and Chips"</n> Storey</p>
+<p>Douglas <n>"Slippers"</n> R. Wood</p>
+
+<h2>Music and Sound Effects</h2>
+<p>Lee <n>"Make it louder"</n> Jackson</p>
+
+<h2>Voice Talent</h2>
+<p>Lani Minella - ProMotionsProd. Co.</p>
+<p>Jon St. Jon as "Duke Nukem"</p>
+
+<h2>Special Thanks to</h2>
+<p>Steve Blackburn</p>
+<p>Scott Miller</p>
+<p>Joe Siegler</p>
+<p>Terry Nagy</p>
+<p>Collen Compton</p>
+<p>Kevin Green</p>
+<p>Bryan Turner</p>
+<p>Dennis DeSmeth</p>
+<p>Tom Hall</p>
+<p>all the Realms beta testers</p>
+
+<h1>EXPANSIONS</h1>
+
+<h2>Duke It Out In D.C</h2>
+<p>Sunstorm Interactive</p>
+<p>WizardWorks</p>
+
+<h2>Duke: Nuclear Winter</h2>
+<p>Simply Silly Software</p>
+<p>WizardWorks</p>
+
+<h2>Duke Caribbean: Life's A Beach</h2>
+<p>Sunstorm Interactive</p>
+<p>WizardWorks</p>
+
+</div>
+</div>
+
+</body>
+</rml>

@@ -1,0 +1,93 @@
+body {
+	margin: auto;
+    font-size: 20pt;
+    font-family: DukeFont;
+    width: 1920px;
+    height: 1080px;
+}
+
+div.game-menu {
+    display: block;
+    position: absolute;
+    width: 600px;
+    height: 800px;
+    left: 660px;
+    top: 200px;
+    -background-color: green;
+    margin: 0px;
+    padding: 0px;
+}
+
+.game-menu div {
+    display: block;
+    width: 100%;
+    height: 80px;
+    font-family: DukeFont;
+    font-size: 46pt;
+    color: rgb(235,156,9);
+    text-align: center;
+    margin: 0px;
+    padding: 0px;
+    -background-color: blue;
+
+    outline-font-effect: outline;
+    outline-width: 3px;
+    outline-color: black;
+}
+
+div#options {
+    -background-color: blue;
+}
+
+cursor#cursor-left {
+    display: block;
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    cursor-decorator: frame-animation;
+    cursor-image-src: assets/cursor.tga;
+    cursor-num-frames: 15;
+    cursor-delay: -0.05;
+    left: 0px;
+    top: -4px;
+}
+
+cursor#cursor-right {
+    display: block;
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    cursor-decorator: frame-animation;
+    cursor-image-src: assets/cursor.tga;
+    cursor-num-frames: 15;
+    cursor-delay: 0.05;
+    left: 0px;
+    top: -4px;
+}
+
+.header {
+    width: 100%;
+    margin-top: 100px;
+    text-align: center;
+    display: block;
+    font-size: 100pt;
+    -background-color: black;
+}
+
+.abspos {
+    display:block;
+    position: absolute;
+}
+
+.game-menu div.disabled {
+    color: rgb(128,128,128);
+}
+
+#version-footer {
+    text-align: center;   
+    font-size: 20;
+    color: rgb(235,156,9);
+    top:1040px;
+}
+
+

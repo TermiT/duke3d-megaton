@@ -1,0 +1,77 @@
+cursor#cursor-left {
+    width: 64px;
+    height: 64px;
+}
+
+div.game-menu {
+    psotion: abcolute;
+    display: block;
+    left: 334px;
+    top: 231px;
+    -background: blue;
+}
+
+.game-menu div {
+    font-size: 46pt;
+    text-align: left;
+    padding-left: 40px;
+    height: 66px;
+}
+
+.game-menu div.empty {
+    color: rgb(128,128,128);
+}
+
+#thumbnail {
+    position: absolute;
+    display:block;
+    left: 960px;
+    top: 231px;
+    width: 624;
+    height: 390px;
+    -background: black;
+    padding: 3px;
+    
+    background-decorator: tiled-box;
+    background-top-left-image: assets/thumbnailframe.tga 0px 0px 16px 16px;
+    background-top-right-image: assets/thumbnailframe.tga 48px 0px 64px 16px;
+    background-top-image: assets/thumbnailframe.tga stretch 16px 0px 48px 16px;
+    background-bottom-left-image: assets/thumbnailframe.tga 0px 48px 16px 64px;
+    background-bottom-right-image: assets/thumbnailframe.tga 48px 48px 64px 64px;
+    background-bottom-image: assets/thumbnailframe.tga stretch 16px 48px 48px 64px;
+    background-left-image: assets/thumbnailframe.tga stretch 0px 16px 16px 48px;
+    background-center-image: assets/thumbnailframe.tga stretch 16px 16px 48px 48px;
+
+}
+
+#info {
+    position: absolute;
+    display: block;
+    left: 960px;
+    top: 636px;
+    width: 624px;
+    height: 390px;
+    -background: green;
+}
+
+#info div {
+    color: rgb(235,156,9);
+    font-size: 33pt;
+    display: block;
+    height: 51px;
+    text-align: center;
+}
+
+#thumbnail img {
+    width: 100%;
+    height: 100%;
+}
+
+title {
+    display: block;
+    position: absolute;
+    font-size: 79;
+    color: rgb(235,156,9);
+    left: 334px;
+    top: 63px;
+}

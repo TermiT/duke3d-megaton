@@ -1,0 +1,23 @@
+<rml>
+<head>
+    <link type="text/css" href="menu.rcss"/>
+    <link type="text/css" href="skillep.rcss"/>
+    <title>SELECT AN EPISODE</title>
+</head>
+
+<body id="menu-episodes">
+
+<title>EPISODE</title>
+
+<cursor id="cursor-left"/>
+<cursor id="cursor-right"/>
+
+<div class="game-menu">
+    <div id="episode-0" submenu="menu-skill">L.A. MELTDOWN</div>
+    <div id="episode-1" submenu="menu-skill">LUNAR APOCALYPSE</div>
+    <div id="episode-2" submenu="menu-skill">SHRAPNEL CITY</div>
+    <div id="episode-3" submenu="menu-skill">THE BIRTH</div>
+</div>
+
+</body>
+</rml>

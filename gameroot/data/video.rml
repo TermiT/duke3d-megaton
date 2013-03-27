@@ -1,0 +1,52 @@
+<rml>
+<head>
+    <link type="text/css" href="menu.rcss"/>
+    <link type="text/css" href="conf.rcss"/>
+    <style>
+.game-menu div options {
+    width: 460px;
+}
+
+.game-menu div range {
+    width: 460px;
+}
+    </style>
+
+    <title>VIDEO SETTINGS</title>
+</head>
+
+<body id="menu-video">
+
+<title>VIDEO</title>
+
+<div class="game-menu">
+                    
+    <div id="video-mode" options>
+        <caption>VIDEO MODE</caption>
+        <options/>
+    </div>
+    <div id="fullscreen-mode" options>
+        <caption>FULLSCREEN</caption>
+        <options>
+            <option id="fullscreen-on">ON</option>
+            <option id="fullscreen-off">OFF</option>
+        </options>
+    </div>
+    <div id="texture-filter" options>
+        <caption>TEXTURES</caption>
+        <options>
+            <option id="smooth">SMOOTH</option>
+            <option id="retro">RETRO</option>
+        </options>
+    </div>
+    <div id="gamma" range>
+        <caption>BRIGHTNESS</caption>
+        <range min="0" max="64" step="4" value="0"/>
+    </div>
+    <div id="apply"
+         command="apply-video-mode"
+         style="text-align:center;padding-top:40px;display:none;" >APPLY</div>
+    </div>
+
+</body>
+</rml>

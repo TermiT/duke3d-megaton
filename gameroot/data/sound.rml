@@ -1,0 +1,61 @@
+<rml>
+<head>
+    <link type="text/css" href="menu.rcss"/>
+    <link type="text/css" href="conf.rcss"/>
+    <style>
+.game-menu div options {
+    width: 400px;
+}
+
+.game-menu div range {
+    width: 400px;
+}
+    </style>
+    <title>SOUNDS</title>
+</head>
+
+<body id="menu-sound">
+
+<title>SOUND</title>
+
+<div class="game-menu">
+
+    <div id="sound-volume" range>
+        <caption>VOLUME</caption>
+        <range min="0" max="256" step="16" value="0"/>
+    </div>
+
+                    
+    <div id="sound" options>
+        <caption>SOUND FX</caption>
+        <options>
+            <option id="sound-on">ON</option>
+            <option id="sound-off">OFF</option>
+        </options>
+    </div>
+
+    <div id="music" options>
+        <caption>MUSIC</caption>
+        <options>
+            <option id="music-on">ON</option>
+            <option id="music-off">OFF</option>
+        </options>
+    </div>
+
+
+    <div id="music-volume" range style="display:none;" class="disabled">
+        <caption>MUSIC VOLUME</caption>
+        <range min="0" max="256" step="16" value="0"/>
+    </div>
+
+    <div id="duke-talk" options>
+        <caption>DUKE TALK</caption>
+        <options>
+            <option id="talk-on">ON</option>
+            <option id="talk-off">OFF</option>
+        </options>
+    </div>
+
+</div>
+</body>
+</rml>
