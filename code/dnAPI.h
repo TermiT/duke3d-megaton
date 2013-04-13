@@ -84,12 +84,15 @@ int dnSaveGame(int slot);
 void dnQuitToTitle();
 void dnResetMouse();
 void dnResetMouseWheel();
+int dnIsVsyncOn();
+
 
 int dnGetAddonId();
 int dnGetAddonEpisode();
 const char* dnGetGRPName();
 const char* dnGetVersion();
 
+void dnSetLastSaveSlot(short i);
     
 const char* dnGetEpisodeName(int episode);
 const char* dnGetLevelName(int episode, int level);
@@ -137,8 +140,9 @@ SDLKey dnGetFunctionBinding(int function, int slot);
 void dnClearFunctionBindings();
 void dnApplyBindings();
 void dnDetectVideoMode();
-void dnGetScreenSize(int *width, int *height);
 
+void Sys_GetScreenSize(int *width, int *height);
+void Sys_CenterWindow(int width, int height);
     
 #ifdef __cplusplus
 }

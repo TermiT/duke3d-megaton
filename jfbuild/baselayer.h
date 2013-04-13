@@ -107,7 +107,7 @@ int gettimerfreq(void);
 void (*installusertimercallback(void (*callback)(void)))(void);
 
 int checkvideomode(int *x, int *y, int c, int fs, int forced);
-int setvideomode(int x, int y, int c, int fs);
+int setvideomode(int x, int y, int c, int fs, int force);
 void getvalidmodes(void);
 void resetvideomode(void);
 

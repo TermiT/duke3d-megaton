@@ -12,12 +12,14 @@ void SetElementUserData(Rocket::Core::Element *element, void *user_data, const R
 
 void* GetElementUserData(Rocket::Core::Element *element, const Rocket::Core::String& key) {
 	void *result = NULL;
-	Rocket::Core::Variant *value = element->GetAttribute(key);
-	if (value != NULL) {
-		Rocket::Core::String strval;
-		value->GetInto(strval);
-		sscanf(strval.CString(), "%x", &result);
-	}
+    if (element != NULL) {
+        Rocket::Core::Variant *value = element->GetAttribute(key);
+        if (value != NULL) {
+            Rocket::Core::String strval;
+            value->GetInto(strval);
+            sscanf(strval.CString(), "%x", &result);
+        }
+    }
 	return result;
 }
 

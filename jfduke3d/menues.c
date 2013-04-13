@@ -2973,8 +2973,8 @@ if (PLUTOPAK) {
 				nbpp  = (newvidmode==validmodecnt)?bpp:validmode[newvidmode].bpp;
 				nrend = (vidsets[newvidset] & 0x20000) ? (nbpp==8?2:3) : 0;
 
-				if (setgamemode(nfs, nxdim, nydim, nbpp) < 0) {
-		    		if (setgamemode(pfs, pxdim, pydim, pbpp) < 0) {
+				if (setgamemode(nfs, nxdim, nydim, nbpp, 0) < 0) {
+		    		if (setgamemode(pfs, pxdim, pydim, pbpp, 0) < 0) {
 						setrendermode(prend);
 						gameexit("Failed restoring old video mode.");
 					} else onvideomodechange(pbpp > 8);
@@ -5402,13 +5402,13 @@ int dnSaveGame(int slot) {
     int r;
     time_t now;
     struct tm *localtm;
-
-    if (slot != 0) { //quick slot
-        now = time(0);
-        localtm = localtime(&now);
-
-        strftime(&ud.savegame[slot][0], 18, "%H:%M, %d %b",  localtm);
-    }
+    
+    now = time(0);
+    localtm = localtime(&now);
+    
+    strftime(&ud.savegame[slot][0], 18, "%H:%M, %d %b",  localtm);
+    
+    dnSetLastSaveSlot(slot);
     dnCaptureScreen();
     r = saveplayer((signed char) slot);
     if (r == 0) {
@@ -5423,4 +5423,8 @@ void dnQuitToTitle() {
     if(ud.recstat == 1) {
         closedemowrite();
     }
+}
+
+void dnSetLastSaveSlot(short i) {
+    lastsavedpos = i;
 }

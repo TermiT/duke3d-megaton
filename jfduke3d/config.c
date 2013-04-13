@@ -228,8 +228,8 @@ void CONFIG_SetDefaults( void )
 	ud.m_marker = 1;
 	ud.m_ffire = 1;
 	ud.levelstats = 0;
-	ud.vsync = 1;
-	ud.fps_max = 120;
+	ud.vsync = 0;
+	ud.fps_max = 180;
 	ShowOpponentWeapons = 0;
 	Bstrcpy(ud.rtsname, "DUKE.RTS");
 	Bstrcpy(myname, "Duke");
@@ -895,7 +895,7 @@ int32 CONFIG_SetMapBestTime(char *mapname, int32 tm)
 void dnDetectVideoMode() {
     int width, height;
     if (ScreenWidth == 0) {
-        dnGetScreenSize(&width, &height);
+        Sys_GetScreenSize(&width, &height);
         ScreenWidth = width;
         ScreenHeight = height;
         ScreenBPP = 32;

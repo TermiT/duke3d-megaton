@@ -26,6 +26,7 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 //-------------------------------------------------------------------------
 
 #include "duke3d.h"
+#include "dnAchievement.h"
 
 extern char numenvsnds,actor_tog;
 
@@ -3435,6 +3436,7 @@ void moveactors(void)
                         spritesound(LASERTRIP_EXPLODE,i);
                         spawn(i,PIGCOP);
                         ps[myconnectindex].actors_killed++;
+                        dnRecordEnemyKilled();
                         KILLIT(i);
                     }
                     goto BOLT;
@@ -3690,6 +3692,7 @@ void moveactors(void)
                             sprite[j].pal = 0;
                         }
                         ps[p].actors_killed ++;
+                        dnRecordEnemyKilled();
                         t[0] = -3;
                         if(ps[p].somethingonplayer == i)
                             ps[p].somethingonplayer = -1;
@@ -3774,6 +3777,7 @@ void moveactors(void)
                         spritesound(SLIM_DYING,i);
 
                         ps[p].actors_killed ++;
+                        dnRecordEnemyKilled();
                         if(ps[p].somethingonplayer == i)
                             ps[p].somethingonplayer = -1;
 

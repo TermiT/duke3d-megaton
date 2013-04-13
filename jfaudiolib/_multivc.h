@@ -56,7 +56,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MV_NumPanPositions ( MV_MaxPanPosition + 1 )
 #define MV_MaxTotalVolume  255
 //#define MV_MaxVolume       63
-#define MV_NumVoices       8
+#define MV_NumVoices       16
 
 // mirrors FX_MUSIC_PRIORITY from fx_man.h
 #define MV_MUSIC_PRIORITY 0x7fffffffl

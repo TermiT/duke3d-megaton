@@ -21,6 +21,7 @@ int  GUI_IsEnabled(void);
 int  GUI_InjectEvent(SDL_Event *ev);
 void GUI_TimePulse(void);
 void GUI_EnableMenuForCurrentFrame(void);
+void GUI_ShowSaveMenu(void);
 
 #ifdef __cplusplus
 }

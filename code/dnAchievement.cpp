@@ -11,12 +11,26 @@
 #include "dnAPI.h"
 
 
+void dnRecordCountAchievement(const char* achievement, const char* stat, int max_count, int show_progress_every) {
+    int number = CSTEAM_GetStat(stat);
+	if (number > -1) {
+		number++;
+		CSTEAM_SetStat(stat, number);
+		if ((number == 1 || number % show_progress_every == 0) && number != max_count)  {
+			CSTEAM_IndicateProgress(achievement, number, max_count);
+		}
+		if (number >= max_count) {
+			CSTEAM_UnlockAchievement(achievement);
+		}
+	}
+}
+
 void dnRecordDancerTip(){
     if (dnGetAddonId() != 0) return;
     CSTEAM_UnlockAchievement(ACHIEVEMENT_SHAKE_IT_BABY);
 }
 
-void dnHandleEndLevelAchievements(int Volume, int Level, int Time) {
+void dnHandleEndLevelAchievements(int Volume, int Level, int Time, int MaxKills, int Kills) {
     printf("Level: %d",Level);
     
 	if (Volume == 0 && Level == 0 && (Time / (26*60)) < 3 && dnGetAddonId() == 0) {
@@ -40,21 +54,19 @@ void dnHandleEndLevelAchievements(int Volume, int Level, int Time) {
     } else if (dnGetAddonId() == 3 && Volume == 2 && Level == 6){
         CSTEAM_UnlockAchievement(ACHIEVEMENT_LIMBO);
     }
+    
+    if (Kills >= MaxKills) {
+        CSTEAM_UnlockAchievement(ACHIEVEMENT_TAKE_NO_PRISONERS);
+    }
+}
+
+void dnRecordEnemyKilled() {
+    dnRecordCountAchievement(ACHIEVEMENT_INVADERS_MUST_DIE, STAT_INVADERS_MUST_DIE, ACHIEVEMENT_INVADERS_MUST_DIE_MAX, 10);
 }
 
 
 void dnRecordEnemyStomp() {
-    int number = CSTEAM_GetStat(STAT_THE_MIGHTY_FOOT);
-	if (number > -1) {
-		number++;
-		CSTEAM_SetStat(STAT_THE_MIGHTY_FOOT, number);
-		if ((number == 1 || number % 5 == 0) && number != ACHIEVEMENT_THE_MIGHTY_FOOT_MAX)  {
-			CSTEAM_IndicateProgress(ACHIEVEMENT_THE_MIGHTY_FOOT, number, ACHIEVEMENT_THE_MIGHTY_FOOT_MAX);
-		}
-		if (number >= ACHIEVEMENT_THE_MIGHTY_FOOT_MAX) {
-			CSTEAM_UnlockAchievement(ACHIEVEMENT_THE_MIGHTY_FOOT);
-		}
-	}
+    dnRecordCountAchievement(ACHIEVEMENT_THE_MIGHTY_FOOT, STAT_THE_MIGHTY_FOOT, ACHIEVEMENT_THE_MIGHTY_FOOT_MAX, 5);
 }
 
 void dnRecordShitPile() {
@@ -63,15 +75,9 @@ void dnRecordShitPile() {
 }
 
 void dnRecordSecret(int Volume, int Level, short SecretIndex) {
-    int number = CSTEAM_GetStat(STAT_OOMP_UUGH_WHERE_IS_IT);
-	if (number > -1) {
-		number++;
-		CSTEAM_SetStat(STAT_OOMP_UUGH_WHERE_IS_IT, number);
-		if ((number == 1 || number % 10 == 0) && number != ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT_MAX)  {
-			CSTEAM_IndicateProgress(ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT, number, ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT_MAX);
-		}
-		if (number >= ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT_MAX) {
-			CSTEAM_UnlockAchievement(ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT);
-		}
-	}
+    //printf("volum %d, level %d, secret index: %d\n", Volume, Level, SecretIndex);
+    //doom marine: 0, 2, 3
+    dnRecordCountAchievement(ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT, STAT_OOMP_UUGH_WHERE_IS_IT, ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT_MAX, 10);
 }
+
+

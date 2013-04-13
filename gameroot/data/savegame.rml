@@ -10,7 +10,7 @@
 <cursor id="cursor-left"/>
 
 <div class="game-menu">
-    <div id="slot0" command="save-game">QUICK SLOT</div>
+    <div id="slot0" command="save-game">EMPTY</div>
     <div id="slot1" command="save-game">EMPTY</div>
     <div id="slot2" command="save-game">EMPTY</div>
     <div id="slot3" command="save-game">EMPTY</div>

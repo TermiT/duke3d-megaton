@@ -370,7 +370,7 @@ void   setbrightness(char dabrightness, char *dapal, char noapply);
 void   setpalettefade(char r, char g, char b, char offset);
 void   squarerotatetile(short tilenume);
 
-long   setgamemode(char davidoption, long daxdim, long daydim, long dabpp);
+long   setgamemode(char davidoption, long daxdim, long daydim, long dabpp, int force);
 void   nextpage(void);
 void   setview(long x1, long y1, long x2, long y2);
 void   setaspect(long daxrange, long daaspect);

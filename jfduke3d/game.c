@@ -53,11 +53,9 @@ Modifications for JonoF's port by Jonathon Fowler(jf@jonof.id.au)
 #include "dnAchievement.h"
 #include "dnAPI.h"
 
-#if defined(__APPLE__)
-#import "mactools.h"
-#endif
+#include "_control.h"
 
-#define VERSION "1.0"
+#define VERSION "1.0.1"
 
 #define HEAD   "Duke Nukem 3D Unregistered Shareware "VERSION
 
@@ -2117,7 +2115,7 @@ void gameexit(char *t)
     if(playerswhenstarted > 1 && ud.coop != 1 && *t == ' ')
     {
         dobonus(1);
-        setgamemode(ScreenMode,ScreenWidth,ScreenHeight,ScreenBPP);
+        setgamemode(ScreenMode,ScreenWidth,ScreenHeight,ScreenBPP,0);
     }
 
     if( *t != 0 && *(t+1) != 'V' && *(t+1) != 'Y')
@@ -2337,6 +2335,8 @@ void moveclouds(void)
         }
     }
 }
+
+extern int dnFPS;
 
 void displayrest(long smoothratio)
 {
@@ -2570,6 +2570,9 @@ void displayrest(long smoothratio)
 #endif
 	i = (ud.screen_size <= 4)?0:scale(tilesizy[BOTTOMSTATUSBAR],ud.statusbarscale,100);
 	
+	sprintf(tempbuf, "FPS: %d", dnFPS);
+	minitext(320-5*12,200-i-6-6-6-6,tempbuf,0,26);
+
 	sprintf(tempbuf,"Time: %ld:%02ld",
 		(ps[myconnectindex].player_par/(26*60)),
 		(ps[myconnectindex].player_par/26)%60);
@@ -8039,7 +8042,7 @@ if (!NAM && VOLUMEALL) {
         initprintf("Loading palette/lookups.\n");
 
     dnDetectVideoMode();
-    if( setgamemode(ScreenMode,ScreenWidth,ScreenHeight,ScreenBPP) < 0 )
+    if( setgamemode(ScreenMode,ScreenWidth,ScreenHeight,ScreenBPP,0) < 0 )
     {
         initprintf("Failure setting video mode %dx%dx%d %s! Attempting safer mode...\n",
 				ScreenWidth,ScreenHeight,ScreenBPP,ScreenMode?"fullscreen":"windowed");
@@ -8047,7 +8050,7 @@ if (!NAM && VOLUMEALL) {
         ScreenWidth = 1024;
         ScreenHeight = 768;
 		ScreenBPP = 32;
-        setgamemode(ScreenMode,ScreenWidth,ScreenHeight,ScreenBPP);
+        setgamemode(ScreenMode,ScreenWidth,ScreenHeight,ScreenBPP,0);
     }
 
     play_video("video/3drLogo.mpeg");
@@ -8180,6 +8183,22 @@ if (!VOLUMEALL) {
 
         cheats();
         nonsharedkeys();
+        
+       
+        if (BUTTON(gamefunc_Quick_Save)) {
+            BUTTONCLEAR(gamefunc_Quick_Save);
+            if(lastsavedpos != -1) {
+                dnSaveGame(lastsavedpos);
+            } else {
+                GUI_ShowSaveMenu();
+            }
+        }
+        
+        if(BUTTON(gamefunc_Quick_Load)) {
+            if (lastsavedpos != -1)
+                dnLoadGame(lastsavedpos);
+            BUTTONCLEAR(gamefunc_Quick_Load);
+        }
 
         if( (ud.show_help == 0 && ud.multimode < 2 && !(ps[myconnectindex].gm&MODE_MENU) ) || ud.multimode > 1 || ud.recstat == 2)
             i = min(max((totalclock-ototalclock)*(65536L/TICSPERFRAME),0),65536);
@@ -9655,7 +9674,7 @@ void dobonus(char bonusonly)
 
     if(bonusonly || ud.multimode > 1) {
         if (ud.recstat != 2 )
-            dnHandleEndLevelAchievements(ud.volume_number, ud.last_level - 1, ps[myconnectindex].player_par);
+            dnHandleEndLevelAchievements(ud.volume_number, ud.last_level - 1, ps[myconnectindex].player_par, ps[myconnectindex].max_actors_killed, ps[myconnectindex].actors_killed);
         return;
     }
 
@@ -9684,8 +9703,7 @@ void dobonus(char bonusonly)
     fadepal(0,0,0, 63,0,-1);
     
     if (ud.recstat != 2 )
-        dnHandleEndLevelAchievements(ud.volume_number, ud.last_level - 1, ps[myconnectindex].player_par);
-
+        dnHandleEndLevelAchievements(ud.volume_number, ud.last_level - 1, ps[myconnectindex].player_par, ps[myconnectindex].max_actors_killed, ps[myconnectindex].actors_killed);
     
     bonuscnt = 0;
     totalclock = 0; tinc = 0;

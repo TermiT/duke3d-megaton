@@ -90,10 +90,86 @@ body {
 <p>Nigel Lowrie</p>
 
 <h1>Open-Source</h1>
-<h2>Based on port by</h2>
+<h2>Based on JFDuke3D/EDuke32</h2>
 <p>Jonathon <n>"JonoF"</n> Fowler</p>
+<p>Richard <n>"TerminX"</n> Gobeille</p>
+<p>Pierre-Loup <n>"Plagman"</n> Griffais</p>
+<p>Philipp <n>"Helixhorned"</n> Kutin</p>
+<p>Special Thanks to the JFDuke3D and EDuke32 Team</p>
 
-<h1>3DREALMS</h1>
+<h1>3D REALMS</h1>
+
+<h2>Original Duke Nukem 3D Team</h2>
+
+<h2>Original Concept</h2>
+<p>Todd Repogle</p>
+<p>Allen H. Blum III</p>
+ 
+<h2>Produced & Directed By</h2>
+<p>Greg Malone</p>
+ 
+<h2>Executive Producer</h2>
+<p>George Broussard</p>
+ 
+<h2>BUILD Engine</h2>
+<p>Ken Silverman</p>
+ 
+<h2>Game Programming</h2>
+<p>Todd Repogle</p>
+ 
+<h2>3D Engine/Tools/Net</h2>
+<p>Ken Silverman</p>
+ 
+<h2>Network Layer/Setup Program</h2>
+<p>Mark Dochtermann</p>
+
+<h2>Map Design</h2>
+<p>Allen H Blum III</p>
+<p>Richard Gray</p>
+ 
+<h2>3D Modeling</h2>
+<p>Chuck Jones</p>
+<p>Sapphire Corporation</p>
+ 
+<h2>Artwork</h2>
+<p>Dirk Jones, Stephen Hornback</p>
+<p>James Storey, David Demaret</p>
+<p>Douglas R Wood</p>
+  
+<h2>Sound Engine</h2>
+<p>Jim Dose</p>
+ 
+<h2>Sound & Music Development</h2>
+<p>Robert Prince</p>
+<p>Lee Jackson</p>
+ 
+<h2>Voice Talent</h2>
+<p>Lani Minella - Voice Producer</p>
+<p>Jon St. John as "Duke Nukem"</p>
+ 
+<h2>Graphic Design</h2>
+PACKAGING, MANUAL, ADS
+<p>Robert M. Atkins</p>
+<p>Michael Hadwin</p>
+ 
+<h2>Special Thanks To</h2>
+<p>Steven Blackburn, Tom Hall
+Scott Miller, Joe Siegler
+Terry Nagy, Colleen Compton
+Hash Inc., Formgen, Inc.</p>
+  
+<h2>The 3D Realms Beta Testers</h2>
+<p>Nathan Anderson, Wayne Benner
+Glenn Brensinger, Rob Brown
+Erik Harris, Ken Heckbert
+Terry Herrin, Greg Hively
+Hank Leukart, Eric Baker
+Jeff Rausch, Kelly Rogers
+Mike Duncan, Doug Howell
+Bill Blair</p>
+
+
+<h2>Duke Nukem 3D: Atomic Edition Team</h2>
 
 <h2>Project Leader/Director</h2>
 <p>George <n>"Frame rate sucks"</n> Broussard</p>
@@ -149,17 +225,100 @@ body {
 
 <h1>EXPANSIONS</h1>
 
-<h2>Duke It Out In D.C</h2>
+<h2>Duke It Out In D.C.</h2>
+
 <p>Sunstorm Interactive</p>
+
+<h2>President/Executive Producer</h2>
+<p>Anthony Campiti</p>
+
+<h2>Senior Level Design/Associate Producer</h2>
+<p>Robert Travis</p>
+
+<h2>Lead Artist/Level Design</h2>
+<p>Shawn Swift</p>
+
+<h2>Programmer/Level Design/Testing</h2>
+<p>Charlie Wiederhold</p>
+
+<h2>Special Thanks To</h2>
+<p>3D Realms</p>
 <p>WizardWorks</p>
+<p>GT Interactive</p>
 
 <h2>Duke: Nuclear Winter</h2>
+
 <p>Simply Silly Software</p>
-<p>WizardWorks</p>
+
+<h2>Original Concept</h2>
+<p>Joseph Wilcox</p>
+<p>V A Lowe</p>
+
+<h2>Map Design</h2>
+<p>Scott Haslam</p>
+<p>Krystian Palys</p>
+<p>Michael Clark</p>
+
+<h2>Artwork</h2>
+<p>V A Lowe</p>
+
+<h2>3D Modeling</h2>
+<p>Roger Tweedie</p>
+
+<h2>Actor Programming</h2>
+<p>Joris Weimar</p>
+
+<h2>Project Leader</h2>
+<p>Joseph Wilcox</p>
+
+<h2>Special Thanks To</h2>
+<p>George Broussard</p>
+<p>Peter Armstrong</p>
+<p>Rick Rayno</p>
+<p>Scott Miller</p>
+
+<h2>Voice Talent</h2>
+<p>Jon St. John as "Duke Nukem"</p>
+<p>J.D.Wilcox as "Santa"</p>
 
 <h2>Duke Caribbean: Life's A Beach</h2>
+
 <p>Sunstorm Interactive</p>
-<p>WizardWorks</p>
+
+<h2>Producer</h2>
+<p>Anthony Campiti</p>
+
+<h2>Lead Level Design</h2>
+<p>Robert Travis</p>
+
+<h2>Programming/Level Design</h2>
+<p>Charlie Wiederhold</p>
+
+<h2>Artwork/Voice SFX</h2>
+<p>Dave Manuel</p>
+
+<h2>Voice of Duke Nukem</h2>
+<p>Jon St. John</p>
+
+<h2>Artwork</h2>
+<p>Mike Buck</p>
+<p>Paul Jury</p>
+
+<h2>Level Design</h2>
+<p>Bill Buchalter</p>
+<p>Tyler Larson</p>
+<p>Shawn Swift</p>
+
+<h2>CON Programming</h2>
+<p>Joris Weimar</p>
+
+<h2>Music and SFX</h2>
+<p>Jenna Ramsey</p>
+
+<h2>Special Thanks To</h2>
+<p>GT Interactive</p>
+<p>Wizard Works</p>
+<p>3D Realms</p>
 
 </div>
 </div>

@@ -950,15 +950,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\code\mode_detect_win32.c"
-				>
-			</File>
-			<File
 				RelativePath="..\code\wintools.c"
-				>
-			</File>
-			<File
-				RelativePath="..\code\wintools.h"
 				>
 			</File>
 			<Filter

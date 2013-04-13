@@ -32,6 +32,17 @@
             <option id="fullscreen-off">OFF</option>
         </options>
     </div>
+    <div id="vertical-sync" options>
+        <caption>VSYNC</caption>
+        <options>
+            <option id="vsync-on">ON</option>
+            <option id="vsync-off">OFF</option>
+        </options>
+    </div>
+    <div id="max-fps" options>
+        <caption>MAX FPS</caption>
+        <options/>
+    </div>
     <div id="texture-filter" options>
         <caption>TEXTURES</caption>
         <options>

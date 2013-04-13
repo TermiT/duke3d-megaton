@@ -2153,17 +2153,7 @@ if (!VOLUMEONE) {
     loc.svel = momy;
     loc.avel = angvel;
     loc.horz = horiz;
-    
-    if (BUTTON(gamefunc_Quick_Save)) {
-        dnSaveGame(0);
-        BUTTONCLEAR(gamefunc_Quick_Save);
-    }
-    
-    if(BUTTON(gamefunc_Quick_Load)) {
-        dnLoadGame(0);
-        BUTTONCLEAR(gamefunc_Quick_Load);
-    }
-    
+        
     dnOverrideInput(&loc);
 }
 
@@ -3560,6 +3550,7 @@ void processinput(short snum)
                     if ((snum == myconnectindex) && ud.recstat != 2 /*&& !dnHasTakenOverDemo() && !dnFastForwardOnDeath()*/)
 					{
 						dnRecordEnemyStomp();
+                        dnRecordEnemyKilled();
 					}
 
                 }

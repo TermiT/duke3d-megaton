@@ -25,10 +25,6 @@
 #endif
 
 #include "csteam.h"
-#ifdef _WIN32
-#include "wintools.h"
-#endif
-
 #include "dnAPI.h"
 #include "smpeg/smpeg.h"
 
@@ -249,7 +245,6 @@ void play_video(const char * filename) {
     SDL_ShowCursor(SDL_DISABLE);
     
     SMPEG_play(movie);
-//    SMPEG_loop(movie, -1);
     SMPEG_getinfo(movie, &movieInfo);
     
     glEnable(GL_TEXTURE_2D);
@@ -271,14 +266,8 @@ void play_video(const char * filename) {
     while(done == 0) {
         SDL_Event event;
         while (SDL_PollEvent(&event)){
-            if (event.type == SDL_QUIT)  {
+            if (event.type == SDL_QUIT|| event.type == SDL_KEYDOWN || event.type == SDL_MOUSEBUTTONDOWN)  {
                 done = 1;
-            }
-            if (event.type == SDL_KEYDOWN){
-                if (event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_RETURN
-                    || event.key.keysym.sym == SDLK_SPACE) {
-                    done = 1;
-                }
             }
         }
         glClear(GL_COLOR_BUFFER_BIT);
@@ -296,7 +285,6 @@ void play_video(const char * filename) {
     SMPEG_delete(movie);
     movie = NULL;
     SDL_FreeSurface(movieSurface);
-    //SDL_ShowCursor(SDL_ENABLE);
 }
 
 
@@ -698,15 +686,17 @@ void releaseallbuttons(void)
 //
 //
 
-#ifdef _WIN32
+void Sys_InitTimer();
+void Sys_UninitTimer();
+double Sys_GetTicks();
+void Sys_ThrottleFPS(int max_fps);
 
-Uint32 WIN_GetTicks() {
-	return (Uint32)Win32_GetQPC();
+static 
+Uint32 GetTicks() {
+	return (Uint32)Sys_GetTicks();
 }
 
-#define SDL_GetTicks() WIN_GetTicks()
-
-#endif
+#define SDL_GetTicks() GetTicks()
 
 static Uint32 timerfreq=0;
 static Uint32 timerlastsample=0;
@@ -720,9 +710,7 @@ int inittimer(int tickspersecond)
 {
 	if (timerfreq) return 0;	// already installed
 
-#ifdef _WIN32
-	Win32_InitQPC();
-#endif
+	Sys_InitTimer();
 
 	initprintf("Initialising timer\n");
 
@@ -741,6 +729,8 @@ int inittimer(int tickspersecond)
 void uninittimer(void)
 {
 	if (!timerfreq) return;
+	
+	Sys_UninitTimer();
 
 	timerfreq=0;
 }
@@ -778,11 +768,7 @@ unsigned long getticks(void)
 //
 unsigned long getusecticks(void)
 {
-#ifdef _WIN32
-	return (unsigned long)(Win32_GetQPC() * 1000.0);
-#else
-	return (unsigned long)SDL_GetTicks() * 1000;
-#endif
+	return (unsigned long)(Sys_GetTicks() * 1000.0);
 }
 
 
@@ -986,16 +972,15 @@ int checkvideomode(int *x, int *y, int c, int fs, int forced)
 	return nearest;		// JBF 20031206: Returns the mode number
 }
 
-
 //
 // setvideomode() -- set SDL video mode
 //
-int setvideomode(int x, int y, int c, int fs)
+int setvideomode(int x, int y, int c, int fs, int force)
 {
 	int regrab = 0;
 	
 	if ((fs == fullscreen) && (x == xres) && (y == yres) && (c == bpp) &&
-	    !videomodereset) {
+	    !videomodereset && !force) {
 		OSD_ResizeDisplay(xres,yres);
 		return 0;
 	}
@@ -1061,6 +1046,10 @@ int setvideomode(int x, int y, int c, int fs)
 					j = 0;
 				}
 				SDL_GL_SetAttribute(attributes[i].attr, j);
+			}
+
+			if (!fs) {
+				Sys_CenterWindow(x, y);
 			}
 
 			GUI_PreModeChange();
@@ -1228,6 +1217,22 @@ void enddrawing(void)
 	if (SDL_MUSTLOCK(sdl_surface)) SDL_UnlockSurface(sdl_surface);
 }
 
+int dnFPS = 0;
+
+void dnCalcFPS() {
+	static Uint32 prev_time = 0;
+	static Uint32 frame_counter = 0;
+	int current_time;
+	frame_counter++;
+	if (frame_counter == 50) {
+		frame_counter = 0;
+		current_time = SDL_GetTicks();
+		if (prev_time != 0) {
+			dnFPS = (int)( 50000.0 / (current_time-prev_time) );
+		}
+		prev_time = current_time;
+	}
+}
 
 //
 // showframe() -- update the display
@@ -1271,6 +1276,12 @@ void showframe(int w)
         if (ps[myconnectindex].gm&MODE_EOL) {
             clearview(0L);
         }
+		
+		dnCalcFPS();
+		if (!ud.vsync && ud.fps_max > 10) {
+			Sys_ThrottleFPS(ud.fps_max);
+		}
+
 		return;
 	}
 #endif

@@ -48,14 +48,14 @@ void dnGetVideoModeList(VideoModeList& modes) {
 	}
 }
 
-extern "C" long setgamemode(char davidoption, long daxdim, long daydim, long dabpp);
+extern "C" long setgamemode(char davidoption, long daxdim, long daydim, long dabpp, int force);
 extern "C" void polymost_glreset ();
 
 void dnChangeVideoMode(VideoMode *v) {
 	//setvideomode(videomode->width, videomode->height, videomode->bpp, videomode->fullscreen);
 	//resetvideomode();
 	polymost_glreset();
-	setgamemode(v->fullscreen, v->width, v->height, v->bpp);
+	setgamemode(v->fullscreen, v->width, v->height, v->bpp, 1);
 }
 
 bool operator == (const VideoMode& a, const VideoMode& b) {

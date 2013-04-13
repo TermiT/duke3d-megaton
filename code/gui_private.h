@@ -36,13 +36,15 @@ private:
     Rocket::Core::Element *m_waiting_menu_item;
     int m_waiting_slot;
     
-    bool m_need_apply_video_mode;
+    bool m_need_apply_video_mode, m_need_apply_vsync;
     VideoMode m_backup_video_mode, m_new_video_mode;
     
     bool m_show_press_enter;
     bool m_draw_strips;
     
     ConfirmableAction *m_action_to_confirm;
+    
+    Rocket::Core::String menu_to_open;
 
 	void SetupAnimation();
 	void LoadDocuments();
@@ -113,6 +115,8 @@ public:
     void ApplyVideoMode(Rocket::Core::ElementDocument *menu_page);
 
     void ResetMouse();
+    
+    void ShowSaveMenu();
 
 };
 

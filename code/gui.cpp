@@ -94,4 +94,11 @@ void GUI_EnableMenuForCurrentFrame(void) {
 	gui->EnableForCurrentFrame();
 }
 
+extern "C"
+void GUI_ShowSaveMenu(void) {
+	assert(gui != NULL);
+	gui->ShowSaveMenu();
+}
+
+
 #endif

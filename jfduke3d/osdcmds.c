@@ -218,7 +218,7 @@ static int osdcmd_restartvid(const osdfuncparm_t *parm)
 	extern long qsetmode;
 	
 	resetvideomode();
-	if (setgamemode(ScreenMode,ScreenWidth,ScreenHeight,ScreenBPP))
+	if (setgamemode(ScreenMode,ScreenWidth,ScreenHeight,ScreenBPP,0))
 		gameexit("restartvid: Reset failed...\n");
 	onvideomodechange(ScreenBPP>8);
 	vscrn();
@@ -250,9 +250,9 @@ static int osdcmd_vidmode(const osdfuncparm_t *parm)
 			break;
 	}
 
-	if (setgamemode(newfs,newwidth,newheight,newbpp)) {
+	if (setgamemode(newfs,newwidth,newheight,newbpp,0)) {
 		initprintf("vidmode: Mode change failed!\n");
-		if (setgamemode(ScreenMode, ScreenWidth, ScreenHeight, ScreenBPP))
+		if (setgamemode(ScreenMode, ScreenWidth, ScreenHeight, ScreenBPP,0))
 			gameexit("vidmode: Reset failed!\n");
 	}
 	ScreenBPP = newbpp; ScreenWidth = newwidth; ScreenHeight = newheight;

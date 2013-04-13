@@ -2812,14 +2812,14 @@ int MV_Init
    MV_SetErrorCode( MV_Ok );
 
    MV_TotalMemory = Voices * sizeof( VoiceNode ) + sizeof( HARSH_CLIP_TABLE_8 ) + TotalBufferSize;
-	ptr = (char *) malloc( MV_TotalMemory );
+	ptr = (char *) malloc( MV_TotalMemory*2 );//HACK
    if ( !ptr )
       {
       MV_SetErrorCode( MV_NoMem );
       return( MV_Error );
       }
    
-   memset(ptr, 0, MV_TotalMemory);
+   memset(ptr, 0, MV_TotalMemory*2);//HACK
 
    MV_Voices = ( VoiceNode * )ptr;
 	ptr += Voices * sizeof( VoiceNode );

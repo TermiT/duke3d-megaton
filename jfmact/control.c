@@ -1266,9 +1266,8 @@ void dnResetBindings() {
     dnBindFunction(gamefunc_Shrink_Screen, 0, SDLK_MINUS);
     dnBindFunction(gamefunc_Enlarge_Screen, 0, SDLK_EQUALS);
     
-    dnBindFunction(gamefunc_Quick_Load, 0, SDLK_F5);
     dnBindFunction(gamefunc_Quick_Save, 0, SDLK_F6);
-
+    dnBindFunction(gamefunc_Quick_Load, 0, SDLK_F9);
 }
 
 void dnBindFunction(int function, int slot, dnKey key) {

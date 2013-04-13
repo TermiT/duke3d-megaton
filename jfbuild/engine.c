@@ -6931,12 +6931,12 @@ long saveboard(char *filename, long *daposx, long *daposy, long *daposz,
 //
 // JBF: davidoption now functions as a windowed-mode flag (0 == windowed, 1 == fullscreen)
 extern char videomodereset;
-long setgamemode(char davidoption, long daxdim, long daydim, long dabpp)
+long setgamemode(char davidoption, long daxdim, long daydim, long dabpp, int force)
 {
 	long i, j;
 
 	if ((qsetmode == 200) && (videomodereset == 0) &&
-	    (davidoption == fullscreen) && (xdim == daxdim) && (ydim == daydim) && (bpp == dabpp))
+	    (davidoption == fullscreen) && (xdim == daxdim) && (ydim == daydim) && (bpp == dabpp) && !force)
 		return(0);
 	
 	strcpy(kensmessage,"!!!! BUILD engine&tools programmed by Ken Silverman of E.G. RI.  (c) Copyright 1995 Ken Silverman.  Summary:  BUILD = Ken. !!!!");
@@ -6947,7 +6947,7 @@ long setgamemode(char davidoption, long daxdim, long daydim, long dabpp)
 
 	//bytesperline is set in this function
 	j = bpp;
-	if (setvideomode(daxdim,daydim,dabpp,davidoption) < 0) return(-1);
+	if (setvideomode(daxdim,daydim,dabpp,davidoption,force) < 0) return(-1);
 
         // it's possible the previous call protected our code sections again
         makeasmwriteable();
@@ -10053,7 +10053,7 @@ void qsetmode640350(void)
 {
 	if (qsetmode != 350)
 	{
-		if (setvideomode(640, 350, 8, fullscreen) < 0) {
+		if (setvideomode(640, 350, 8, fullscreen,0) < 0) {
 			//fprintf(stderr, "Couldn't set 640x350 video mode for some reason.\n");
 			return;
 		}
@@ -10084,7 +10084,7 @@ void qsetmode640480(void)
 {
 	if (qsetmode != 480)
 	{
-		if (setvideomode(640, 480, 8, fullscreen) < 0) {
+		if (setvideomode(640, 480, 8, fullscreen,0) < 0) {
 			//fprintf(stderr, "Couldn't set 640x480 video mode for some reason.\n");
 			return;
 		}
@@ -10118,7 +10118,7 @@ void qsetmodeany(long daxdim, long daydim)
 	if (daydim < 480) daydim = 480;
 
 	if (qsetmode != ((daxdim<<16)|(daydim&0xffff))) {
-		if (setvideomode(daxdim, daydim, 8, fullscreen) < 0)
+		if (setvideomode(daxdim, daydim, 8, fullscreen,0) < 0)
 			return;
 
 		xdim = xres;

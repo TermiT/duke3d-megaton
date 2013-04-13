@@ -28,7 +28,6 @@
 		77CF869C169F1B69008D46F1 /* ShellRenderInterfaceOpenGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 77CF85FC169F1B69008D46F1 /* ShellRenderInterfaceOpenGL.cpp */; };
 		77CF869D169F1B69008D46F1 /* ShellSystemInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 77CF85FE169F1B69008D46F1 /* ShellSystemInterface.cpp */; };
 		77CF869F169F1B69008D46F1 /* asssys.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8605169F1B69008D46F1 /* asssys.c */; };
-		77CF86A0169F1B69008D46F1 /* cd.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8607169F1B69008D46F1 /* cd.c */; };
 		77CF86A1169F1B69008D46F1 /* driver_nosound.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8609169F1B69008D46F1 /* driver_nosound.c */; };
 		77CF86A2169F1B69008D46F1 /* driver_sdl.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF860B169F1B69008D46F1 /* driver_sdl.c */; };
 		77CF86A4169F1B69008D46F1 /* drivers.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF860F169F1B69008D46F1 /* drivers.c */; };
@@ -95,7 +94,6 @@
 		77F3883916A70868008B73A6 /* glguard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 77F3883716A70868008B73A6 /* glguard.cpp */; };
 		77F3883C16A70FF2008B73A6 /* dnAchievement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 77F3883B16A70FF2008B73A6 /* dnAchievement.cpp */; };
 		77F3883E16A73625008B73A6 /* dnAPI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 77F3883D16A73625008B73A6 /* dnAPI.cpp */; };
-		950C880116DD191D0005B45C /* mode_detect_osx.m in Sources */ = {isa = PBXBuildFile; fileRef = 950C880016DD191D0005B45C /* mode_detect_osx.m */; };
 		95296E5516ADD2DC00A491FD /* ogg.framework in Copy Files (Frameworks) */ = {isa = PBXBuildFile; fileRef = 770D572A16AAA0FA003E9655 /* ogg.framework */; };
 		95296E5616ADD2DC00A491FD /* vorbis.framework in Copy Files (Frameworks) */ = {isa = PBXBuildFile; fileRef = 770D572B16AAA0FA003E9655 /* vorbis.framework */; };
 		955618D516A14AB500CBB392 /* libRocketControls.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 955618D016A14AB500CBB392 /* libRocketControls.a */; };
@@ -153,7 +151,7 @@
 		770D572A16AAA0FA003E9655 /* ogg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ogg.framework; path = ../thirdparty/frameworks/ogg.framework; sourceTree = "<group>"; };
 		770D572B16AAA0FA003E9655 /* vorbis.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = vorbis.framework; path = ../thirdparty/frameworks/vorbis.framework; sourceTree = "<group>"; };
 		776E959916B18E7900A1176B /* libsmpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsmpeg.a; path = "../thirdparty/bin-osx32/libsmpeg.a"; sourceTree = "<group>"; };
-		7777065616ADE4CE00D532FF /* mactools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mactools.h; sourceTree = "<group>"; };
+		7777065016ADE26900D532FF /* steam_appid.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = steam_appid.txt; path = ../gameroot/steam_appid.txt; sourceTree = "<group>"; };
 		7777065716ADE4CE00D532FF /* mactools.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = mactools.m; sourceTree = "<group>"; };
 		77BCA8B216CC21EF00117FBD /* icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = icon.icns; sourceTree = "<group>"; };
 		77C9A15D169F3D2D003FA762 /* dnAPI_globals.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dnAPI_globals.c; sourceTree = "<group>"; };
@@ -188,8 +186,6 @@
 		77CF8604169F1B69008D46F1 /* _multivc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = _multivc.h; sourceTree = "<group>"; };
 		77CF8605169F1B69008D46F1 /* asssys.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = asssys.c; sourceTree = "<group>"; };
 		77CF8606169F1B69008D46F1 /* asssys.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = asssys.h; sourceTree = "<group>"; };
-		77CF8607169F1B69008D46F1 /* cd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cd.c; sourceTree = "<group>"; };
-		77CF8608169F1B69008D46F1 /* cd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cd.h; sourceTree = "<group>"; };
 		77CF8609169F1B69008D46F1 /* driver_nosound.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = driver_nosound.c; sourceTree = "<group>"; };
 		77CF860A169F1B69008D46F1 /* driver_nosound.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = driver_nosound.h; sourceTree = "<group>"; };
 		77CF860B169F1B69008D46F1 /* driver_sdl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = driver_sdl.c; sourceTree = "<group>"; };
@@ -332,7 +328,6 @@
 		77F3883A16A70FBA008B73A6 /* dnAchievement.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dnAchievement.h; sourceTree = "<group>"; };
 		77F3883B16A70FF2008B73A6 /* dnAchievement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dnAchievement.cpp; sourceTree = "<group>"; };
 		77F3883D16A73625008B73A6 /* dnAPI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dnAPI.cpp; sourceTree = "<group>"; };
-		950C880016DD191D0005B45C /* mode_detect_osx.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = mode_detect_osx.m; sourceTree = "<group>"; };
 		955618D016A14AB500CBB392 /* libRocketControls.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libRocketControls.a; path = "../thirdparty/bin-osx32/libRocketControls.a"; sourceTree = "<group>"; };
 		955618D116A14AB500CBB392 /* libRocketCore.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libRocketCore.a; path = "../thirdparty/bin-osx32/libRocketCore.a"; sourceTree = "<group>"; };
 		955618D216A14AB500CBB392 /* libRocketDebugger.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libRocketDebugger.a; path = "../thirdparty/bin-osx32/libRocketDebugger.a"; sourceTree = "<group>"; };
@@ -380,6 +375,7 @@
 			isa = PBXGroup;
 			children = (
 				77BCA8B216CC21EF00117FBD /* icon.icns */,
+				7777065016ADE26900D532FF /* steam_appid.txt */,
 				77CF85E3169F1B69008D46F1 /* code */,
 				77CF8602169F1B69008D46F1 /* jfaudiolib */,
 				77CF8623169F1B69008D46F1 /* jfbuild */,
@@ -439,9 +435,7 @@
 				77CF85EB169F1B69008D46F1 /* helpers.h */,
 				77F3883A16A70FBA008B73A6 /* dnAchievement.h */,
 				77F3883B16A70FF2008B73A6 /* dnAchievement.cpp */,
-				7777065616ADE4CE00D532FF /* mactools.h */,
 				7777065716ADE4CE00D532FF /* mactools.m */,
-				950C880016DD191D0005B45C /* mode_detect_osx.m */,
 			);
 			name = code;
 			path = ../code;
@@ -478,8 +472,6 @@
 				77CF8604169F1B69008D46F1 /* _multivc.h */,
 				77CF8605169F1B69008D46F1 /* asssys.c */,
 				77CF8606169F1B69008D46F1 /* asssys.h */,
-				77CF8607169F1B69008D46F1 /* cd.c */,
-				77CF8608169F1B69008D46F1 /* cd.h */,
 				77CF8609169F1B69008D46F1 /* driver_nosound.c */,
 				77CF860A169F1B69008D46F1 /* driver_nosound.h */,
 				77CF860B169F1B69008D46F1 /* driver_sdl.c */,
@@ -721,7 +713,6 @@
 				77CF869C169F1B69008D46F1 /* ShellRenderInterfaceOpenGL.cpp in Sources */,
 				77CF869D169F1B69008D46F1 /* ShellSystemInterface.cpp in Sources */,
 				77CF869F169F1B69008D46F1 /* asssys.c in Sources */,
-				77CF86A0169F1B69008D46F1 /* cd.c in Sources */,
 				77CF86A1169F1B69008D46F1 /* driver_nosound.c in Sources */,
 				77CF86A2169F1B69008D46F1 /* driver_sdl.c in Sources */,
 				77CF86A4169F1B69008D46F1 /* drivers.c in Sources */,
@@ -787,7 +778,6 @@
 				77F3883C16A70FF2008B73A6 /* dnAchievement.cpp in Sources */,
 				77F3883E16A73625008B73A6 /* dnAPI.cpp in Sources */,
 				7777065816ADE4CE00D532FF /* mactools.m in Sources */,
-				950C880116DD191D0005B45C /* mode_detect_osx.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -819,7 +809,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx;
 			};
 			name = Debug;
 		};
@@ -841,7 +831,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};
@@ -872,6 +862,7 @@
 					"WIDESCREEN_HACK=1",
 					"CLASSIC_MENU=0",
 					"FONT_HACK=1",
+					"NOSTEAM=1",
 				);
 				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				HEADER_SEARCH_PATHS = (
@@ -919,6 +910,7 @@
 					"WIDESCREEN_HACK=1",
 					"FONT_HACK=1",
 					"CLASSIC_MENU=0",
+					"NOSTEAM=1",
 				);
 				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				HEADER_SEARCH_PATHS = (

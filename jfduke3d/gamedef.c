@@ -2530,6 +2530,7 @@ char parse(void)
         case 88:
             insptr++;
             ps[g_p].actors_killed += *insptr;
+            dnRecordEnemyKilled();
             hittype[g_i].actorstayput = -1;
             insptr++;
             break;
@@ -2744,13 +2745,15 @@ char parse(void)
 
             if(ud.multimode < 2)
             {
-                if( lastsavedpos >= 0 && ud.recstat != 2 )
-                {
-                    ps[g_p].gm = MODE_MENU;
-                    KB_ClearKeyDown(sc_Space);
-                    cmenu(15000);
-                }
-                else ps[g_p].gm = MODE_RESTART;
+                //commented by termit
+//                if( lastsavedpos >= 0 && ud.recstat != 2 )
+//                {
+//                    ps[g_p].gm = MODE_MENU;
+//                    KB_ClearKeyDown(sc_Space);
+//                    cmenu(15000);
+//                }
+//                else
+                    ps[g_p].gm = MODE_RESTART;
                 killit_flag = 2;
             }
             else
@@ -3207,8 +3210,10 @@ void execute(short i,short p,long x)
 
     if(g_sp->sectnum < 0 || g_sp->sectnum >= MAXSECTORS)
     {
-        if(badguy(g_sp))
+        if(badguy(g_sp)){
             ps[g_p].actors_killed++;
+            dnRecordEnemyKilled();
+        }
         deletesprite(g_i);
         return;
     }

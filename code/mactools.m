@@ -6,9 +6,11 @@
 //  Copyright (c) 2013 General Arcade. All rights reserved.
 //
 
-#import "mactools.h"
 #import <Foundation/Foundation.h>
 #import <Cocoa/Cocoa.h>
+#include <mach/mach_time.h>
+#include <sys/time.h>
+
 #define MAX_PATH 2048
 
 const char* Sys_GetResourceDir(void) {
@@ -39,6 +41,7 @@ void Sys_StoreData(const char *filepath, const char *data) {
     }
 }
 
+static
 NSString * Sys_GetOSVersion() {
     NSProcessInfo *pInfo = [NSProcessInfo processInfo];
     NSString *version = [pInfo operatingSystemVersionString];
@@ -47,4 +50,75 @@ NSString * Sys_GetOSVersion() {
 
 bool Sys_IsSnowLeopard() {
     return (bool)([Sys_GetOSVersion() rangeOfString:@"10.6"].location != NSNotFound);
+}
+
+static uint64_t timer_start;
+
+void Sys_InitTimer() {
+    timer_start = mach_absolute_time();
+}
+
+void Sys_UninitTimer() {
+    
+}
+
+static
+double subtractTimes( uint64_t endTime, uint64_t startTime )
+{
+    uint64_t difference = endTime - startTime;
+    static double conversion = 0.0;
+    
+    if( conversion == 0.0 )
+    {
+        mach_timebase_info_data_t info;
+        kern_return_t err = mach_timebase_info( &info );
+        
+        //Convert the timebase into milliseconds
+        if( err == 0  )
+            conversion = 1e-6 * (double) info.numer / (double) info.denom;
+    }
+    
+    return conversion * (double) difference;
+}
+
+double Sys_GetTicks() {
+    uint64_t current;
+    current = mach_absolute_time();
+    return subtractTimes(current, timer_start);
+}
+
+void Sys_ThrottleFPS(int max_fps) {
+    static int throttler_ready = 0;
+	static double end_of_prev_frame;
+	double frame_time, current_time, time_to_wait;
+    struct timespec ts = { 0 };
+    
+	if (throttler_ready) {
+		frame_time = 1000.0/max_fps;
+
+        do {
+            current_time = Sys_GetTicks();
+            time_to_wait = frame_time - (current_time - end_of_prev_frame);
+                        
+            if (time_to_wait > 0) {
+                ts.tv_sec = 0;
+                ts.tv_nsec = (long)(time_to_wait*1000000.0);
+                nanosleep(&ts, NULL);
+            }
+        } while (0);
+        
+	} else {
+        throttler_ready = 1;
+	}
+    end_of_prev_frame = Sys_GetTicks();
+}
+
+void Sys_GetScreenSize(int *width, int *height) {
+    NSRect screenRect = [[NSScreen mainScreen] frame];
+    *width = (int) screenRect.size.width;
+    *height = (int) screenRect.size.height;
+}
+
+void Sys_CenterWindow(int width, int height) {
+    
 }

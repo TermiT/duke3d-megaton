@@ -23,6 +23,9 @@
 #define ACHIEVEMENT_BALLS_OF_SNOW                   "ACHIEVEMENT_BALLS_OF_SNOW"
 #define ACHIEVEMENT_LIMBO                           "ACHIEVEMENT_LIMBO"
 
+#define ACHIEVEMENT_TAKE_NO_PRISONERS               "ACHIEVEMENT_TAKE_NO_PRISONERS"
+#define ACHIEVEMENT_INVADERS_MUST_DIE               "ACHIEVEMENT_INVADERS_MUST_DIE"
+
 //MULTIPLAYER
 #define ACHIEVEMENT_BLOW_IT_OUT_YOUR_ASS            "ACHIEVEMENT_BLOW_IT_OUT_YOUR_ASS"
 #define ACHIEVEMENT_IVE_GOT_BALLS_OF_STEEL          "ACHIEVEMENT_IVE_GOT_BALLS_OF_STEEL"
@@ -30,20 +33,24 @@
 
 #define STAT_THE_MIGHTY_FOOT						"STAT_THE_MIGHTY_FOOT"
 #define STAT_OOMP_UUGH_WHERE_IS_IT					"STAT_OOMP_UUGH_WHERE_IS_IT"
+#define STAT_INVADERS_MUST_DIE                      "STAT_INVADERS_MUST_DIE"
 
 #define ACHIEVEMENT_THE_MIGHTY_FOOT_MAX				40
 #define ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT_MAX		70
+#define ACHIEVEMENT_INVADERS_MUST_DIE_MAX           1000
 
 #ifdef __cplusplus
 extern "C" {
 #endif
     
 void dnRecordDancerTip();
-void dnHandleEndLevelAchievements(int Volume, int Level, int Time);
+void dnHandleEndLevelAchievements(int Volume, int Level, int Time, int MaxKills, int Kills);
 void dnRecordEnemyStomp();
 void dnRecordShitPile();
 void dnRecordSecret(int Volume, int Level, short SecretIndex);
 void dnFoundSecret(short sectorindex);
+void dnRecordEnemyKilled();
+    
     
 #ifdef __cplusplus
 }

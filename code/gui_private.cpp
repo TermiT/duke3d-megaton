@@ -146,7 +146,7 @@ void GUI::SetActionToConfirm(ConfirmableAction *action) {
     m_draw_strips = m_action_to_confirm != NULL;
 }
 
-GUI::GUI(int width, int height):m_enabled(false),m_width(width),m_height(height),m_enabled_for_current_frame(false),m_waiting_for_key(false),m_action_to_confirm(NULL),m_need_apply_video_mode(false),m_show_press_enter(true),m_draw_strips(false) {
+GUI::GUI(int width, int height):m_enabled(false),m_width(width),m_height(height),m_enabled_for_current_frame(false),m_waiting_for_key(false),m_action_to_confirm(NULL),m_need_apply_video_mode(false),m_need_apply_vsync(false),m_show_press_enter(true),m_draw_strips(false) {
     
 	m_systemInterface = new ShellSystemInterface();
 	m_renderInterface = new ShellRenderInterfaceOpenGL();
@@ -193,6 +193,8 @@ GUI::GUI(int width, int height):m_enabled(false),m_width(width),m_height(height)
     Rocket::Core::ElementDocument *doc = m_context->GetDocument("menu-main");
     Rocket::Core::Element *e = doc->GetElementById("version-footer");
     e->SetInnerRML(version_string);
+    
+    menu_to_open = "menu-ingame";
 }
 
 /*
@@ -325,7 +327,7 @@ void GUI::Enable(bool v) {
 		if (m_enabled) {
             printf("Menu enabled\n");
             if (dnGameModeSet()) {
-                m_menu->ShowDocument(m_context, "menu-ingame", false);
+                m_menu->ShowDocument(m_context, menu_to_open, false);
             } else {
                 m_menu->ShowDocument(m_context, m_show_press_enter ? "menu-start" : "menu-main", false);
             }
@@ -416,6 +418,7 @@ bool GUI::InjectEvent(SDL_Event *ev) {
 		} else 	{
 			m_draw_strips = false;
 			if (!m_menu->GoBack(m_context)) {
+                menu_to_open = "menu-ingame";
 				dnHideMenu();
 			}
 		}
@@ -562,6 +565,7 @@ void SaveVideoMode(VideoMode *vm) {
 	ScreenHeight = vm->height;
 	ScreenBPP = vm->bpp;
 	ScreenMode = vm->fullscreen;
+    vscrn();
 }
 
 void GUI::ReadChosenSkillAndEpisode(int *pskill, int *pepisode) {
@@ -623,6 +627,7 @@ void GUI::DoCommand(Rocket::Core::Element *element, const Rocket::Core::String& 
             m_menu->GoBack(m_context);
         }
     } else if (command == "resume-game") {
+        menu_to_open = "menu-ingame";
         dnHideMenu();
     } else if (command == "restore-video-mode") {
         dnChangeVideoMode(&m_backup_video_mode);
@@ -733,17 +738,34 @@ void GUI::ShowConfirmation(ConfirmableAction *action, const Rocket::Core::String
 
 void GUI::PopulateOptions(Rocket::Core::Element *menu_item, Rocket::Core::Element *options_element) {
 	char buffer[64];
-	VideoModeList video_modes;
-	dnGetVideoModeList(video_modes);
-	for (VideoModeList::iterator i = video_modes.begin(); i != video_modes.end(); i++) {
-		Rocket::Core::Element *option = Rocket::Core::Factory::InstanceElement(options_element, "option", "option", Rocket::Core::XMLAttributes());
-		sprintf(buffer, "%dx%d", i->width, i->height);
-		option->SetInnerRML(buffer);
-		sprintf(buffer, "%dx%d@%d", i->width, i->height, i->bpp);
-		option->SetId(buffer);
-		options_element->AppendChild(option);
-		option->RemoveReference();
-	}
+    if (menu_item->GetId() == "video-mode") {
+        VideoModeList video_modes;
+        dnGetVideoModeList(video_modes);
+        for (VideoModeList::iterator i = video_modes.begin(); i != video_modes.end(); i++) {
+            Rocket::Core::Element *option = Rocket::Core::Factory::InstanceElement(options_element, "option", "option", Rocket::Core::XMLAttributes());
+            sprintf(buffer, "%dx%d", i->width, i->height);
+            option->SetInnerRML(buffer);
+            sprintf(buffer, "%dx%d@%d", i->width, i->height, i->bpp);
+            option->SetId(buffer);
+            options_element->AppendChild(option);
+            option->RemoveReference();
+        }
+    } else if (menu_item->GetId() == "max-fps") {
+        Rocket::Core::Element *option = Rocket::Core::Factory::InstanceElement(options_element, "option", "option", Rocket::Core::XMLAttributes());
+        option->SetInnerRML("OFF");
+        option->SetId("fps-0");
+        options_element->AppendChild(option);
+        option->RemoveReference();
+        for (int i = 30; i < 190; i+=10) {
+            Rocket::Core::Element *option = Rocket::Core::Factory::InstanceElement(options_element, "option", "option", Rocket::Core::XMLAttributes());
+            sprintf(buffer, "%d", i);
+            option->SetInnerRML(buffer);
+            sprintf(buffer, "fps-%d", i);
+            option->SetId(buffer);
+            options_element->AppendChild(option);
+            option->RemoveReference();
+        }
+    }
 }
 
 void GUI::DidOpenMenuPage(Rocket::Core::ElementDocument *menu_page) {
@@ -764,6 +786,22 @@ void GUI::DidOpenMenuPage(Rocket::Core::ElementDocument *menu_page) {
         if (m_need_apply_video_mode) {
             ApplyVideoMode(menu_page);
             m_need_apply_video_mode = false;
+			m_need_apply_vsync = false;
+        } else if (m_need_apply_vsync) {
+            Rocket::Core::Element *option_element = m_menu->GetActiveOption(m_menu->GetMenuItem(m_context->GetDocument("menu-video"), "vertical-sync"));
+            Rocket::Core::String str;
+            
+            if (option_element != NULL) {
+                str = option_element->GetId();
+                
+                ud.vsync = str == "vsync-on" ? 1 : 0;
+                
+                VideoMode vm;
+                dnGetCurrentVideoMode(&vm);
+                dnChangeVideoMode(&vm);
+                m_need_apply_vsync = false;
+                vscrn();
+            }
         }
     } else if (page_id == "menu-keys-setup") {
         InitKeysSetupPage(menu_page);
@@ -783,15 +821,11 @@ void GUI::InitLoadPage(Rocket::Core::ElementDocument *menu_page) {
         if (menu_item != NULL) {
             struct savehead saveh;
             if (loadpheader((char)i, &saveh) == 0) {
-                if (i != 0) {
-                    menu_item->SetInnerRML(saveh.name);
-                }
+                menu_item->SetInnerRML(saveh.name);
                 menu_item->SetClass("empty", false);
                 menu_item->RemoveAttribute("noanim");
             } else {
-                if (i != 0) {
-                    menu_item->SetInnerRML("EMPTY");
-                }
+                menu_item->SetInnerRML("EMPTY");
                 menu_item->SetClass("empty", true);
                 menu_item->SetAttribute("noanim", true);
             }
@@ -810,12 +844,17 @@ void GUI::InitMouseSetupPage(Rocket::Core::ElementDocument *menu_page) {
 }
 
 void GUI::InitVideoOptionsPage(Rocket::Core::ElementDocument *page) {
+    char buf[10];
     VideoMode vm;
     dnGetCurrentVideoMode(&vm);
     SetChosenMode(&vm);
     UpdateApplyStatus();
     m_menu->ActivateOption(m_menu->GetMenuItem(page, "texture-filter"), gltexfiltermode < 3 ? "retro" : "smooth", false);
     m_menu->SetRangeValue(m_menu->GetMenuItem(page, "gamma"), (float)dnGetBrightness(), false);
+    m_menu->ActivateOption(m_menu->GetMenuItem(page, "vertical-sync"), ud.vsync ? "vsync-on" : "vsync-off", false);
+    int fps_max = clamp((int)((ud.fps_max+5)/10)*10, 30, 180);
+    sprintf(buf, "fps-%d", fps_max);
+    m_menu->ActivateOption(m_menu->GetMenuItem(page, "max-fps"), buf, false);
 }
 
 void GUI::InitSoundOptionsPage(Rocket::Core::ElementDocument *page) {
@@ -853,13 +892,6 @@ void GUI::InitKeysSetupPage(Rocket::Core::ElementDocument *page) {
                 const char *key1_name = dnGetKeyName(key1);
                 m_menu->SetKeyChooserValue(menu_item, 0, key0_name, key0_name);
                 m_menu->SetKeyChooserValue(menu_item, 1, key1_name, key1_name);
-
-//                int key0 = KeyboardKeys[func_num][0];
-//                int key1 = KeyboardKeys[func_num][1];
-//                const char *key0_name = key0 == -1 ? "None" : dnGetKeyName(key0);
-//                const char *key1_name = key1 == -1 ? "None" : dnGetKeyName(key1);
-//                m_menu->SetKeyChooserValue(menu_item, 0, KeyDisplayName(key0_name), key0_name);
-//                m_menu->SetKeyChooserValue(menu_item, 1, KeyDisplayName(key1_name), key1_name);
             }
         }
 }
@@ -867,7 +899,6 @@ void GUI::InitKeysSetupPage(Rocket::Core::ElementDocument *page) {
 void GUI::DidCloseMenuPage(Rocket::Core::ElementDocument *menu_page) {
     const Rocket::Core::String& page_id = menu_page->GetId();
 	if (page_id == "menu-video") {
-
     } else if (page_id == "menu-keys-setup") {
         /*
         dnResetMouseKeyBindings();
@@ -1036,6 +1067,15 @@ void GUI::DidChangeOptionValue(Rocket::Core::Element *menu_item, Rocket::Core::E
 		ud.screen_size = v*4;
 		ud.statusbarscale = 100;
 		vscrn();
+	} else if (item_id == "max-fps") {
+        int fps;
+        if (sscanf(value_id.CString(), "fps-%d", &fps) == 1) {
+            ud.fps_max = fps;
+        }
+	} else if (item_id == "vertical-sync") {
+		int a = ud.vsync ? 1 : 0;
+		int b = value_id == "vsync-on" ? 1 : 0;
+		m_need_apply_vsync = a != b;
 	}
 }
 
@@ -1117,4 +1157,12 @@ void GUI::DidActivateItem(Rocket::Core::Element *menu_item) {
 
 void GUI::DidClearKeyChooserValue(Rocket::Core::Element *menu_item, int slot) {
     AssignFunctionKey(menu_item->GetId(), "", slot);
+}
+
+void GUI::ShowSaveMenu() {
+    menu_to_open = "menu-save";
+    ps[myconnectindex].gm |= MODE_MENU;
+//    menu_to_open = "menu-ingame";
+    //m_menu->ShowDocument(m_context, "menu-save", false);
+    
 }
