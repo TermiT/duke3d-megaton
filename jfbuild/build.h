@@ -25,7 +25,8 @@ extern "C" {
 #define MAXWALLS MAXWALLSV8
 #define MAXSPRITES MAXSPRITESV8
 
-#define MAXTILES 9216
+#define VIRTUALTILES 500
+#define MAXTILES (9000 + VIRTUALTILES)
 #define MAXVOXELS 4096
 #define MAXSTATUS 1024
 #define MAXPLAYERS 16
@@ -228,6 +229,10 @@ EXTERN char gotsector[(MAXSECTORS+7)>>3];
 EXTERN char captureformat;
 extern char vgapalette[5*256];
 extern unsigned long drawlinepat;
+    
+EXTERN int faketilesiz[MAXTILES];
+EXTERN char *faketiledata[MAXTILES];
+
 
 extern void faketimerhandler(void);
 
@@ -359,6 +364,8 @@ void   initspritelists(void);
 long   loadboard(char *filename, char fromwhere, long *daposx, long *daposy, long *daposz, short *daang, short *dacursectnum);
 long   loadmaphack(char *filename);
 long   saveboard(char *filename, long *daposx, long *daposy, long *daposz, short *daang, short *dacursectnum);
+void   set_picsizanm(long picnum, short dasizx, short dasizy, long daanm);
+long   tile_exists(long picnum);
 long   loadpics(char *filename, long askedsize);
 void   loadtile(short tilenume);
 long   qloadkvx(long voxindex, char *filename);
@@ -431,6 +438,9 @@ long   setspritez(short spritenum, long newx, long newy, long newz);
 
 long   screencapture(char *filename, char inverseit);
 
+long   getclosestcol(long r, long g, long b);
+    
+    
 #define STATUS2DSIZ 144
 void   qsetmode640350(void);
 void   qsetmode640480(void);
@@ -483,7 +493,8 @@ void hicinit(void);
 // effect bitset: 1 = greyscale, 2 = invert
 void hicsetpalettetint(long palnum, unsigned char r, unsigned char g, unsigned char b, unsigned char effect);
 // flags bitset: 1 = don't compress
-int hicsetsubsttex(long picnum, long palnum, char *filen, float alphacut, char flags);
+int hicsetsubsttex(long picnum, long palnum, char *filen, float alphacut, char flags, int sizex, int sizey);
+
 int hicsetskybox(long picnum, long palnum, char *faces[6]);
 int hicclearsubst(long picnum, long palnum);
 

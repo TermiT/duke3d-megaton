@@ -1,4 +1,5 @@
 #include "glguard.h"
+#include <stdio.h>
 
 static
 ShellRenderInterfaceOpenGL *s_render_interface = NULL;

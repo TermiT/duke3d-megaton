@@ -80,4 +80,17 @@ void dnRecordSecret(int Volume, int Level, short SecretIndex) {
     dnRecordCountAchievement(ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT, STAT_OOMP_UUGH_WHERE_IS_IT, ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT_MAX, 10);
 }
 
+void dnRecordCheat() {
+    CSTEAM_UnlockAchievement(ACHIEVEMENT_SHAME);
+}
+
+void dnRecordDukeTalk(short num) {
+    if (dnGetAddonId() != 0) return;
+//            printf("NUM %d", num);
+    if (num == 193) { //Doomed space marine
+        CSTEAM_UnlockAchievement(ACHIEVEMENT_DOOMED_MARINE);
+    } else if (num == 235) { // Skywalker
+        CSTEAM_UnlockAchievement(ACHIEVEMENT_USE_THE_FORCE);
+    }
+}
 

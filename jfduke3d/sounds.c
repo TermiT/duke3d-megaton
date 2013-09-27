@@ -33,7 +33,8 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 #include "music.h"
 #include "duke3d.h"
 #include "util_lib.h"
-
+#include "dnAchievement.h"
+#include "cd.h"
 
 #define LOUDESTVOLUME 150
 
@@ -56,6 +57,8 @@ static int MusicPaused = 0;
 ===================
 */
 
+void *Sys_GetWindow();
+
 void SoundStartup( void )
 {
    int32 status;
@@ -71,9 +74,9 @@ void SoundStartup( void )
         fxdevicetype = FXDevice - 1;
     }
     
-//    #ifdef _WIN32
-//    initdata = (void *) win_gethwnd();
-//    #endif
+    #ifdef _WIN32
+    initdata = Sys_GetWindow();
+    #endif
 
    status = FX_Init( fxdevicetype, NumVoices, &NumChannels, &NumBits, &MixRate, initdata );
    if ( status == FX_Ok ) {
@@ -188,6 +191,11 @@ void MusicShutdown( void )
 
 void MusicPause( int onf )
 {
+	if (CD_IsPlaying()) {
+		CD_Pause(onf);
+		return;
+	}
+
    if (MusicPaused == onf || (MusicIsWaveform && MusicVoice < 0)) {
       return;
    }
@@ -211,6 +219,7 @@ void MusicPause( int onf )
 
 void MusicSetVolume(int volume)
 {
+   CD_SetVolume(volume);
    if (MusicIsWaveform && MusicVoice >= 0) {
       //FX_SetVoiceVolume(MusicVoice, volume);
    } else if (!MusicIsWaveform) {
@@ -264,10 +273,13 @@ void intomenusounds(void)
     menunum %= 17;
 }
 
+const char* dnGetAddonMusicDir();
+int CD_PlayByName(const char *songname, const char *folder, int loop);
 void playmusic(char *fn)
 {
     int fp;
     char * testfn, * extension;
+    const char * folder = dnGetAddonMusicDir();
 
     if(MusicToggle == 0) return;
     if(MusicDevice < 0) return;
@@ -285,6 +297,12 @@ void playmusic(char *fn)
 	  // let's see if there's an ogg with the same base name
 	  // lying around
            strcpy(extension, ".ogg");
+
+      	Bstrlwr(testfn);
+		   if (CD_PlayByName(testfn, folder, MUSIC_LoopSong) == 0) {
+			   return;
+		   }
+
            fp = kopen4load(testfn, 0);
            if (fp >= 0) {
                printf("OGG found: %s\n", testfn);
@@ -320,6 +338,11 @@ void playmusic(char *fn)
 
 void stopmusic(void)
 {
+	if (CD_IsPlaying()) {
+		CD_Stop();
+		return;
+	}
+
     if (MusicIsWaveform && MusicVoice >= 0) {
        FX_StopSound(MusicVoice);
        MusicVoice = -1;
@@ -387,6 +410,7 @@ int xyzsound(short num,short i,long x,long y,long z)
 
     if( soundm[num]&4 )
     {
+        dnRecordDukeTalk(num);
         if(VoiceToggle==0 || (ud.multimode > 1 && PN == APLAYER && sprite[i].yvel != screenpeek && ud.coop != 1) ) return -1;
 
         for(j=0;j<NUM_SOUNDS;j++)

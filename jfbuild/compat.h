@@ -294,6 +294,24 @@ static inline uint64 B_SWAP64(uint64 l) { return (l>>56)|((l>>40)&0xff00)|((l>>2
 # define max(a,b) ( ((a) > (b)) ? (a) : (b) )
 #endif
 
+#if __GNUC__ >= 4
+# define CLAMP_DECL static inline __attribute__((warn_unused_result))
+#else
+# define CLAMP_DECL static inline
+#endif
+    
+// Clamp <in> to [<min>..<max>]. The case in <= min is handled first.
+CLAMP_DECL int clamp(int in, int min, int max)
+{
+    return in <= min ? min : (in >= max ? max : in);
+}
+
+// Clamp <in> to [<min>..<max>]. The case in >= max is handled first.
+CLAMP_DECL int clamp2(int in, int min, int max)
+{
+    return in >= max ? max : (in <= min ? min : in);
+}
+    
 
 #define BMAX_PATH 260
 

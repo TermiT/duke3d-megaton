@@ -26,14 +26,20 @@
 #define ACHIEVEMENT_TAKE_NO_PRISONERS               "ACHIEVEMENT_TAKE_NO_PRISONERS"
 #define ACHIEVEMENT_INVADERS_MUST_DIE               "ACHIEVEMENT_INVADERS_MUST_DIE"
 
+#define ACHIEVEMENT_SHAME                           "ACHIEVEMENT_SHAME"
+#define ACHIEVEMENT_DOOMED_MARINE                   "ACHIEVEMENT_DOOMED_MARINE"
+#define ACHIEVEMENT_USE_THE_FORCE                   "ACHIEVEMENT_USE_THE_FORCE"
+
+#define STAT_THE_MIGHTY_FOOT						"STAT_THE_MIGHTY_FOOT"
+#define STAT_OOMP_UUGH_WHERE_IS_IT					"STAT_OOMP_UUGH_WHERE_IS_IT"
+#define STAT_INVADERS_MUST_DIE                      "STAT_INVADERS_MUST_DIE"
+
+
 //MULTIPLAYER
 #define ACHIEVEMENT_BLOW_IT_OUT_YOUR_ASS            "ACHIEVEMENT_BLOW_IT_OUT_YOUR_ASS"
 #define ACHIEVEMENT_IVE_GOT_BALLS_OF_STEEL          "ACHIEVEMENT_IVE_GOT_BALLS_OF_STEEL"
 #define ACHIEVEMENT_HAIL_TO_THE_KING_BABY           "ACHIEVEMENT_HAIL_TO_THE_KING_BABY"
 
-#define STAT_THE_MIGHTY_FOOT						"STAT_THE_MIGHTY_FOOT"
-#define STAT_OOMP_UUGH_WHERE_IS_IT					"STAT_OOMP_UUGH_WHERE_IS_IT"
-#define STAT_INVADERS_MUST_DIE                      "STAT_INVADERS_MUST_DIE"
 
 #define ACHIEVEMENT_THE_MIGHTY_FOOT_MAX				40
 #define ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT_MAX		70
@@ -50,6 +56,8 @@ void dnRecordShitPile();
 void dnRecordSecret(int Volume, int Level, short SecretIndex);
 void dnFoundSecret(short sectorindex);
 void dnRecordEnemyKilled();
+void dnRecordCheat();
+void dnRecordDukeTalk(short num);
     
     
 #ifdef __cplusplus

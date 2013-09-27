@@ -22,6 +22,12 @@ int  GUI_InjectEvent(SDL_Event *ev);
 void GUI_TimePulse(void);
 void GUI_EnableMenuForCurrentFrame(void);
 void GUI_ShowSaveMenu(void);
+void GUI_ShowLoadMenu(void);
+void GUI_ShowHelpMenu(void);
+void GUI_ShowSoundMenu(void);
+void GUI_ShowVideoSettingsMenu(void);
+void GUI_ShowGameOptionsMenu(void);
+void GUI_ShowQuitConfirmation(void);
 
 #ifdef __cplusplus
 }

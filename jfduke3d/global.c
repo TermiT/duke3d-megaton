@@ -97,7 +97,6 @@ long avgfvel, avgsvel, avgavel, avghorz, avgbits;
 
 
 input inputfifo[MOVEFIFOSIZ][MAXPLAYERS];
-input recsync[RECSYNCBUFSIZ];
 
 long movefifosendplc;
 

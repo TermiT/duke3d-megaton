@@ -62,9 +62,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib smpeg.lib steam_api.lib libcmtd.lib libcpmtd.lib freetype2411MT_D.lib dsound.lib dinput.lib ddraw.lib dxguid.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib"
+				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib smpeg.lib steam_api.lib libcmtd.lib libcpmtd.lib freetype2411MT_D.lib dsound.lib dinput.lib ddraw.lib dxguid.lib dxerr.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib vpxmtd.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)/thirdparty/bin-win32/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/redistributable_bin&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/public/steam/lib/win32&quot;;&quot;$(SolutionDir)/thirdparty/sources/dxsdk/lib&quot;;&quot;$(SolutionDir)/thirdparty/sources/support/lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)/thirdparty/bin-win32/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/redistributable_bin&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/public/steam/lib/win32&quot;;&quot;$(SolutionDir)/thirdparty/bin-win32/&quot;;&quot;$(SolutionDir)/thirdparty/sources/support/lib&quot;"
 				IgnoreAllDefaultLibraries="true"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
@@ -141,9 +141,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib smpeg.lib steam_api.lib libcmt.lib libcpmt.lib freetype2411MT.lib dsound.lib dinput.lib ddraw.lib dxguid.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib"
+				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib smpeg.lib steam_api.lib libcmt.lib libcpmt.lib freetype2411MT.lib dsound.lib dinput.lib ddraw.lib dxguid.lib dxerr.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib libirc.lib libm.lib vpxmt.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)/thirdparty/bin-win32/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/redistributable_bin&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/public/steam/lib/win32&quot;;&quot;$(SolutionDir)/thirdparty/sources/dxsdk/lib&quot;;&quot;$(SolutionDir)/thirdparty/sources/support/lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)/thirdparty/bin-win32/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/redistributable_bin&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/public/steam/lib/win32&quot;;&quot;$(SolutionDir)/thirdparty/bin-win32/&quot;;&quot;$(SolutionDir)/thirdparty/sources/support/lib&quot;"
 				IgnoreAllDefaultLibraries="true"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
@@ -218,7 +218,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib steam_api.lib libcmtd.lib libcpmtd.lib freetype2411MT_D.lib dsound.lib dinput.lib ddraw.lib dxguid.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib"
+				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib steam_api.lib libcmtd.lib libcpmtd.lib freetype2411MT_D.lib dsound.lib dinput.lib ddraw.lib dxguid.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib vpxmt.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(SolutionDir)/thirdparty/bin-win32/Debug&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/redistributable_bin&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/public/steam/lib/win32&quot;;&quot;$(SolutionDir)/thirdparty/sources/dxsdk/lib&quot;;&quot;$(SolutionDir)/thirdparty/sources/support/lib&quot;"
 				IgnoreAllDefaultLibraries="true"
@@ -295,7 +295,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib steam_api.lib libcmtd.lib libcpmtd.lib freetype2411MT_D.lib dsound.lib dinput.lib ddraw.lib dxguid.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib"
+				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib steam_api.lib libcmtd.lib libcpmtd.lib freetype2411MT_D.lib dsound.lib dinput.lib ddraw.lib dxguid.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib smpeg.lib vpxmt.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(SolutionDir)/thirdparty/bin-win32/Debug&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/redistributable_bin&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/public/steam/lib/win32&quot;;&quot;$(SolutionDir)/thirdparty/sources/dxsdk/lib&quot;;&quot;$(SolutionDir)/thirdparty/sources/support/lib&quot;"
 				IgnoreAllDefaultLibraries="true"
@@ -442,6 +442,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\jfaudiolib\driver_directsound.c"
+				>
+			</File>
+			<File
+				RelativePath="..\jfaudiolib\driver_directsound.h"
+				>
+			</File>
+			<File
 				RelativePath="..\jfaudiolib\driver_nosound.c"
 				>
 			</File>
@@ -450,19 +458,19 @@
 				>
 			</File>
 			<File
-				RelativePath="..\jfaudiolib\driver_sdl.c"
-				>
-			</File>
-			<File
-				RelativePath="..\jfaudiolib\driver_sdl.h"
-				>
-			</File>
-			<File
 				RelativePath="..\jfaudiolib\drivers.c"
 				>
 			</File>
 			<File
 				RelativePath="..\jfaudiolib\drivers.h"
+				>
+			</File>
+			<File
+				RelativePath="..\jfaudiolib\dsound_oggplayer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\jfaudiolib\dsound_oggplayer.h"
 				>
 			</File>
 			<File
@@ -518,6 +526,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\jfaudiolib\OggPlayer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\jfaudiolib\OggPlayer.h"
+				>
+			</File>
+			<File
 				RelativePath="..\jfaudiolib\pitch.c"
 				>
 			</File>
@@ -567,6 +583,14 @@
 			</File>
 			<File
 				RelativePath="..\jfbuild\cache1d.h"
+				>
+			</File>
+			<File
+				RelativePath="..\jfbuild\common_build.c"
+				>
+			</File>
+			<File
+				RelativePath="..\jfbuild\common_build.h"
 				>
 			</File>
 			<File
@@ -631,6 +655,18 @@
 			</File>
 			<File
 				RelativePath="..\jfbuild\kplib.h"
+				>
+			</File>
+			<File
+				RelativePath="..\jfbuild\lz4.c"
+				>
+			</File>
+			<File
+				RelativePath="..\jfbuild\lz4.h"
+				>
+			</File>
+			<File
+				RelativePath="..\jfbuild\lz4_encoder.h"
 				>
 			</File>
 			<File
@@ -947,6 +983,14 @@
 			</File>
 			<File
 				RelativePath="..\code\helpers.h"
+				>
+			</File>
+			<File
+				RelativePath="..\code\playvpx\playvpx.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\code\playvpx\playvpx.h"
 				>
 			</File>
 			<File

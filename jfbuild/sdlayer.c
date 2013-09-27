@@ -5,7 +5,6 @@
 // Use SDL1.2 from http://www.libsdl.org
 
 #define WIN32_LEAN_AND_MEAN
-
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
@@ -22,11 +21,16 @@
 #ifdef USE_OPENGL
 # include "glbuild.h"
 # include "gui.h"
+#ifdef __linux
+# include <GL/glu.h>
+#endif
 #endif
 
 #include "csteam.h"
 #include "dnAPI.h"
 #include "smpeg/smpeg.h"
+
+
 
 #if 1
 
@@ -122,7 +126,7 @@ int wm_msgbox(char *name, char *fmt, ...)
 	return osx_msgbox(name, buf);
 #elif defined HAVE_GTK2
 	if (gtkbuild_msgbox(name, buf) >= 0) return 1;
-#elif defined _WIN32 && !defined _DEBUG
+#elif defined _WIN32
 	return Win32_ShowErrorMessage(name, buf);
 #endif
 	puts(buf);
@@ -179,113 +183,7 @@ void wm_setapptitle(char *name)
 
 
 
-int APIENTRY gluBuild2DMipmaps (
-    GLenum      target, 
-    GLint       components, 
-    GLint       width, 
-    GLint       height, 
-    GLenum      format, 
-    GLenum      type, 
-    const void  *data);
 
-void DrawIMG(SDL_Surface *img, int x, int y)
-{
-    GLuint texture;
-    
-    glPixelStorei(GL_UNPACK_ALIGNMENT,4);
-    
-    glGenTextures(1,&texture);
-    glBindTexture(GL_TEXTURE_2D,texture);
-    
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,0);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,0);
-    
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 4, img->w, img->h, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
-    
-    
-    glBindTexture(GL_TEXTURE_2D, texture);
-    
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex3f( -1, -1,  0.0f);
-    glTexCoord2f(1.0f, 0.0f); glVertex3f(  1, -1,  0.0f);
-    glTexCoord2f(1.0f, 1.0f); glVertex3f(  1,  1,  0.0f);
-    glTexCoord2f(0.0f, 1.0f); glVertex3f( -1,  1,  0.0f);
-    glEnd();
-
-    glDeleteTextures(1, &texture);
-}
-
-static
-void smpeg_callback(SDL_Surface* dst, int x, int y,
-                    unsigned int w, unsigned int h) {
-    
-}
-
-
-void play_video(const char * filename) {
-    SMPEG *movie = NULL;
-    SDL_Surface *movieSurface = 0;
-    SMPEGstatus mpgStatus;
-    SMPEG_Info movieInfo;
-	char *error;
-	int done;
-    
-    movie = SMPEG_new(filename, &movieInfo, true);
-    
-    error = SMPEG_error(movie);
-    
-    if( error != NULL || movie == NULL ) {
-        printf( "Error loading MPEG: %s\n", error );
-        return;
-    }
-    
-    movieSurface = SDL_CreateRGBSurface(SDL_SWSURFACE, 512, 512, 32, 0xFF, 0xFF00, 0xFF0000, 0);
-    
-    SMPEG_setdisplay(movie, movieSurface, 0, &smpeg_callback);
-    SDL_ShowCursor(SDL_DISABLE);
-    
-    SMPEG_play(movie);
-    SMPEG_getinfo(movie, &movieInfo);
-    
-    glEnable(GL_TEXTURE_2D);
-	glClearColor(1, 0, 1, 1);
-
-    glDisable(GL_DEPTH_TEST);
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-    
-	glViewport(0, 0, ScreenWidth, ScreenHeight);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-    glOrtho(-1, 1, 1, -1, 0, 1);
-    glScalef((16.0f/9.0f)/(ScreenWidth/(float)ScreenHeight), 1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-    
-    done = 0;
-    
-    while(done == 0) {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)){
-            if (event.type == SDL_QUIT|| event.type == SDL_KEYDOWN || event.type == SDL_MOUSEBUTTONDOWN)  {
-                done = 1;
-            }
-        }
-        glClear(GL_COLOR_BUFFER_BIT);
-        
-        DrawIMG(movieSurface, 0, 0);
-        mpgStatus = SMPEG_status(movie);
-        if(mpgStatus != SMPEG_PLAYING) {
-            done = 1;
-        }
-        SDL_GL_SwapBuffers();
-    
-    }
-
-    SMPEG_stop(movie);
-    SMPEG_delete(movie);
-    movie = NULL;
-    SDL_FreeSurface(movieSurface);
-}
 
 
 int main(int argc, char *argv[])
@@ -495,7 +393,7 @@ int initinput(void)
 			inputdevices |= 4;
 
 			joynumaxes    = SDL_JoystickNumAxes(joydev);
-			joynumbuttons = min(32,SDL_JoystickNumButtons(joydev));
+			//joynumbuttons = min(32,SDL_JoystickNumButtons(joydev));
 			joynumhats    = SDL_JoystickNumHats(joydev);
 			initprintf("Joystick 1 has %d axes, %d buttons, and %d hat(s).\n",
 				joynumaxes,joynumbuttons,joynumhats);
@@ -689,7 +587,6 @@ void releaseallbuttons(void)
 void Sys_InitTimer();
 void Sys_UninitTimer();
 double Sys_GetTicks();
-void Sys_ThrottleFPS(int max_fps);
 
 static 
 Uint32 GetTicks() {
@@ -1033,8 +930,8 @@ int setvideomode(int x, int y, int c, int fs, int force)
 		};
 
 		if (nogl) return -1;
-		
-		initprintf("Setting video mode %dx%d (%d-bpp %s)\n",
+	initprintf("Setting video mode %dx%d (%d-bpp %s)\n",
+	
 				x,y,c, ((fs&1) ? "fullscreen" : "windowed"));
 		do {
 			for (i=0; i < (int)(sizeof(attributes)/sizeof(attributes[0])); i++) {
@@ -1273,9 +1170,8 @@ void showframe(int w)
 		GUI_Render();
 
 		SDL_GL_SwapBuffers();
-        if (ps[myconnectindex].gm&MODE_EOL) {
-            clearview(0L);
-        }
+        clearview(0L);
+
 		
 		dnCalcFPS();
 		if (!ud.vsync && ud.fps_max > 10) {
@@ -1385,6 +1281,10 @@ Uint32 WheelTimerCallback(Uint32 interval, void *param) {
     printf("Release %d\n", button);
     return 0;
 }
+
+#ifdef _WIN32
+void DSOP_Update();
+#endif
 
 //
 // handleevents() -- process the SDL message queue
@@ -1593,6 +1493,9 @@ int handleevents(void)
 	}
     
 	GUI_TimePulse();
+#ifdef _WIN32
+	DSOP_Update();
+#endif
 	sampletimer();
 	startwin_idle(NULL);
 #undef SetKey
@@ -1811,8 +1714,9 @@ void dnOverrideInput(input *loc) {
     vector2 mouse_velocity;
        
     mouse_velocity.x = pointer.x*sensitivity.x;
-    mouse_velocity.y = pointer.y*sensitivity.y*(((double)xdim)/((double)ydim));
-
+    if (!ud.mouseylock) {
+         mouse_velocity.y = pointer.y*sensitivity.y*(((double)xdim)/((double)ydim));
+    }
     total_velocity.x += mouse_velocity.x;
     total_velocity.y += mouse_velocity.y;
 
@@ -1845,3 +1749,6 @@ int dnGetMouseSensitivity() {
 void dnResetMouse() {
 	pointer.x = pointer.y = 0;
 }
+
+
+

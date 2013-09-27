@@ -33,6 +33,14 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 #include "_control.h"
 
 //#define WITHMAPDUMPSLASH
+#ifndef min
+# define min(a,b) ( ((a) < (b)) ? (a) : (b) )
+#endif
+
+#ifndef max
+# define max(a,b) ( ((a) > (b)) ? (a) : (b) )
+#endif
+
 
 int32 turnheldtime; //MED
 int32 lastcontroltime; //MED
@@ -1280,6 +1288,7 @@ void displaymasks(short snum)
 {
     short p;
     extern long widescreen;
+    int yoffset = 0;
 
     if(sprite[ps[snum].i].pal == 1)
         p = 1;
@@ -1289,16 +1298,10 @@ void displaymasks(short snum)
      if(ps[snum].scuba_on)
 	 {
         if(ud.screen_size > 4 && !widescreen)
-        {
-            rotatesprite(43<<16,(200-8-tilesizy[SCUBAMASK])<<16,65536,0,SCUBAMASK,0,p,2+16,windowx1,windowy1,windowx2,windowy2);
-            rotatesprite((320-43)<<16,(200-8-tilesizy[SCUBAMASK])<<16,65536,1024,SCUBAMASK,0,p,2+4+16,windowx1,windowy1,windowx2,windowy2);
-
-        }
-        else
-        {
-            rotatesprite(43<<16,(200-tilesizy[SCUBAMASK])<<16,65536,0,SCUBAMASK,0,p,2+16,windowx1,windowy1,windowx2,windowy2);
-            rotatesprite((320-43)<<16,(200-tilesizy[SCUBAMASK])<<16,65536,1024,SCUBAMASK,0,p,2+4+16,windowx1,windowy1,windowx2,windowy2);
-        }
+            yoffset = 8;
+        rotatesprite(44<<16,(200-yoffset-tilesizy[SCUBAMASK])<<16,65536,0,SCUBAMASK,0,p,2+16,windowx1,windowy1,windowx2,windowy2);
+        rotatesprite(43<<16,(200-yoffset-tilesizy[SCUBAMASK])<<16,65536,0,SCUBAMASK,0,p,2+16,windowx1,windowy1,windowx2,windowy2);
+        rotatesprite((320-43)<<16,(200-yoffset-tilesizy[SCUBAMASK])<<16,65536,1024,SCUBAMASK,0,p,2+4+16,windowx1,windowy1,windowx2,windowy2);
 	 }
 }
 
@@ -1357,9 +1360,8 @@ short fistsign;
 
 
 static int widescreen_weapon_offset(int offset) {
-#if WIDESCREEN_HACK
+#ifdef WIDESCREEN_WEAPONS_HACK
     extern long widescreen;
-    //((ud.screen_size == 8)? 160 : 200)
     float offsetx;
     float ky = ydim/(float)((ud.screen_size == 8) ? 290 : 240);
     float kx = xdim/(float)320;
@@ -1370,7 +1372,6 @@ static int widescreen_weapon_offset(int offset) {
         offsetx = (screensizex-320)/2 + offset;
         offset = (int)offsetx;
     }
-    
 #endif
     return offset;
 }
@@ -1910,6 +1911,9 @@ void getinput(short snum)
          loc.bits = (((long)gamequit)<<26);
          return;
     }
+    
+    
+    
 #if 0
     if (ud.mouseaiming)
           myaimmode = BUTTON(gamefunc_Mouse_Aiming);
@@ -1934,6 +1938,20 @@ void getinput(short snum)
 		}
 	}
 #endif
+    
+    if (BUTTON(gamefunc_Mouse_Aiming)) {
+        if (!ud.mouseylock) {
+            ps[myconnectindex].horiz = 100;
+            myaimmode = 0;
+            ud.mouseylock = 1;
+        } else {
+            myaimmode = 1;
+            ud.mouseylock = 0;
+        }
+        FTA(44+myaimmode,p);
+        BUTTONCLEAR(gamefunc_Mouse_Aiming);
+    }
+
 
     CONTROL_GetInput( &info );
 
@@ -2153,7 +2171,7 @@ if (!VOLUMEONE) {
     loc.svel = momy;
     loc.avel = angvel;
     loc.horz = horiz;
-        
+    
     dnOverrideInput(&loc);
 }
 
@@ -3058,8 +3076,10 @@ void processinput(short snum)
 
             if(psectlotag != 1 && psectlotag != 2 && p->on_ground == 0 && p->poszv > (6144>>1)) {
                 // no landing mouse correction
-                // p->hard_landing = p->poszv>>10;
-                p->hard_landing = 0;
+                if (ud.mouseylock)
+                    p->hard_landing = p->poszv>>10;
+                else
+                    p->hard_landing = 0;
             }
             
 

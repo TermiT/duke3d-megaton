@@ -27,15 +27,15 @@
 
 #include "driver_nosound.h"
 
-#ifdef HAVE_SDL
+#ifdef HAVE_SDL_MIXER
 # include "driver_sdl.h"
 #endif
 
-#if 0 //def __APPLE__
+#ifdef __APPLE__
 # include "driver_coreaudio.h"
 #endif
 
-#if HAVE_DSOUND
+#if _WIN32
 # include "driver_directsound.h"
 # include "driver_winmm.h"
 #endif
@@ -112,7 +112,7 @@ static struct {
    },
     
     // Simple DirectMedia Layer
-    #ifdef HAVE_SDL
+    #ifdef HAVE_SDL_MIXER
     {
         SDLDrv_GetError,
         SDLDrv_ErrorString,
@@ -136,7 +136,7 @@ static struct {
     #endif
     
     // OS X CoreAudio
-    #if 0 //def __APPLE__
+    #if defined __APPLE__
     {
         CoreAudioDrv_GetError,
         CoreAudioDrv_ErrorString,
@@ -146,7 +146,13 @@ static struct {
         CoreAudioDrv_PCM_StopPlayback,
         CoreAudioDrv_PCM_Lock,
         CoreAudioDrv_PCM_Unlock,
-        UNSUPPORTED_CD,
+        CoreAudioDrv_CD_Init,
+        CoreAudioDrv_CD_Shutdown,
+        CoreAudioDrv_CD_Play,
+        CoreAudioDrv_CD_Stop,
+        CoreAudioDrv_CD_Pause,
+        CoreAudioDrv_CD_IsPlaying,
+        CoreAudioDrv_CD_SetVolume,
         UNSUPPORTED_MIDI,
     },
     #else
@@ -154,7 +160,7 @@ static struct {
     #endif
     
     // Windows DirectSound
-    #ifdef HAVE_DSOUND
+    #ifdef _WIN32
     {
         DirectSoundDrv_GetError,
         DirectSoundDrv_ErrorString,
@@ -164,7 +170,13 @@ static struct {
         DirectSoundDrv_PCM_StopPlayback,
         DirectSoundDrv_PCM_Lock,
         DirectSoundDrv_PCM_Unlock,
-        UNSUPPORTED_CD,
+        DirectSoundDrv_CD_Init,
+        DirectSoundDrv_CD_Shutdown,
+        DirectSoundDrv_CD_Play,
+        DirectSoundDrv_CD_Stop,
+        DirectSoundDrv_CD_Pause,
+        DirectSoundDrv_CD_IsPlaying,
+        DirectSoundDrv_CD_SetVolume,
         UNSUPPORTED_MIDI,
     },
     #else
@@ -363,7 +375,9 @@ int  SoundDriver_CD_Play(int track, int loop)
 
 void SoundDriver_CD_Stop(void)
 {
-    SoundDrivers[ASS_CDSoundDriver].CD_Stop();
+	if (ASS_CDSoundDriver >= 0) {
+		SoundDrivers[ASS_CDSoundDriver].CD_Stop();
+	}
 }
 
 void SoundDriver_CD_Pause(int pauseon)
@@ -373,7 +387,7 @@ void SoundDriver_CD_Pause(int pauseon)
 
 int SoundDriver_CD_IsPlaying(void)
 {
-    return SoundDrivers[ASS_CDSoundDriver].CD_IsPlaying();
+	return ASS_CDSoundDriver < 0 ? 0 : SoundDrivers[ASS_CDSoundDriver].CD_IsPlaying();
 }
 
 void SoundDriver_CD_SetVolume(int volume)
@@ -388,7 +402,9 @@ int  SoundDriver_MIDI_Init(midifuncs *funcs)
 
 void SoundDriver_MIDI_Shutdown(void)
 {
-    SoundDrivers[ASS_MIDISoundDriver].MIDI_Shutdown();
+	if (ASS_MIDISoundDriver >= 0) {
+		SoundDrivers[ASS_MIDISoundDriver].MIDI_Shutdown();
+	}
 }
 
 int  SoundDriver_MIDI_StartPlayback(void (*service)(void))

@@ -53,10 +53,10 @@ int CD_Init(int SoundCard)
     int err;
 
 	if (SoundCard == ASS_AutoDetect) {
-#if 0 //defined __APPLE__
+#if defined __APPLE__
 		SoundCard = ASS_CoreAudio;
 #elif defined _WIN32
-		SoundCard = ASS_WinMM;
+		SoundCard = ASS_DirectSound;
 #elif defined HAVE_SDL
 		SoundCard = ASS_SDL;
 #else

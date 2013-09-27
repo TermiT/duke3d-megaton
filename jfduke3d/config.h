@@ -30,9 +30,9 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 
 #define SETUPNAMEPARM "SETUPFILE"
 
-extern int32 SoundToggle;
-extern int32 MusicToggle;
-extern int32 VoiceToggle;
+//extern int32 SoundToggle;
+//extern int32 MusicToggle;
+//extern int32 VoiceToggle;
 extern int32 FXDevice;
 extern int32 MusicDevice;
 extern int32 FXVolume;

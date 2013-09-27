@@ -322,7 +322,7 @@ struct user_defs
     int32 m_ffire,ffire,m_player_skill,m_level_number,m_volume_number,multimode;
     int32 player_skill,level_number,volume_number,m_marker,marker,mouseflip;
 
-	int32 vsync, fps_max;
+	int32 vsync, fps_max, mouseylock;
 };
 
 struct player_orig
@@ -483,7 +483,6 @@ extern short mirrorwall[64], mirrorsector[64], mirrorcnt;
 extern long frameplace, chainplace, chainnumpages;
 extern volatile long checksume;
 
-#include "funct.h"
 
 extern char screencapt;
 extern short soundps[NUM_SOUNDS],soundpe[NUM_SOUNDS],soundvo[NUM_SOUNDS];
@@ -508,6 +507,7 @@ extern char networkmode;
 extern char lumplockbyte[11];
 
 extern char defaultduke3dgrp[BMAX_PATH];
+extern char defaultmapspath[BMAX_PATH];
 
     //DUKE3D.H - replace the end "my's" with this
 extern long myx, omyx, myxvel, myy, omyy, myyvel, myz, omyz, myzvel;

@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "music.h"
 #include "midi.h"
 #include "ll_man.h"
+#include "cd.h"
 
 #define TRUE  ( 1 == 1 )
 #define FALSE ( !TRUE )
@@ -232,6 +233,8 @@ void MUSIC_SetVolume
       {
       MIDI_SetVolume( volume );
       }*/
+
+   CD_SetVolume(volume);
    }
 
 
@@ -365,6 +368,7 @@ int MUSIC_StopSong
    )
 
    {
+   CD_Stop();
    MUSIC_StopFade();
    MIDI_StopSong();
    MUSIC_SetErrorCode( MUSIC_Ok );

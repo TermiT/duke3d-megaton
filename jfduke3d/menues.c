@@ -39,6 +39,14 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 #include "hightile_priv.h"
 #include "polymosttex_priv.h"
 
+#ifndef min
+# define min(a,b) ( ((a) < (b)) ? (a) : (b) )
+#endif
+
+#ifndef max
+# define max(a,b) ( ((a) > (b)) ? (a) : (b) )
+#endif
+
 extern char inputloc;
 extern int recfilep;
 //extern char vgacompatible;
@@ -284,7 +292,7 @@ int loadplayer(signed char spot)
          if (kdfread(&mirrorwall[0],sizeof(short),64,fil) != 64) goto corrupt;
      if (kdfread(&mirrorsector[0],sizeof(short),64,fil) != 64) goto corrupt;
      if (kdfread(&show2dsector[0],sizeof(char),MAXSECTORS>>3,fil) != (MAXSECTORS>>3)) goto corrupt;
-     if (kdfread(&actortype[0],sizeof(char),MAXTILES,fil) != MAXTILES) goto corrupt;
+     if (kdfread(&actortype[0],sizeof(char),MAXTILES-VIRTUALTILES,fil) != MAXTILES-VIRTUALTILES) goto corrupt;
 
      if (kdfread(&numclouds,sizeof(numclouds),1,fil) != 1) goto corrupt;
      if (kdfread(&clouds[0],sizeof(short)<<7,1,fil) != 1) goto corrupt;
@@ -300,8 +308,8 @@ int loadplayer(signed char spot)
          script[i] = j;
      }
 
-     if (kdfread(&actorscrptr[0],4,MAXTILES,fil) != MAXTILES) goto corrupt;
-     for(i=0;i<MAXTILES;i++)
+     if (kdfread(&actorscrptr[0],4,MAXTILES-VIRTUALTILES,fil) != MAXTILES-VIRTUALTILES) goto corrupt;
+     for(i=0;i<MAXTILES-VIRTUALTILES;i++)
          if(actorscrptr[i])
      {
         j = (long)actorscrptr[i]+(long)&script[0];
@@ -569,7 +577,7 @@ int saveplayer(signed char spot)
          dfwrite(&mirrorwall[0],sizeof(short),64,fil);
          dfwrite(&mirrorsector[0],sizeof(short),64,fil);
      dfwrite(&show2dsector[0],sizeof(char),MAXSECTORS>>3,fil);
-     dfwrite(&actortype[0],sizeof(char),MAXTILES,fil);
+     dfwrite(&actortype[0],sizeof(char),MAXTILES-VIRTUALTILES,fil);
 
      dfwrite(&numclouds,sizeof(numclouds),1,fil);
      dfwrite(&clouds[0],sizeof(short)<<7,1,fil);
@@ -597,14 +605,14 @@ int saveplayer(signed char spot)
         script[i] = j;
      }
 
-     for(i=0;i<MAXTILES;i++)
+     for(i=0;i<MAXTILES-VIRTUALTILES;i++)
          if(actorscrptr[i])
      {
         j = (long)actorscrptr[i]-(long)&script[0];
         actorscrptr[i] = (long *)j;
      }
-     dfwrite(&actorscrptr[0],4,MAXTILES,fil);
-     for(i=0;i<MAXTILES;i++)
+     dfwrite(&actorscrptr[0],4,MAXTILES-VIRTUALTILES,fil);
+     for(i=0;i<MAXTILES-VIRTUALTILES;i++)
          if(actorscrptr[i])
      {
          j = (long)actorscrptr[i]+(long)&script[0];
@@ -798,71 +806,11 @@ static int probe_(int type,int x,int y,int i,int n)
 int probe(int x,int y,int i,int n) { return probe_(0,x,y,i,n); }
 int probesm(int x,int y,int i,int n) { return probe_(1,x,y,i,n); }
 
-
-void unpatchspritessize () {
-    if (!patchedspritessize)
-        return;
-    
-#ifdef FONT_HACK
-    //silly hack, but what can we do... :(
-    tilesizx[2929]=9; tilesizx[2930]=12; tilesizx[2931]=10;
-    tilesizx[2932]=11; tilesizx[2933]=11; tilesizx[2934]=12;
-    tilesizx[2935]=10; tilesizx[2936]=13; tilesizx[2937]=13;
-    tilesizx[2938]=12; tilesizx[2940]=14; tilesizx[2941]=13;
-    tilesizx[2942]=11; tilesizx[2943]=12; tilesizx[2944]=13;
-    tilesizx[2945]=11; tilesizx[2946]=13; tilesizx[2947]=12;
-    tilesizx[2948]=6; tilesizx[2949]=9; tilesizx[2950]=12;
-    tilesizx[2951]=9; tilesizx[2952]=13; tilesizx[2953]=12;
-    tilesizx[2954]=14; tilesizx[2955]=12; tilesizx[2956]=14;
-    tilesizx[2957]=14; tilesizx[2958]=11; tilesizx[2959]=12;
-    tilesizx[2960]=13; tilesizx[2961]=14; tilesizx[2962]=13;
-    tilesizx[2963]=12; tilesizx[2964]=12; tilesizx[3002]=6;
-    tilesizx[3003]=8; tilesizx[3004]=6; tilesizx[3005]=12;
-    tilesizx[3006]=8; tilesizx[3007]=6; tilesizx[3008]=14;
-    tilesizx[3009]=17; tilesizx[3022]=8;
-#endif
-    patchedspritessize = 0;
-}
-
-void patchspritessize () {
-    int i;
-    if (patchedspritessize)
-        return;
-
-    // hack for big red font
-    #ifdef FONT_HACK
-    for (i = 2930; i < 2939; i++) { // 0-9
-        tilesizx[i] = 12;
-    }    
-    for (i = 2940; i < 2965; i++) { // A-Z
-        tilesizx[i] = 15;
-    }
-    for (i = 3002; i < 3009; i++) { // symbols
-        tilesizx[i] = 5;
-    }
-    tilesizx[2959] = 12; // T
-    tilesizx[2948] = 8;  // I
-    tilesizx[2931] = 6;  // 1
-    tilesizx[2929] = 12; // -
-    tilesizx[3005] = 12; // ?
-    tilesizx[3008] = 15; // /
-    tilesizx[3009] = 15; // %
-    tilesizx[3022] = 5;  // '
-#endif
-    patchedspritessize = 1;
-}
-
-
-
-int menutext(int x,int y,short s,short p,const char *t)
+int megaton_menutext(int x,int y,short s,short p,const char *t)
 {
     short i, ac, centre;
-    patchspritessize();
-
     y -= 12;
 
-
-    
     i = centre = 0;
 
     if( x == (320>>1) )
@@ -877,12 +825,131 @@ int menutext(int x,int y,short s,short p,const char *t)
             }
             ac = 0;
             if(*(t+i) >= '0' && *(t+i) <= '9') {
-                ac = *(t+i) - '0' + BIGALPHANUM-10;
+                ac = *(t+i) - '0' + BIGALPHANUM_MEGATON-10;
             } else if(*(t+i) >= 'a' && *(t+i) <= 'z') {
-                ac = toupper(*(t+i)) - 'A' + BIGALPHANUM;
+                ac = toupper(*(t+i)) - 'A' + BIGALPHANUM_MEGATON;
             } else if(*(t+i) >= 'A' && *(t+i) <= 'Z') {
-                ac = *(t+i) - 'A' + BIGALPHANUM;
+                ac = *(t+i) - 'A' + BIGALPHANUM_MEGATON;
             } else switch(*(t+i)) {
+                case '-':
+                    ac = BIGALPHANUM_MEGATON-11;
+                    break;
+                case '.':
+                    ac = BIGPERIOD_MEGATON;
+                    break;
+                case '\'':
+                    ac = BIGAPPOS_MEGATON;
+                    break;
+                case ',':
+                    ac = BIGCOMMA_MEGATON;
+                    break;
+                case '!':
+                    ac = BIGX_MEGATON;
+                    break;
+                case '?':
+                    ac = BIGQ_MEGATON;
+                    break;
+                case ';':
+                    ac = BIGSEMI_MEGATON;
+                    break;
+                case ':':
+                    ac = BIGSEMI_MEGATON;
+                    break;
+                default:
+                    centre += 5;
+                    i++;
+                    continue;
+            }
+
+            centre += tilesizx[ac];
+            i++;
+        }
+    }
+
+    if(centre)
+        x = (320-centre-10)>>1;
+
+    while(*t)
+    {
+        if(*t == ' ') {x+=5;t++;continue;}
+        ac = 0;
+        if(*t >= '0' && *t <= '9') {
+            ac = *t - '0' + BIGALPHANUM_MEGATON-10;
+        } else if(*t >= 'a' && *t <= 'z') {
+            ac = toupper(*t) - 'A' + BIGALPHANUM_MEGATON;
+        } else if(*t >= 'A' && *t <= 'Z') {
+            ac = *t - 'A' + BIGALPHANUM_MEGATON;
+        } else switch(*t) {
+            case '-':
+                ac = BIGALPHANUM_MEGATON-11;
+                break;
+            case '.':
+                ac = BIGPERIOD_MEGATON;
+                break;
+            case ',':
+                ac = BIGCOMMA_MEGATON;
+                break;
+            case '!':
+                ac = BIGX_MEGATON;
+                break;
+            case '\'':
+                ac = BIGAPPOS_MEGATON;
+                break;
+            case '?':
+                ac = BIGQ_MEGATON;
+                break;
+            case ';':
+                ac = BIGSEMI_MEGATON;
+                break;
+            case ':':
+                ac = BIGCOLIN_MEGATON;
+                break;
+            default:
+                x += 5;
+                t++;
+                continue;
+        }
+
+        rotatesprite(x<<16,y<<16,65536L,0,ac,s,p,10+16,0,0,xdim-1,ydim-1);
+
+        x += tilesizx[ac];
+        t++;
+    }
+    return (x);
+}
+
+
+int menutext(int x,int y,short s,short p,const char *t)
+{
+    short i, ac, centre;
+    extern int megatondef;
+    if (megatondef){
+        return megaton_menutext(x, y, s, p, t);
+    }
+    
+    y -= 12;
+    
+    i = centre = 0;
+    
+    if( x == (320>>1) )
+    {
+        while( *(t+i) )
+        {
+            if(*(t+i) == ' ')
+            {
+                centre += 5;
+                i++;
+                continue;
+            }
+            ac = 0;
+            if(*(t+i) >= '0' && *(t+i) <= '9')
+                ac = *(t+i) - '0' + BIGALPHANUM-10;
+            else if(*(t+i) >= 'a' && *(t+i) <= 'z')
+                ac = toupper(*(t+i)) - 'A' + BIGALPHANUM;
+            else if(*(t+i) >= 'A' && *(t+i) <= 'Z')
+                ac = *(t+i) - 'A' + BIGALPHANUM;
+            else switch(*(t+i))
+            {
                 case '-':
                     ac = BIGALPHANUM-11;
                     break;
@@ -912,26 +979,27 @@ int menutext(int x,int y,short s,short p,const char *t)
                     i++;
                     continue;
             }
-
-            centre += tilesizx[ac]; // - 1;
+            
+            centre += tilesizx[ac]-1;
             i++;
         }
     }
-
+    
     if(centre)
         x = (320-centre-10)>>1;
-
+    
     while(*t)
     {
         if(*t == ' ') {x+=5;t++;continue;}
         ac = 0;
-        if(*t >= '0' && *t <= '9') {
+        if(*t >= '0' && *t <= '9')
             ac = *t - '0' + BIGALPHANUM-10;
-        } else if(*t >= 'a' && *t <= 'z') {
+        else if(*t >= 'a' && *t <= 'z')
             ac = toupper(*t) - 'A' + BIGALPHANUM;
-        } else if(*t >= 'A' && *t <= 'Z') {
+        else if(*t >= 'A' && *t <= 'Z')
             ac = *t - 'A' + BIGALPHANUM;
-        } else switch(*t) {
+        else switch(*t)
+        {
             case '-':
                 ac = BIGALPHANUM-11;
                 break;
@@ -961,9 +1029,9 @@ int menutext(int x,int y,short s,short p,const char *t)
                 t++;
                 continue;
         }
-
+        
         rotatesprite(x<<16,y<<16,65536L,0,ac,s,p,10+16,0,0,xdim-1,ydim-1);
-
+        
         x += tilesizx[ac];
         t++;
     }
@@ -976,8 +1044,6 @@ int menutextc(int x,int y,short s,short p,const char *t)
 
     s += 8;
     y -= 12;
-
-    patchspritessize();
     
     i = centre = 0;
 
@@ -5291,7 +5357,8 @@ void dnEnableMusic(int enable) {
 	if (MusicDevice >= 0 && enable != MusicToggle) {
 		MusicToggle = enable;
 		if (MusicToggle == 0 ) {
-			MusicPause(1);
+			//MusicPause(1);
+            MUSIC_StopSong();
 		}
 		else {
 			MUSIC_SetVolume( (short)MusicVolume );
@@ -5301,7 +5368,7 @@ void dnEnableMusic(int enable) {
 			else {
 				playmusic(&env_music_fn[0][0]);
 			}
-			MusicPause(0);
+			//MusicPause(0);
 		}
 	}
 }
@@ -5427,4 +5494,23 @@ void dnQuitToTitle() {
 
 void dnSetLastSaveSlot(short i) {
     lastsavedpos = i;
+}
+
+CACHE1D_FIND_REC *dnGetMapsList() {
+    pathsearchmode = 1;
+    if (boardfilename[0] == 0) strcpy(boardfilename, defaultmapspath);
+    getfilenames(boardfilename,"*.map");
+    return findfileshigh;
+}
+
+int dnIsUserMap() {
+    return (boardfilename[0] != 0);
+}
+
+void dnSetUserMap(const char * mapname) {
+    if (mapname == NULL) {
+        boardfilename[0] = 0;
+    } else {
+        sprintf(boardfilename, "%s/%s", defaultmapspath, mapname);
+    }
 }

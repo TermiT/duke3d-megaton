@@ -114,7 +114,7 @@ void hicsetpalettetint(long palnum, unsigned char r, unsigned char g, unsigned c
 // hicsetsubsttex(picnum,pal,filen,alphacut)
 //   Specifies a replacement graphic file for an ART tile.
 //
-int hicsetsubsttex(long picnum, long palnum, char *filen, float alphacut, char flags)
+int hicsetsubsttex(long picnum, long palnum, char *filen, float alphacut, char flags, int sizex, int sizey)
 {
 	hicreplctyp *hr, *hrn;
 
@@ -136,6 +136,10 @@ int hicsetsubsttex(long picnum, long palnum, char *filen, float alphacut, char f
 
 	// store into hicreplc the details for this replacement
 	if (hrn->filename) free(hrn->filename);
+
+    //hack sprite size
+    if (sizex > -1) tilesizx[picnum] = sizex;
+    if (sizey > -1) tilesizy[picnum] = sizey;
 
 	hrn->filename = strdup(filen);
 	if (!hrn->filename) {
@@ -256,26 +260,13 @@ int hicclearsubst(long picnum, long palnum)
 	return 0;
 }
 
-/*
-void resizestatusbar(void) {
-    hicreplctyp* h  =  hicreplc[BOTTOMSTATUSBAR];
-    if(h != NULL) {
-        float ky = h->sizey/(float)tilesizy[BOTTOMSTATUSBAR];
-        float kx = h->sizex/(float)tilesizx[BOTTOMSTATUSBAR];
-        float n = kx/ky;
-        tilesizx[BOTTOMSTATUSBAR] = (int)(320 * n);
-    }
-}
-*/
-
 
 #else /* POLYMOST */
 
 void hicsetpalettetint(long palnum, unsigned char r, unsigned char g, unsigned char b, unsigned char effect) { }
-int hicsetsubsttex(long picnum, long palnum, char *filen, float alphacut) { return 0; }
+int hicsetsubsttex(long picnum, long palnum, char *filen, float alphacut, char flags, int sizex, int sizey) { return 0; }
 int hicsetskybox(long picnum, long palnum, char *faces[6]) { return 0; }
 int hicclearsubst(long picnum, long palnum) { return 0; }
-//void resizestatusbar(void) {};
 
 #endif
 

@@ -100,5 +100,41 @@ void GUI_ShowSaveMenu(void) {
 	gui->ShowSaveMenu();
 }
 
+extern "C"
+void GUI_ShowLoadMenu(void) {
+	assert(gui != NULL);
+	gui->ShowLoadMenu();
+}
+
+extern "C"
+void GUI_ShowHelpMenu(void) {
+	assert(gui != NULL);
+	gui->ShowHelpMenu();
+}
+
+extern "C"
+void GUI_ShowSoundMenu(void) {
+	assert(gui != NULL);
+	gui->ShowSoundMenu();
+}
+
+extern "C"
+void GUI_ShowVideoSettingsMenu(void) {
+	assert(gui != NULL);
+	gui->ShowVideoSettingsMenu();
+}
+
+extern "C"
+void GUI_ShowGameOptionsMenu(void) {
+	assert(gui != NULL);
+	gui->ShowGameOptionsMenu();
+}
+
+extern "C"
+void GUI_ShowQuitConfirmation(void) {
+	assert(gui != NULL);
+	gui->ShowQuitConfirmation();
+}
+
 
 #endif

@@ -9,6 +9,8 @@
 #include "compat.h"
 #include "baselayer.h"
 #include "scriptfile.h"
+#include "lz4.h"
+#include "common_build.h"
 
 enum {
 	T_EOF = -2,
@@ -56,6 +58,9 @@ enum {
 	T_TINT,T_RED,T_GREEN,T_BLUE,
 	T_TEXTURE,T_ALPHACUT,T_NOCOMPRESS,
 	T_UNDEFMODEL,T_UNDEFMODELRANGE,T_UNDEFMODELOF,T_UNDEFTEXTURE,T_UNDEFTEXTURERANGE,
+    T_TILEFROMTEXTURE, T_XOFFSET, T_YOFFSET,
+    T_ORIGSIZEX, T_ORIGSIZEY,
+
 };
 
 typedef struct { char *text; int tokenid; } tokenlist;
@@ -89,6 +94,8 @@ static tokenlist basetokens[] = {
 	{ "undefmodelof",      T_UNDEFMODELOF      },
 	{ "undeftexture",      T_UNDEFTEXTURE      },
 	{ "undeftexturerange", T_UNDEFTEXTURERANGE },
+
+    { "tilefromtexture", T_TILEFROMTEXTURE  },
 };
 
 static tokenlist modeltokens[] = {
@@ -170,6 +177,8 @@ static tokenlist texturetokens_pal[] = {
 	{ "file",      T_FILE },{ "name", T_FILE },
 	{ "alphacut",  T_ALPHACUT },
 	{ "nocompress",T_NOCOMPRESS },
+    { "orig_sizex", T_ORIGSIZEX },
+    { "orig_sizey", T_ORIGSIZEY },
 };
 
 
@@ -197,6 +206,30 @@ static const char *skyfaces[6] = {
 	"front face", "right face", "back face",
 	"left face", "top face", "bottom face"
 };
+
+static void tile_from_truecolpic(int tile, const palette_t *picptr, int alphacut)
+{
+    const int xsiz = tilesizx[tile], ysiz = tilesizy[tile];
+    int i, j;
+
+    char *ftd = (char *)Bmalloc(xsiz*ysiz);
+
+    faketiledata[tile] = (char *)Bmalloc(xsiz*ysiz + 400);
+
+    for (i=xsiz-1; i>=0; i--)
+    {
+        for (j=ysiz-1; j>=0; j--)
+        {
+            const palette_t *col = &picptr[j*xsiz+i];
+            if (col->f < alphacut) { ftd[i*ysiz+j] = 255; continue; }
+            ftd[i*ysiz+j] = getclosestcol(col->b>>2,col->g>>2,col->r>>2);
+        }
+        //                initprintf("\n %d %d %d %d",col->r,col->g,col->b,col->f);
+    }
+
+    faketilesiz[tile] = LZ4_compress(ftd, faketiledata[tile], xsiz*ysiz);
+    Bfree(ftd);
+}
 
 static int defsparser(scriptfile *script)
 {
@@ -255,7 +288,7 @@ static int defsparser(scriptfile *script)
 					if (scriptfile_getnumber(script,&fnoo)) break; //x-size
 					if (scriptfile_getnumber(script,&fnoo)) break; //y-size
 					if (scriptfile_getstring(script,&fn))  break;
-					hicsetsubsttex(tile,pal,fn,-1.0,0);
+					hicsetsubsttex(tile,pal,fn,-1.0,0,-1,-1);
 				}
 				break;
 			case T_DEFINESKYBOX:
@@ -820,7 +853,7 @@ static int defsparser(scriptfile *script)
 								char *fn = NULL;
 								double alphacut = -1.0;
 								char flags = 0;
-
+                                int sizex = -1, sizey = -1;
 								if (scriptfile_getsymbol(script,&pal)) break;
 								if (scriptfile_getbraces(script,&palend)) break;
 								while (script->textptr < palend) {
@@ -828,6 +861,12 @@ static int defsparser(scriptfile *script)
 										case T_FILE:     scriptfile_getstring(script,&fn); break;
 										case T_ALPHACUT: scriptfile_getdouble(script,&alphacut); break;
 										case T_NOCOMPRESS: flags |= 1; break;
+                                        case T_ORIGSIZEX:
+                                            scriptfile_getsymbol(script, &sizex);
+                                            break;
+                                        case T_ORIGSIZEY:
+                                            scriptfile_getsymbol(script, &sizey);
+                                            break;
 										default: break;
 									}
 								}
@@ -843,7 +882,7 @@ static int defsparser(scriptfile *script)
 												script->filename, scriptfile_getlinum(script,paltokptr));
 									break;
 								}
-								hicsetsubsttex(tile,pal,fn,alphacut,flags);
+								hicsetsubsttex(tile,pal,fn,alphacut,flags, sizex, sizey);
 							} break;
 							default: break;
 						}
@@ -938,7 +977,89 @@ static int defsparser(scriptfile *script)
 							hicclearsubst(r0,i);
 				}
 				break;
-			
+
+            case T_TILEFROMTEXTURE:
+                {
+                    char *texturetokptr = script->ltextptr, *textureend, *fn = NULL;
+                    int tile = -1;
+                    int alphacut = 255;
+                    int xoffset = 0, yoffset = 0;
+
+                    static const tokenlist tilefromtexturetokens[] =
+                    {
+                        { "file",            T_FILE },
+                        { "name",            T_FILE },
+                        { "alphacut",        T_ALPHACUT },
+                        { "xoffset",         T_XOFFSET },
+                        { "xoff",            T_XOFFSET },
+                        { "yoffset",         T_YOFFSET },
+                        { "yoff",            T_YOFFSET },
+                    };
+
+                    if (scriptfile_getsymbol(script,&tile)) break;
+                    if (scriptfile_getbraces(script,&textureend)) break;
+                    while (script->textptr < textureend)
+                    {
+                        int token = getatoken(script,tilefromtexturetokens,sizeof(tilefromtexturetokens)/sizeof(tokenlist));
+                        switch (token)
+                        {
+                        case T_FILE:
+                            scriptfile_getstring(script,&fn); break;
+                        case T_ALPHACUT:
+                            scriptfile_getsymbol(script,&alphacut); break;
+                        case T_XOFFSET:
+                            scriptfile_getsymbol(script,&xoffset); break;
+                        case T_YOFFSET:
+                            scriptfile_getsymbol(script,&yoffset); break;
+                        default:
+                            break;
+                        }
+                    }
+
+                    if ((unsigned)tile >= MAXTILES)
+                    {
+                        initprintf("Error: missing or invalid 'tile number' for texture definition near line %s:%d\n",
+                                   script->filename, scriptfile_getlinum(script,texturetokptr));
+                        break;
+                    }
+
+                    if (!fn)
+                    {
+                        initprintf("Error: missing 'file name' for tilefromtexture definition near line %s:%d\n",
+                                   script->filename, scriptfile_getlinum(script,texturetokptr));
+                        break;
+                    }
+
+                    if (check_file_exist(fn))
+                        break;
+
+                    alphacut = clamp(alphacut, 0, 255);
+
+                    {
+                        int xsiz, ysiz, j;
+                        palette_t *picptr = NULL;
+
+                        kpzload(fn, (intptr_t *)&picptr, &j, &xsiz, &ysiz);
+        //                initprintf("\ngot bpl %d xsiz %d ysiz %d",bpl,xsiz,ysiz);
+
+                        if (!picptr)
+                            break;
+
+                        if (xsiz <= 0 || ysiz <= 0)
+                            break;
+
+                        xoffset = clamp(xoffset, -128, 127)&255;
+                        yoffset = clamp(yoffset, -128, 127)&255;
+
+                        set_picsizanm(tile, xsiz, ysiz, (picanm[tile]&0xff0000ff)+(xoffset<<8)+(yoffset<<16));
+
+                        tile_from_truecolpic(tile, picptr, alphacut);
+
+                        Bfree(picptr);
+                    }
+                }
+                break;
+
 			default:
 				initprintf("Unknown token.\n"); break;
 		}

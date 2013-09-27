@@ -230,6 +230,7 @@ void CONFIG_SetDefaults( void )
 	ud.levelstats = 0;
 	ud.vsync = 0;
 	ud.fps_max = 180;
+    ud.mouseylock = 0;
 	ShowOpponentWeapons = 0;
 	Bstrcpy(ud.rtsname, "DUKE.RTS");
 	Bstrcpy(myname, "Duke");
@@ -681,6 +682,7 @@ int32 CONFIG_ReadSetup( void )
 	SCRIPT_GetNumber( scripthandle, "Controls","UseJoystick",&UseJoystick);
 	SCRIPT_GetNumber( scripthandle, "Controls","UseMouse",&UseMouse);
 	SCRIPT_GetNumber( scripthandle, "Controls","MouseAimingFlipped",&ud.mouseflip);	// mouse aiming inverted
+    SCRIPT_GetNumber( scripthandle, "Controls","MouseYLock",&ud.mouseylock);
 	SCRIPT_GetNumber( scripthandle, "Controls","MouseAiming",&ud.mouseaiming);		// 1=momentary/0=toggle
 	//SCRIPT_GetNumber( scripthandle, "Controls","GameMouseAiming",(int32 *)&ps[0].aim_mode);	// dupe of below (?)
 	ps[0].aim_mode = ud.mouseaiming;
@@ -769,6 +771,7 @@ void CONFIG_WriteSetup( void )
 	SCRIPT_PutNumber( scripthandle, "Controls","UseJoystick",UseJoystick,false,false);
 	SCRIPT_PutNumber( scripthandle, "Controls","UseMouse",UseMouse,false,false);
 	SCRIPT_PutNumber( scripthandle, "Controls","MouseAimingFlipped",ud.mouseflip,false,false);
+    SCRIPT_PutNumber( scripthandle, "Controls","MouseYLock",ud.mouseylock,false,false);
 	SCRIPT_PutNumber( scripthandle, "Controls","MouseAiming",ud.mouseaiming,false,false);
 	//SCRIPT_PutNumber( scripthandle, "Controls","GameMouseAiming",(int32) ps[myconnectindex].aim_mode,false,false);
 	SCRIPT_PutNumber( scripthandle, "Controls","AimingFlag",(long) myaimmode,false,false);

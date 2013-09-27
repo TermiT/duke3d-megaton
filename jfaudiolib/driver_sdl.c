@@ -22,45 +22,68 @@
  * libSDL output driver for MultiVoc
  */
 
-# include <SDL.h>
+
+#if defined(SDL_FRAMEWORK)
+# include <SDL/SDL.h>
+# if defined(_WIN32) || defined(GEKKO)
+#  include <SDL/SDL_mixer.h>
+# else
+#  include <SDL_mixer/SDL_mixer.h>
+# endif
+# include <SDL/SDL_thread.h>
+#else
+# include "SDL.h"
+# include "SDL_mixer.h"
+# include "SDL_thread.h"
+#endif
 #include "driver_sdl.h"
+#include "multivoc.h"
+
+
+#ifndef UNREFERENCED_PARAMETER
+# define UNREFERENCED_PARAMETER(x) x=x
+#endif
 
 enum {
-    SDLErr_Warning = -2,
-    SDLErr_Error   = -1,
-    SDLErr_Ok      = 0,
-    SDLErr_Uninitialised,
-    SDLErr_InitSubSystem,
-    SDLErr_OpenAudio,
-    SDLErr_CDOpen,
-    SDLErr_CDCannotPlayTrack,
-    SDLErr_CDCreateSemaphore,
-    SDLErr_CDCreateThread
+   SDLErr_Warning = -2,
+   SDLErr_Error   = -1,
+   SDLErr_Ok      = 0,
+   SDLErr_Uninitialised,
+   SDLErr_InitSubSystem,
+   SDLErr_OpenAudio,
+   SDLErr_OpenOGG,
+   SDLErr_PlayOGG,
 };
 
-static int ErrorCode = SDLErr_Ok;
-static int Initialised = 0;
-static int Playing = 0;
-static int StartedSDL = 0;      // SDL services in use (1 = sound, 2 = CDA)
-static int StartedSDLInit = 0;  // SDL services we initialised (0x80000000 means we used SDL_Init)
-
-static SDL_CD *CDRom = 0;
-static SDL_Thread *CDWatchThread = 0;
-static SDL_sem *CDWatchKillSem = 0;
-static int CDLoop = 0;
-static int CDTrack = 0;
+static int32_t ErrorCode = SDLErr_Ok;
+static int32_t Initialised = 0;
+static int32_t Playing = 0;
+// static int32_t StartedSDL = -1;
 
 static char *MixBuffer = 0;
-static int MixBufferSize = 0;
-static int MixBufferCount = 0;
-static int MixBufferCurrent = 0;
-static int MixBufferUsed = 0;
+static int32_t MixBufferSize = 0;
+static int32_t MixBufferCount = 0;
+static int32_t MixBufferCurrent = 0;
+static int32_t MixBufferUsed = 0;
 static void ( *MixCallBack )( void ) = 0;
 
-static void fillData(void * userdata, Uint8 * ptr, int remaining)
+static Mix_Chunk *DummyChunk = NULL;
+static uint8_t *DummyBuffer = NULL;
+static int32_t InterruptsDisabled = 0;
+static SDL_mutex *EffectFence;
+
+static void fillData(int32_t chan, void *ptr, int32_t remaining, void *udata)
 {
-    int len;
+    int32_t len;
     char *sptr;
+
+    UNREFERENCED_PARAMETER(chan);
+    UNREFERENCED_PARAMETER(udata);
+    
+    if (!MixBuffer || !MixCallBack)
+      return;
+
+    SDL_LockMutex(EffectFence);
 
     while (remaining > 0) {
         if (MixBufferUsed == MixBufferSize) {
@@ -83,23 +106,25 @@ static void fillData(void * userdata, Uint8 * ptr, int remaining)
             
             memcpy(ptr, sptr, len);
             
-            ptr += len;
+            ptr = (void *)((uintptr_t)(ptr) + len);
             MixBufferUsed += len;
             remaining -= len;
         }
     }
+
+    SDL_UnlockMutex(EffectFence);
 }
 
 
-int SDLDrv_GetError(void)
+int32_t SDLDrv_GetError(void)
 {
     return ErrorCode;
 }
 
-const char *SDLDrv_ErrorString( int ErrorNumber )
+const char *SDLDrv_ErrorString( int32_t ErrorNumber )
 {
     const char *ErrorString;
-	
+    
     switch( ErrorNumber ) {
         case SDLErr_Warning :
         case SDLErr_Error :
@@ -109,7 +134,7 @@ const char *SDLDrv_ErrorString( int ErrorNumber )
         case SDLErr_Ok :
             ErrorString = "SDL Audio ok.";
             break;
-			
+            
         case SDLErr_Uninitialised:
             ErrorString = "SDL Audio uninitialised.";
             break;
@@ -121,22 +146,15 @@ const char *SDLDrv_ErrorString( int ErrorNumber )
         case SDLErr_OpenAudio:
             ErrorString = "SDL Audio: error in OpenAudio.";
             break;
-            
-        case SDLErr_CDOpen:
-            ErrorString = "SDL CD: error opening cd device.";
+
+        case SDLErr_OpenOGG:
+            ErrorString = "SDL Audio: error loading OGG file.";
             break;
-        
-        case SDLErr_CDCannotPlayTrack:
-            ErrorString = "SDL CD: cannot play the requested track.";
+
+        case SDLErr_PlayOGG:
+            ErrorString = "SDL Audio: error playing OGG file.";
             break;
-            
-        case SDLErr_CDCreateSemaphore:
-            ErrorString = "SDL CD: could not create looped CD playback semaphore.";
-            break;
-        
-        case SDLErr_CDCreateThread:
-            ErrorString = "SDL CD: could not create looped CD playback thread.";
-            break;
+
 
         default:
             ErrorString = "Unknown SDL Audio error code.";
@@ -146,121 +164,84 @@ const char *SDLDrv_ErrorString( int ErrorNumber )
     return ErrorString;
 }
 
-int SDLDrv_PCM_Init(int * mixrate, int * numchannels, int * samplebits, void * initdata)
+int32_t SDLDrv_PCM_Init(int32_t *mixrate, int32_t *numchannels, int32_t *samplebits, void * initdata)
 {
-    Uint32 inited;
-    Uint32 err = 0;
-    SDL_AudioSpec spec, actual;
-    char drivername[256] = "(error)";
+    int32_t err = 0;
+    int32_t chunksize;
+    uint16_t fmt;
+
+    UNREFERENCED_PARAMETER(numchannels);
+    UNREFERENCED_PARAMETER(initdata);
 
     if (Initialised) {
         SDLDrv_PCM_Shutdown();
     }
 
-    inited = SDL_WasInit(SDL_INIT_EVERYTHING);
-    //fprintf(stderr, "inited = %x\n", inited);
+    chunksize = 512;
 
-    if (inited == 0) {
-        // nothing was initialised
-        err = SDL_Init(SDL_INIT_AUDIO);
-        StartedSDLInit |= 0x80000000 + SDL_INIT_AUDIO;
-        //fprintf(stderr, "called SDL_Init\n");
-    } else if (!(inited & SDL_INIT_AUDIO)) {
-        err = SDL_InitSubSystem(SDL_INIT_AUDIO);
-        StartedSDLInit |= SDL_INIT_AUDIO;
-        //fprintf(stderr, "called SDL_InitSubSystem\n");
-    }
+    if (*mixrate >= 16000) chunksize *= 2;
+    if (*mixrate >= 32000) chunksize *= 2;
+
+    err = Mix_OpenAudio(*mixrate, (*samplebits == 8) ? AUDIO_U8 : AUDIO_S16SYS, *numchannels, chunksize);
 
     if (err < 0) {
-        ErrorCode = SDLErr_InitSubSystem;
-        return SDLErr_Error;
-    }
-
-    StartedSDL |= SDL_INIT_AUDIO;
-
-    SDL_AudioDriverName(drivername, sizeof(drivername));
-    fprintf(stderr, "SDL_AudioDriverName: %s\n", drivername);
-
-    spec.freq = *mixrate;
-    spec.format = (*samplebits == 8) ? AUDIO_U8 : AUDIO_S16SYS;
-    spec.channels = *numchannels;
-    spec.samples = 512;
-    spec.callback = fillData;
-    spec.userdata = 0;
-
-    memset(&actual, 0, sizeof(actual));
-
-    err = SDL_OpenAudio(&spec, &actual);
-    if (err < 0) {
         ErrorCode = SDLErr_OpenAudio;
         return SDLErr_Error;
     }
 
-    if (actual.freq == 0 || actual.channels == 0) {
-        // hack for when SDL said it opened the audio, but clearly didn't
-        SDL_CloseAudio();
-        ErrorCode = SDLErr_OpenAudio;
-        return SDLErr_Error;
+    if (Mix_QuerySpec(mixrate, &fmt, numchannels))
+    {
+        if (fmt == AUDIO_U8 || fmt == AUDIO_S8) *samplebits = 8;
+        else *samplebits = 16;
     }
 
-    err = 0;
+    //Mix_SetPostMix(fillData, NULL);
 
-    *mixrate = actual.freq;
-    if (actual.format == AUDIO_U8 || actual.format == AUDIO_S16SYS) {
-        *samplebits = actual.format & 0xff;
-    } else {
-        const char *format;
-        switch (actual.format) {
-            case AUDIO_U8: format = "AUDIO_U8"; break;
-            case AUDIO_S8: format = "AUDIO_S8"; break;
-            case AUDIO_U16LSB: format = "AUDIO_U16LSB"; break;
-            case AUDIO_S16LSB: format = "AUDIO_S16LSB"; break;
-            case AUDIO_U16MSB: format = "AUDIO_U16MSB"; break;
-            case AUDIO_S16MSB: format = "AUDIO_S16MSB"; break;
-            default: format = "?!"; break;
-        }
-        fprintf(stderr, "SDL_OpenAudio: actual.format = %s\n", format);
-        ErrorCode = SDLErr_OpenAudio;
-        err = 1;
-    }
-    if (actual.channels == 1 || actual.channels == 2) {
-        *numchannels = actual.channels;
-    } else {
-        fprintf(stderr, "SDL_OpenAudio: actual.channels = %d\n", actual.channels);
-        ErrorCode = SDLErr_OpenAudio;
-        err = 1;
-    }
+    EffectFence = SDL_CreateMutex();
 
-    if (err) {
-        SDL_CloseAudio();
-        return SDLErr_Error;
-    } else {
-        Initialised = 1;
-        return SDLErr_Ok;
-    }
+    // channel 0 and 1 are actual sounds
+    // dummy channel 2 runs our fillData() callback as an effect
+    Mix_RegisterEffect(2, fillData, NULL, NULL);
+
+    DummyBuffer = (uint8_t *) malloc(chunksize);
+    memset(DummyBuffer, 0, chunksize);
+
+    DummyChunk = Mix_QuickLoad_RAW(DummyBuffer, chunksize);
+
+    Mix_PlayChannel(2, DummyChunk, -1);
+
+    Initialised = 1;
+
+    return SDLErr_Ok;
 }
 
 void SDLDrv_PCM_Shutdown(void)
 {
-    if (!Initialised) {
+    if (!Initialised)
         return;
+    else Mix_HaltChannel(-1);
+
+    if (DummyChunk != NULL)
+    {
+        Mix_FreeChunk(DummyChunk);
+        DummyChunk = NULL;
     }
 
-    if (StartedSDLInit & SDL_INIT_AUDIO) {
-        SDL_QuitSubSystem(SDL_INIT_AUDIO);
-        StartedSDLInit &= ~SDL_INIT_AUDIO;
+    if (DummyBuffer  != NULL)
+    {
+        free(DummyBuffer);
+        DummyBuffer = NULL;
     }
 
-    if (StartedSDLInit == 0x80000000) {
-        SDL_Quit();
-        StartedSDLInit = 0;
-    }
+    Mix_CloseAudio();
 
-    StartedSDL &= ~SDL_INIT_AUDIO;
+    SDL_DestroyMutex(EffectFence);
+
+    Initialised = 0;
 }
 
-int SDLDrv_PCM_BeginPlayback(char *BufferStart, int BufferSize,
-						int NumDivisions, void ( *CallBackFunc )( void ) )
+int32_t SDLDrv_PCM_BeginPlayback(char *BufferStart, int32_t BufferSize,
+                        int32_t NumDivisions, void ( *CallBackFunc )( void ) )
 {
     if (!Initialised) {
         ErrorCode = SDLErr_Uninitialised;
@@ -270,7 +251,7 @@ int SDLDrv_PCM_BeginPlayback(char *BufferStart, int BufferSize,
     if (Playing) {
         SDLDrv_PCM_StopPlayback();
     }
-
+    
     MixBuffer = BufferStart;
     MixBufferSize = BufferSize;
     MixBufferCount = NumDivisions;
@@ -280,8 +261,8 @@ int SDLDrv_PCM_BeginPlayback(char *BufferStart, int BufferSize,
     
     // prime the buffer
     MixCallBack();
-
-    SDL_PauseAudio(0);
+    
+    Mix_Resume(-1);
     
     Playing = 1;
     
@@ -294,205 +275,87 @@ void SDLDrv_PCM_StopPlayback(void)
         return;
     }
 
-    SDL_PauseAudio(1);
-	
+    Mix_Pause(-1);
+    
     Playing = 0;
 }
 
 void SDLDrv_PCM_Lock(void)
 {
-    SDL_LockAudio();
+        if (InterruptsDisabled++)
+            return;
+    
+        SDL_LockMutex(EffectFence);
 }
 
 void SDLDrv_PCM_Unlock(void)
 {
-    SDL_UnlockAudio();
+        if (--InterruptsDisabled)
+            return;
+    
+        SDL_UnlockMutex(EffectFence);
 }
 
+static Mix_Music *music = NULL;
 
-static int cdWatchThread(void * v)
-{
-    CDstatus status;
-    
-    do {
-        switch (SDL_SemWaitTimeout(CDWatchKillSem, 500)) {
-            case SDL_MUTEX_TIMEDOUT:
-                // poll the status, restart if stopped
-                if (!CDLoop) {
-                    return 0;
-                }
-                
-                status = SDL_CDStatus(CDRom);
-                
-                if (status == CD_TRAYEMPTY) {
-                    return 0;
-                } else if (status == CD_STOPPED) {
-                    // play
-                    if (SDL_CDPlayTracks(CDRom, CDTrack, 0, 1, 0) < 0) {
-                        return -1;
-                    }
-                }
-                
-                break;
-            case -1:
-                return -1;
-            case 0:
-                // told to quit, so do it
-                return 0;
-        }
-    } while (1);
-    
-    return 0;
-}
-
-
-int SDLDrv_CD_Init(void)
-{
-    Uint32 inited;
-    Uint32 err = 0;
-    int i;
-    
-    SDLDrv_CD_Shutdown();
-    
-    inited = SDL_WasInit(SDL_INIT_EVERYTHING);
-    
-    if (inited == 0) {
-        // nothing was initialised
-        err = SDL_Init(SDL_INIT_CDROM);
-        StartedSDLInit |= 0x80000000 + SDL_INIT_CDROM;
-    } else if (!(inited & SDL_INIT_CDROM)) {
-        err = SDL_InitSubSystem(SDL_INIT_CDROM);
-        StartedSDLInit |= SDL_INIT_CDROM;
-    }
-    
-    if (err < 0) {
-        ErrorCode = SDLErr_InitSubSystem;
-        return SDLErr_Error;
-    }
-    
-    StartedSDL |= SDL_INIT_CDROM;
-    
-    fprintf(stderr, "SDL_CDNumDrives: %d\n", SDL_CDNumDrives());
-    
-    CDRom = SDL_CDOpen(0);
-    if (!CDRom) {
-        ErrorCode = SDLErr_CDOpen;
-        return SDLErr_Error;
-    }
-    
-    fprintf(stderr, "SDL_CD: numtracks: %d\n", CDRom->numtracks);
-    for (i = 0; i < CDRom->numtracks; i++) {
-        fprintf(stderr, "SDL_CD: track %d - %s, %dsec\n",
-                CDRom->track[i].id,
-                CDRom->track[i].type == SDL_AUDIO_TRACK ? "audio" : "data",
-                CDRom->track[i].length / CD_FPS
-                );
-    }
-    
+int  SDLDrv_CD_Init(void) {
+    music = NULL;
     return SDLErr_Ok;
 }
 
-void SDLDrv_CD_Shutdown(void)
-{
+void SDLDrv_CD_Shutdown(void) {
     SDLDrv_CD_Stop();
-    
-    if (CDRom) {
-        SDL_CDClose(CDRom);
-        CDRom = 0;
-    }
-    
-    if (StartedSDLInit & SDL_INIT_CDROM) {
-        SDL_QuitSubSystem(SDL_INIT_CDROM);
-        StartedSDLInit &= ~SDL_INIT_CDROM;
-    }
-
-    if (StartedSDLInit == 0x80000000) {
-        SDL_Quit();
-        StartedSDLInit = 0;
-    }
-
-    StartedSDL &= ~SDL_INIT_CDROM;
 }
 
-int SDLDrv_CD_Play(int track, int loop)
-{
-    if (!CDRom) {
-        ErrorCode = SDLErr_Uninitialised;
+int  CD_PlayFile(const char * filename, int loop) {
+
+    if (music != NULL) {
+        SDLDrv_CD_Stop();
+    }
+
+    music = Mix_LoadMUS(filename);
+
+    if(music == NULL) {
+        printf("Unable to load OGG file: %s\n", Mix_GetError());
+        ErrorCode = SDLErr_OpenOGG;
+        return SDLErr_Error;
+
+    }
+    if(Mix_PlayMusic(music, loop ? -1 : 0) == -1) {
+        printf("Unable to playback OGG file: %s\n", Mix_GetError());
+        ErrorCode = SDLErr_PlayOGG;
         return SDLErr_Error;
     }
-    
-    SDLDrv_CD_Stop();
-    
-    if (SDL_CDPlayTracks(CDRom, track, 0, 1, 0) < 0) {
-        ErrorCode = SDLErr_CDCannotPlayTrack;
-        return SDLErr_Error;
-    }
-    
-    CDLoop = loop;
-    CDTrack = track;
-    
-    if (loop) {
-        CDWatchKillSem = SDL_CreateSemaphore(0);
-        if (!CDWatchKillSem) {
-            CDLoop = 0;
-            ErrorCode = SDLErr_CDCreateSemaphore;
-            return SDLErr_Warning;   // play, but we won't be looping
-        }
-        CDWatchThread = SDL_CreateThread(cdWatchThread, 0);
-        if (!CDWatchThread) {
-            SDL_DestroySemaphore(CDWatchKillSem);
-            CDWatchKillSem = 0;
-            
-            CDLoop = 0;
-            ErrorCode = SDLErr_CDCreateThread;
-            return SDLErr_Warning;  // play, but we won't be looping
-        }
-    }
-    
     return SDLErr_Ok;
 }
 
-void SDLDrv_CD_Stop(void)
-{
-    if (!CDRom) {
-        return;
-    }
-    
-    if (CDWatchKillSem) {
-        if (CDWatchThread) {
-            SDL_SemPost(CDWatchKillSem);
-            SDL_WaitThread(CDWatchThread, 0);
-        }
-        SDL_DestroySemaphore(CDWatchKillSem);
-    }
-    CDWatchKillSem = 0;
-    CDWatchThread = 0;
-            
-    SDL_CDStop(CDRom);
+
+int CD_PlayByName(const char *songname, const char *folder, int loop) {
+    char filename[200];
+    sprintf(filename, "%s/%s", folder, songname); /* MEGATON specific */
+    return CD_PlayFile(filename, loop);
 }
 
-void SDLDrv_CD_Pause(int pauseon)
-{
-    if (!CDRom) {
-        return;
-    }
-    
-    if (pauseon) {
-        SDL_CDPause(CDRom);
-    } else {
-        SDL_CDResume(CDRom);
-    }
+int  SDLDrv_CD_Play(int track, int loop) {
+    char filename[200];
+    sprintf(filename, "classic/MUSIC/Track%02d.ogg", track); /* SW REDUX specific */
+    return CD_PlayFile(filename, loop);
 }
 
-int SDLDrv_CD_IsPlaying(void)
-{
-    if (!CDRom) {
-        return 0;
-    }
-    return SDL_CDStatus(CDRom) == CD_PLAYING;
+
+void SDLDrv_CD_Stop(void) {
+         Mix_HaltMusic();
+         music = NULL;
 }
 
-void SDLDrv_CD_SetVolume(int volume)
-{
+void SDLDrv_CD_Pause(int pauseon) {
+
 }
 
+int  SDLDrv_CD_IsPlaying(void) {
+    return music != NULL;
+}
+
+void SDLDrv_CD_SetVolume(int volume){
+    Mix_VolumeMusic(volume/2);
+}

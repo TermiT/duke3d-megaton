@@ -95,7 +95,17 @@ char * gamefunctions[] =
    "Previous_Weapon",
    "Show_Console",
    "Quick_Load",
-   "Quick_Save"
+   "Quick_Save",
+   "Save_Menu",
+   "Load_Menu",
+   "Help_Menu",
+   "Sound_Menu",
+   "Next_Track",
+   "View_Mode",
+   "Video_Menu",
+   "Quit_Game",
+   "Game_Menu",
+
    };
 #endif
 #ifdef __SETUP__

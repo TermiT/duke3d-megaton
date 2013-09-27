@@ -39,7 +39,7 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 extern "C" {
 #endif
 
-#define NUMGAMEFUNCTIONS 55
+#define NUMGAMEFUNCTIONS 64
 
 extern char * gamefunctions[];
 
@@ -99,7 +99,16 @@ enum
    gamefunc_Previous_Weapon,
    gamefunc_Show_Console,
    gamefunc_Quick_Load,
-   gamefunc_Quick_Save
+   gamefunc_Quick_Save,
+   gamefunc_Save_Menu,
+   gamefunc_Load_Menu,
+   gamefunc_Help_Menu,
+   gamefunc_Sound_Menu,
+   gamefunc_Next_Track,
+   gamefunc_View_Mode,
+   gamefunc_Video_Menu,
+   gamefunc_Quit_Game,
+   gamefunc_Game_Menu,
    };
 #ifdef __cplusplus
 };

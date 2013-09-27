@@ -82,6 +82,7 @@ public:
     virtual void DidRequestKey(Rocket::Core::Element *menu_item, int slot);
     virtual void DidActivateItem(Rocket::Core::Element *menu_item);
     virtual void DidClearKeyChooserValue(Rocket::Core::Element *menu_item, int slot);
+    virtual void DidClearItem(Rocket::Core::Element *menu_item);
 
 
     void InitKeysSetupPage(Rocket::Core::ElementDocument *page);
@@ -101,6 +102,7 @@ public:
     void InitMouseSetupPage(Rocket::Core::ElementDocument *menu_page);
 
     void InitLoadPage(Rocket::Core::ElementDocument *menu_page);
+    void InitUserMapsPage(Rocket::Core::ElementDocument *menu_page);
 
     void ShowConfirmation(ConfirmableAction *action, const Rocket::Core::String& document, const Rocket::Core::String& text, const Rocket::Core::String& default_option="yes");
 
@@ -116,7 +118,14 @@ public:
 
     void ResetMouse();
     
+    void ShowMenuByID(const char * menu_id);
     void ShowSaveMenu();
+    void ShowLoadMenu();
+    void ShowHelpMenu();
+    void ShowSoundMenu();
+    void ShowVideoSettingsMenu();
+    void ShowGameOptionsMenu();
+    void ShowQuitConfirmation();
 
 };
 

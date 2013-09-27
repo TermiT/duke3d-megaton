@@ -86,6 +86,11 @@ HWND GetHwnd() {
 	 return (HWND)0;
 }
 
+void*
+Sys_GetWindow() {
+	return (HWND)GetHwnd();
+}
+
 void Sys_GetScreenSize(int *width, int *height) {
 	HMONITOR monitor = MonitorFromWindow(GetHwnd(), MONITOR_DEFAULTTONEAREST);
 	MONITORINFO info;
@@ -107,4 +112,8 @@ void Sys_CenterWindow(int w, int h) {
 	x = info.rcWork.left + (info.rcWork.right-info.rcWork.left-w)/2;
 	y = info.rcWork.top + (info.rcWork.bottom-info.rcWork.top-h)/2;
 	MoveWindow(hwnd, x, y, w, h, FALSE);
+}
+
+void Sys_OutputDebugString(const char *string) {
+	OutputDebugStringA(string);
 }

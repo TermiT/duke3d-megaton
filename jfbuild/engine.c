@@ -17,6 +17,8 @@
 #include "a.h"
 #include "osd.h"
 #include "crc32.h"
+#include "lz4.h"
+
 
 #include "baselayer.h"
 
@@ -3005,7 +3007,6 @@ static void drawsprite(long snum)
 #ifdef POLYMOST
 	if (rendmode) {
         usehightile = 0;
-        unpatchspritessize();
         polymost_drawsprite(snum);
         usehightile = 1;
         return;
@@ -5045,9 +5046,9 @@ static void loadpalette(void)
 
 
 //
-// getclosestcol (internal)
+// getclosestcol
 //
-static long getclosestcol(long r, long g, long b)
+long getclosestcol(long r, long g, long b)
 {
 	long i, j, k, dist, mindist, retcol;
 	char *pal1;
@@ -7122,6 +7123,34 @@ void nextpage(void)
 }
 
 
+void set_picsizanm(long picnum, short dasizx, short dasizy, long daanm)
+{
+    int j;
+    
+    tilesizx[picnum] = dasizx;
+    tilesizy[picnum] = dasizy;
+    
+    picanm[picnum] = daanm;
+    
+    j = 15;
+    while ((j > 1) && (pow2long[j] > dasizx))
+        j--;
+    picsiz[picnum] = j;
+    
+    j = 15;
+    while ((j > 1) && (pow2long[j] > dasizy))
+        j--;
+    picsiz[picnum] += j<<4;
+}
+
+long tile_exists(long picnum)
+{
+    if (waloff[picnum] == 0)
+        loadtile(picnum);
+    
+    return (waloff[picnum] != 0 && tilesizx[picnum] > 0 && tilesizy[picnum] > 0);
+}
+
 //
 // loadpics
 //
@@ -7244,6 +7273,29 @@ void loadtile(short tilenume)
 		artfil = kopen4load(artfilename,0);
 		faketimerhandler();
 	}
+    
+    // tilefromtexture
+    if (faketilesiz[tilenume])
+    {
+        if (faketilesiz[tilenume] == -1)
+        {
+            walock[tilenume] = 255; // permanent tile
+            allocache(&waloff[tilenume], dasiz, &walock[tilenume]);
+            Bmemset((char *)waloff[tilenume],0,dasiz);
+        }
+        else if (faketiledata[tilenume] != NULL)
+        {
+            walock[tilenume] = 255;
+            allocache(&waloff[tilenume], dasiz, &walock[tilenume]);
+            LZ4_decompress_fast(faketiledata[tilenume], (char *)waloff[tilenume], dasiz);
+            Bfree(faketiledata[tilenume]);
+            faketiledata[tilenume] = NULL;
+        }
+        
+        faketimerhandler();
+        return;
+    }
+
 
 	if (cachedebug) printOSD("Tile:%d\n",tilenume);
 

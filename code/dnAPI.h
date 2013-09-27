@@ -8,11 +8,11 @@
 #define DNAPI_H
 
 #include "SDL.h"
-
 #ifdef __cplusplus
+#undef max 
+#undef min 
 
 #include <vector>
-
 extern "C" {
 #endif
     
@@ -93,7 +93,9 @@ const char* dnGetGRPName();
 const char* dnGetVersion();
 
 void dnSetLastSaveSlot(short i);
-    
+CACHE1D_FIND_REC *dnGetMapsList();
+void dnSetUserMap(const char * mapname);
+int dnIsUserMap();
 const char* dnGetEpisodeName(int episode);
 const char* dnGetLevelName(int episode, int level);
 
@@ -143,6 +145,9 @@ void dnDetectVideoMode();
 
 void Sys_GetScreenSize(int *width, int *height);
 void Sys_CenterWindow(int width, int height);
+    
+void play_vpx_video(const char * filename, void (*frame_callback)(int));
+void play_smpeg_video(const char * filename);
     
 #ifdef __cplusplus
 }

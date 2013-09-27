@@ -67,7 +67,7 @@ static
 void LoadFonts(const char* directory)
 {
 	Rocket::Core::String font_names[1];
-	font_names[0] = "DukeFont.ttf";
+	font_names[0] = "dukefont.ttf";
 
 	for (int i = 0; i < sizeof(font_names) / sizeof(Rocket::Core::String); i++)	{
 		Rocket::Core::FontDatabase::LoadFontFace(Rocket::Core::String(directory) + font_names[i]);
@@ -99,6 +99,9 @@ void GUI::LoadDocuments() {
     LoadDocument("data/keyprompt.rml");
     LoadDocument("data/yesno.rml");
     LoadDocument("data/videoconfirm.rml");
+    LoadDocument("data/usermaps.rml");
+    LoadDocument("data/help.rml");
+    LoadDocument("data/quitconfirm.rml");
 }
 
 void GUI::GetAddonDocumentPath(int addon, const Rocket::Core::String& path, char * addonPath) {
@@ -575,6 +578,9 @@ void GUI::ReadChosenSkillAndEpisode(int *pskill, int *pepisode) {
     if (dnGetAddonId() != 0) {
         *pepisode = dnGetAddonEpisode();
         return;
+    } else if (dnIsUserMap()) { // usermap
+        *pepisode = 0;
+        return;
     } else {
         Rocket::Core::Element *episode = m_menu->GetHighlightedItem(m_context, "menu-episodes");
         assert(episode != NULL);
@@ -592,18 +598,19 @@ void GUI::DoCommand(Rocket::Core::Element *element, const Rocket::Core::String& 
 		Enable(false);
         ps[myconnectindex].gm &= ~MODE_MENU;
 		m_menu->ShowDocument(m_context, "menu-ingame", false);
-		NewGame(skill, episode, 0);
+        // for usermap level should and  episode should be 0
+		NewGame(skill, episode, (dnIsUserMap() ? 7 : 0));
 	} else if (command == "game-quit") {
         QuitGameCommand(element);
+    } else if (command == "game-quit-immediately") {
+        dnQuitGame();
     } else if (command == "apply-video-mode") {
 		VideoMode vm;
 		ReadChosenMode(&vm);
 		dnChangeVideoMode(&vm);
 		UpdateApplyStatus();
 	} else if (command == "load-game") {
-
         LoadGameCommand(element);
-
     } else if (command == "save-game") {
         SaveGameCommand(element);
     } else if (command == "game-stop") {
@@ -643,6 +650,11 @@ void GUI::DoCommand(Rocket::Core::Element *element, const Rocket::Core::String& 
         CSTEAM_OpenCummunityHub();
     } else if (command == "start") {
         m_show_press_enter = false;
+    } else if (command == "load-usermap") {
+        Rocket::Core::ElementDocument *doc = m_context->GetDocument("menu-usermaps");
+        Rocket::Core::Element *map = m_menu->GetHighlightedItem(doc);
+        dnSetUserMap(map->GetId().CString());
+        m_menu->ShowDocument(m_context, "menu-skill");
     }
 }
 
@@ -809,6 +821,10 @@ void GUI::DidOpenMenuPage(Rocket::Core::ElementDocument *menu_page) {
         InitMouseSetupPage(menu_page);
     } else if (page_id == "menu-load" || page_id == "menu-save") {
         InitLoadPage(menu_page);
+    } else if (page_id == "menu-usermaps") {
+        InitUserMapsPage(menu_page);
+    } else if (page_id == "menu-episodes") {
+        dnSetUserMap(NULL);
     }
 }
 
@@ -840,7 +856,11 @@ void GUI::InitMouseSetupPage(Rocket::Core::ElementDocument *menu_page) {
     m_menu->SetRangeValue(m_menu->GetMenuItem(menu_page, "mouse-sens"), sens);
     m_menu->ActivateOption(m_menu->GetMenuItem(menu_page, "invert-y-axis"),
             ud.mouseflip ? "invert-y-on" : "invert-y-off",
-            false);
+            false);    
+    m_menu->ActivateOption(m_menu->GetMenuItem(menu_page, "lock-y-axis"),
+                           ud.mouseylock ? "lock-y-on" : "lock-y-off",
+                           false);
+
 }
 
 void GUI::InitVideoOptionsPage(Rocket::Core::ElementDocument *page) {
@@ -896,6 +916,26 @@ void GUI::InitKeysSetupPage(Rocket::Core::ElementDocument *page) {
         }
 }
 
+
+void GUI::InitUserMapsPage(Rocket::Core::ElementDocument *menu_page) {
+    CACHE1D_FIND_REC * files = dnGetMapsList();
+    Rocket::Core::Element *menu = menu_page->GetElementById("menu");
+    if (files) {
+        menu->SetInnerRML("");
+        while (files) {
+            Rocket::Core::Element * record = new Rocket::Core::Element("div");
+            record->SetInnerRML(Bstrlwr(files->name));
+            record->SetId(files->name);
+            record->SetAttribute("command", "load-usermap");
+            menu->AppendChild(record);
+            files = files->next;
+            m_menu->SetupMenuItem(record);
+        }
+        m_menu->HighlightItem(menu_page, menu->GetFirstChild()->GetId());
+    }
+}
+
+
 void GUI::DidCloseMenuPage(Rocket::Core::ElementDocument *menu_page) {
     const Rocket::Core::String& page_id = menu_page->GetId();
 	if (page_id == "menu-video") {
@@ -911,6 +951,15 @@ void GUI::DidCloseMenuPage(Rocket::Core::ElementDocument *menu_page) {
         dnSetMouseSensitivity(sens_int);
         bool invert_y = m_menu->GetActiveOption(m_menu->GetMenuItem(menu_page, "invert-y-axis"))->GetId() == "invert-y-on";
         ud.mouseflip = invert_y ? 1 : 0;
+        bool lock_y = m_menu->GetActiveOption(m_menu->GetMenuItem(menu_page, "lock-y-axis"))->GetId() == "lock-y-on";
+        if (lock_y) {
+            ps[myconnectindex].horiz = 100;
+//            ps[myconnectindex].auto_aim = AutoAim;
+            myaimmode = 0;
+        } else {
+            myaimmode = 1;
+        }
+        ud.mouseylock = lock_y ? 1 : 0;
     }
 }
 
@@ -1138,7 +1187,7 @@ void GUI::DidActivateItem(Rocket::Core::Element *menu_item) {
             char thumb_rml[50];
             char level_rml[50];
             struct savehead saveh;
-            if (loadpheader(slot, &saveh) == 0) {
+            if (loadpheader(slot, &saveh) == 0 && !menu_item->IsClassSet("empty")) {
                 sprintf(thumb_rml, "<img src=\"tile:%d?%d\"></img>", TILE_LOADSHOT, SDL_GetTicks());
                 skill->SetInnerRML(GetSkillName(m_context, saveh.plrskl));
                 episode->SetInnerRML(dnGetEpisodeName(saveh.volnum));
@@ -1159,10 +1208,72 @@ void GUI::DidClearKeyChooserValue(Rocket::Core::Element *menu_item, int slot) {
     AssignFunctionKey(menu_item->GetId(), "", slot);
 }
 
-void GUI::ShowSaveMenu() {
-    menu_to_open = "menu-save";
-    ps[myconnectindex].gm |= MODE_MENU;
-//    menu_to_open = "menu-ingame";
-    //m_menu->ShowDocument(m_context, "menu-save", false);
-    
+void GUI::DidClearItem(Rocket::Core::Element *menu_item) {
+	if (menu_item->IsClassSet("game-slot")) {
+		int slot;
+		struct RemoveGameAction: public ConfirmableAction {
+			Rocket::Core::Element *element;
+			int slot;
+			RemoveGameAction(Rocket::Core::ElementDocument *page, Rocket::Core::Element *element, int slot):ConfirmableAction(page), element(element), slot(slot){}
+			virtual void Yes() {
+				Rocket::Core::ElementDocument *doc = element->GetOwnerDocument();
+				Rocket::Core::Element *thumbnail = doc->GetElementById("thumbnail");
+				Rocket::Core::Element *skill = doc->GetElementById("skill");
+				Rocket::Core::Element *episode = doc->GetElementById("episode");
+				Rocket::Core::Element *level = doc->GetElementById("level");
+				Rocket::Core::String test;
+				skill->SetInnerRML("");
+				episode->SetInnerRML("");
+				thumbnail->SetInnerRML("<img src=\"assets/placeholder.tga\"></img>");
+				level->SetInnerRML("");
+				element->SetInnerRML("EMPTY");
+				element->SetClass("empty", true);
+				char filename[15];
+				sprintf(filename, "game%d_%d.sav", slot, dnGetAddonId());
+				CSTEAM_DeleteCloudFile(filename);
+                unlink(filename);
+			}
+		};
+		if (sscanf(menu_item->GetId().CString(), "slot%d", &slot) == 1) {
+			if (!menu_item->IsClassSet("empty")) {
+				Rocket::Core::ElementDocument *page = menu_item->GetOwnerDocument();
+				ShowConfirmation(new RemoveGameAction(page, menu_item, slot), "yesno", "Remove saved game?");
+			}
+		}
+	}
 }
+
+
+void GUI::ShowMenuByID(const char * menu_id) {
+    menu_to_open = menu_id;
+    ps[myconnectindex].gm |= MODE_MENU;
+}
+
+void GUI::ShowSaveMenu() {
+    ShowMenuByID("menu-save");
+}
+
+void GUI::ShowLoadMenu() {
+    ShowMenuByID("menu-load");
+}
+
+void GUI::ShowHelpMenu() {
+    ShowMenuByID("menu-help");
+}
+
+void GUI::ShowSoundMenu() {
+    ShowMenuByID("menu-sound");
+}
+
+void GUI::ShowGameOptionsMenu() {
+     ShowMenuByID("menu-game-options");
+}
+
+void GUI::ShowVideoSettingsMenu() {
+    ShowMenuByID("menu-video");
+}
+
+void GUI::ShowQuitConfirmation() {
+    ShowMenuByID("quit-confirm");
+}
+

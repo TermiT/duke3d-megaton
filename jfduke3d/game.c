@@ -55,7 +55,7 @@ Modifications for JonoF's port by Jonathon Fowler(jf@jonof.id.au)
 
 #include "_control.h"
 
-#define VERSION "1.0.1"
+#define VERSION "1.0.4"
 
 #define HEAD   "Duke Nukem 3D Unregistered Shareware "VERSION
 
@@ -72,6 +72,15 @@ Modifications for JonoF's port by Jonathon Fowler(jf@jonof.id.au)
 
 
 #define TIMERUPDATESIZ 32
+
+#ifndef min
+# define min(a,b) ( ((a) < (b)) ? (a) : (b) )
+#endif
+
+#ifndef max
+# define max(a,b) ( ((a) > (b)) ? (a) : (b) )
+#endif
+
 
 long cameradist = 0, cameraclock = 0;
 char playerswhenstarted;
@@ -90,7 +99,9 @@ static struct strllist {
 
 char defaultduke3dgrp[BMAX_PATH] = "duke3d.grp";
 char defaultconfilename[BMAX_PATH] = "game.con";
+char defaultmapspath[BMAX_PATH] = "maps";
 char *confilename = defaultconfilename, *duke3dgrp = defaultduke3dgrp;
+int megatondef = 0;
 
 char boardfilename[BMAX_PATH] = {0};
 char waterpal[768], slimepal[768], titlepal[768], drealms[768], endingpal[768];
@@ -108,8 +119,8 @@ typedef struct  {
 }addon_stuct;
 
 addon_stuct official_addons[4] = {
-    {NULL, NULL, 0}, //default atomic edition
-    {"Duke It Out In D.C "VERSION, "dukedc.grp", 2, NULL},
+    {NULL, NULL, 0, "music"}, //default atomic edition
+    {"Duke It Out In D.C "VERSION, "dukedc.grp", 2, "music"},
     {"Duke: Nuclear Winter "VERSION, "nwinter.grp", 1, "music/nwinter"},
     {"Duke Caribbean: Life's A Beach "VERSION, "vacation.grp", 2, "music/vacation"},
 };
@@ -150,12 +161,11 @@ void patchstatusbar(long x1, long y1, long x2, long y2)
 {
 	long scl, tx, ty;
 	long clx1,cly1,clx2,cly2,clofx,clofy;
+    int tile = BOTTOMSTATUSBAR;
 	scl = sbarsc(65536);
-#ifdef WIDESCREEN_HACK
-	tx = sbarx((320-tilesizx[BOTTOMSTATUSBAR])/2);
-#else
-    tx = sbarx(0);
-#endif
+    if (megatondef)
+        tile = BOTTOMSTATUSBAR_MEGATON;
+    tx = sbarx((320-tilesizx[tile])/2);
     ty = sbary(200-tilesizy[BOTTOMSTATUSBAR]);
 	clx1 = scale(scale(x1,xdim,320),ud.statusbarscale,100);
 	cly1 = scale(scale(y1,ydim,200),ud.statusbarscale,100);
@@ -164,7 +174,7 @@ void patchstatusbar(long x1, long y1, long x2, long y2)
 	clofx = (xdim - scale(xdim,ud.statusbarscale,100)) >> 1;
 	clofy = (ydim - scale(ydim,ud.statusbarscale,100));
 
-	rotatesprite(tx,ty,scl,0,BOTTOMSTATUSBAR,4,0,10+16+64+128,clx1+clofx,cly1+clofy,clx2+clofx-1,cly2+clofy-1);
+	rotatesprite(tx,ty,scl,0,tile,4,0,10+16+64+128,clx1+clofx,cly1+clofy,clx2+clofx-1,cly2+clofy-1);
 }
 
 int recfilep,totalreccnt;
@@ -183,6 +193,7 @@ int sendmessagecommand = -1;
 
 static char *duke3ddef = "duke3d.def";
 static char *custom_duke3ddef = NULL;
+static char * megaton_def = "duke3d-megaton.def";
 
 //task *TimerPtr=NULL;
 
@@ -262,6 +273,19 @@ int gametext(int x,int y,char *t,char s,short dabits)
     }
 
     return (x);
+}
+
+void play_nuke_sounds(int frame) {
+    switch (frame) {
+        case 1:
+            sound(FLY_BY);
+            break;
+        case 70:
+            sound(PIPEBOMB_EXPLODE);
+            break;
+        default:
+            break;
+    }
 }
 
 int gametextpal(int x,int y,char *t,char s,char p)
@@ -2346,6 +2370,12 @@ void displayrest(long smoothratio)
     struct player_struct *pp;
     walltype *wal;
     long cposx,cposy,cang;
+    
+    int minitext_x = 10;
+    int minitext_y = 10;
+    float ky = ydim/(float)240;
+    float kx = xdim/(float)320;
+    float n = kx/ky;
 
     pp = &ps[screenpeek];
 
@@ -2566,33 +2596,37 @@ void displayrest(long smoothratio)
 #if CLASSIC_MENU
     if(ud.levelstats && (ps[myconnectindex].gm&MODE_MENU) == 0) {
 #else
-    if(ud.levelstats) {
+        if(ud.levelstats) {
 #endif
-	i = (ud.screen_size <= 4)?0:scale(tilesizy[BOTTOMSTATUSBAR],ud.statusbarscale,100);
-	
-	sprintf(tempbuf, "FPS: %d", dnFPS);
-	minitext(320-5*12,200-i-6-6-6-6,tempbuf,0,26);
-
-	sprintf(tempbuf,"Time: %ld:%02ld",
-		(ps[myconnectindex].player_par/(26*60)),
-		(ps[myconnectindex].player_par/26)%60);
-	minitext(320-5*12,200-i-6-6-6,tempbuf,0,26);
-
-        if(ud.player_skill > 3 )
-        	sprintf(tempbuf,"Kills: %ld",ps[myconnectindex].actors_killed);
-        else
+            i = (ud.screen_size <= 4)?0:scale(tilesizy[BOTTOMSTATUSBAR],ud.statusbarscale,100);
+            
+            minitext_x = minitext_x / (xdim/320.0);
+            minitext_y = minitext_y / (ydim/240.0);
+            minitext_x -= (320 * n - 320)/2;
+            
+            sprintf(tempbuf, "FPS: %d", dnFPS);
+            minitext(minitext_x,minitext_y+6+6+6,tempbuf,0,26);
+            
+            sprintf(tempbuf,"Time: %ld:%02ld",
+                    (ps[myconnectindex].player_par/(26*60)),
+                    (ps[myconnectindex].player_par/26)%60);
+            minitext(minitext_x,minitext_y+6+6,tempbuf,0,26);
+            
+            if(ud.player_skill > 3 )
+                sprintf(tempbuf,"Kills: %ld",ps[myconnectindex].actors_killed);
+            else
                 sprintf(tempbuf,"Kills: %ld/%ld",ps[myconnectindex].actors_killed,
-				ps[myconnectindex].max_actors_killed>ps[myconnectindex].actors_killed?
-				ps[myconnectindex].max_actors_killed:ps[myconnectindex].actors_killed);
-	minitext(320-5*12,200-i-6-6,tempbuf,0,26);
-
-	sprintf(tempbuf,"Secrets: %ld/%ld", ps[myconnectindex].secret_rooms,ps[myconnectindex].max_secret_rooms);
-	minitext(320-5*12,200-i-6,tempbuf,0,26);
-    }
-    if (tintf > 0 || dotint) palto(tintr,tintg,tintb,tintf|128);
+                        ps[myconnectindex].max_actors_killed>ps[myconnectindex].actors_killed?
+                        ps[myconnectindex].max_actors_killed:ps[myconnectindex].actors_killed);
+            minitext(minitext_x,minitext_y+6,tempbuf,0,26);
+            
+            sprintf(tempbuf,"Secrets: %ld/%ld", ps[myconnectindex].secret_rooms,ps[myconnectindex].max_secret_rooms);
+            minitext(minitext_x, minitext_y,tempbuf,0,26);
+        }
+        if (tintf > 0 || dotint) palto(tintr,tintg,tintb,tintf|128);
 }
 
-
+    
 #if 0
 // JBF: Now in the engine
 void updatesectorz(long x, long y, long z, short *sectnum)
@@ -6022,6 +6056,7 @@ void cheats(void)
 
           FOUNDCHEAT:
           {
+                dnRecordCheat();
                 switch(k)
                 {
                     case 21:
@@ -6421,6 +6456,87 @@ if (VOLUMEONE) {
 }
 
 
+void fn_gamefuncs(void){
+    if (BUTTON(gamefunc_Help_Menu)) {
+        BUTTONCLEAR(gamefunc_Help_Menu);
+        GUI_ShowHelpMenu();
+    }
+    
+    if (BUTTON(gamefunc_Save_Menu)) {
+        BUTTONCLEAR(gamefunc_Save_Menu);
+        GUI_ShowSaveMenu();
+    }
+    
+    if (BUTTON(gamefunc_Load_Menu)) {
+        BUTTONCLEAR(gamefunc_Load_Menu);
+        GUI_ShowLoadMenu();
+    }
+    
+    if (BUTTON(gamefunc_Sound_Menu)) {
+        BUTTONCLEAR(gamefunc_Sound_Menu);
+        GUI_ShowSoundMenu();
+    }
+    
+    if (BUTTON(gamefunc_Next_Track)) {
+        music_select++;
+        if (VOLUMEALL) {
+            if(music_select == 44) music_select = 0;
+        } else {
+            if(music_select == 6) music_select = 0;
+        }
+        strcpy(&tempbuf[0],"PLAYING ");
+        strcat(&tempbuf[0],&music_fn[0][music_select][0]);
+        playmusic(&music_fn[0][music_select][0]);
+        strcpy(&fta_quotes[26][0],&tempbuf[0]);
+        FTA(26,&ps[myconnectindex]);
+        BUTTONCLEAR(gamefunc_Next_Track);
+    }
+    
+    if (BUTTON(gamefunc_Quick_Save)) {
+        BUTTONCLEAR(gamefunc_Quick_Save);
+        if(lastsavedpos != -1) {
+            dnSaveGame(lastsavedpos);
+        } else {
+            GUI_ShowSaveMenu();
+        }
+    }
+    
+    if (BUTTON(gamefunc_View_Mode)) {
+        
+        if( ps[myconnectindex].over_shoulder_on ) {
+            ps[myconnectindex].over_shoulder_on = 0;
+        } else {
+            ps[myconnectindex].over_shoulder_on = 1;
+            cameradist = 0;
+            cameraclock = totalclock;
+        }
+        FTA(109+ps[myconnectindex].over_shoulder_on,&ps[myconnectindex]);
+        BUTTONCLEAR(gamefunc_View_Mode);
+    }
+    
+    if (BUTTON(gamefunc_Game_Menu)) {
+        BUTTONCLEAR(gamefunc_Game_Menu);
+        GUI_ShowGameOptionsMenu();
+    }
+    
+    if(BUTTON(gamefunc_Quick_Load)) {
+        if (lastsavedpos != -1)
+            dnLoadGame(lastsavedpos);
+        BUTTONCLEAR(gamefunc_Quick_Load);
+    }
+    
+    if (BUTTON(gamefunc_Quit_Game)) {
+        BUTTONCLEAR(gamefunc_Quit_Game);
+        GUI_ShowQuitConfirmation();
+    }
+    
+    if (BUTTON(gamefunc_Video_Menu)) {
+        BUTTONCLEAR(gamefunc_Video_Menu);
+        GUI_ShowVideoSettingsMenu();
+    }
+
+}
+    
 long nonsharedtimer;
 void nonsharedkeys(void)
 {
@@ -6825,6 +6941,25 @@ if (VOLUMEALL) {
             if( (ps[myconnectindex].zoom < 48) )
                 ps[myconnectindex].zoom = 48;
 
+        } else {
+            if(BUTTON(gamefunc_Shrink_Screen))
+            {
+                CONTROL_ClearButton(gamefunc_Shrink_Screen);
+                if(ud.screen_size > 0) {
+                    sound(THUD);
+                    ud.screen_size -= 4;
+                    vscrn();
+                }
+            }
+            if( BUTTON(gamefunc_Enlarge_Screen))
+            {
+                CONTROL_ClearButton(gamefunc_Enlarge_Screen);
+                if(ud.screen_size < 8) {
+                    sound(THUD);
+                    ud.screen_size += 4;
+                    vscrn();
+                }
+            }
         }
     }
     
@@ -6935,18 +7070,13 @@ void set_addon(int selected_addon) {
     }
     
     //load def
-    custom_duke3ddef =  malloc(strlen(duke3ddef) + 2);
-    sprintf(custom_duke3ddef, "duke3d_%d.def", addon);
+//    custom_duke3ddef =  malloc(strlen(duke3ddef) + 2);
+//    sprintf(custom_duke3ddef, "duke3d-megaton_%d.def", addon);
     
-    //add music
-    if (official_addons[addon].musicdir != NULL) {
-        addsearchpath(official_addons[addon].musicdir);
-    }
     
     if (addon == 2) {
         confilename = "nwinter.con";
     }
-    
 }
     
 int dnGetAddonId() {
@@ -6955,6 +7085,10 @@ int dnGetAddonId() {
 
 int dnGetAddonEpisode() {
     return official_addons[addon].episode;
+}
+    
+const char* dnGetAddonMusicDir() {
+    return official_addons[addon].musicdir;
 }
     
 const char* dnGetVersion() {
@@ -7114,7 +7248,7 @@ void checkcommandline(int argc,char **argv)
                         c++;
                         if(!*c) break;
                         strcpy(tempbuf,c);
-                        if( strchr(tempbuf,'.') == 0)
+                        if( strchr((const char *)tempbuf,'.') == 0)
                             strcat(tempbuf,".grp");
 
 						{
@@ -7532,8 +7666,8 @@ void Shutdown( void )
 	dnPushCloudFiles();
 	CSTEAM_Shutdown();
 	GUI_Shutdown();
-    SoundShutdown();
     MusicShutdown();
+    SoundShutdown();
     uninittimer();
     uninitengine();
     CONTROL_Shutdown();
@@ -7799,7 +7933,8 @@ int gametype = 0;
 
 extern long    r_usenewaspect;
 void    setaspect_new();
-
+extern struct grpfile *foundgrps;
+extern struct grpfile grpfiles[numgrpfiles];
     
 void app_main(int argc,char **argv)
 {
@@ -7990,7 +8125,7 @@ if (VOLUMEONE) {
     registerosdcommands();
     Startup();
 	if (quitevent) return;
-
+    
     if (custom_duke3ddef != NULL && !loaddefinitionsfile(custom_duke3ddef)) {
         initprintf("Definitions file loaded.\n");
     } else {
@@ -7998,6 +8133,19 @@ if (VOLUMEONE) {
         loaddefinitionsfile(duke3ddef);
     }
 
+    if (addon == 3) {
+        Bsprintf(tempbuf, "duke3d-megaton_%d.def", addon);
+    } else {
+        Bstrcpy(tempbuf, megaton_def);
+    }
+    
+    if (!loaddefinitionsfile(tempbuf)) {
+        initprintf("Megaton definitions file loaded.\n");
+        megatondef = 1;
+    }
+
+
+    
     // gotta set the proper title after we compile the CONs if this is the full version
 if (!NAM && VOLUMEALL) {
 	if (PLUTOPAK)
@@ -8053,17 +8201,18 @@ if (!NAM && VOLUMEALL) {
         setgamemode(ScreenMode,ScreenWidth,ScreenHeight,ScreenBPP,0);
     }
 
-    play_video("video/3drLogo.mpeg");
-    play_video("video/nuke.mpeg");
-    
     GUI_Init(ScreenWidth, ScreenHeight);
+    
+    initprintf("Initialize all the sound stuff.\n");
+    SoundStartup();
+    CD_Init(ASS_AutoDetect);
+    MusicStartup();
+    loadtmb();
 
-   initprintf("Checking music inits.\n");
-   MusicStartup();
-   initprintf("Checking sound inits.\n");
-   SoundStartup();
-   loadtmb();
-
+    play_vpx_video("video/3drLogo.ivf", NULL);
+    //void play_nuke_sounds(int frame);
+    play_vpx_video("video/nuke.ivf", play_nuke_sounds);
+    
 if (VOLUMEONE) {
         if(numplayers > 4 || ud.multimode > 4)
             gameexit(" The full version of Duke Nukem 3D supports 5 or more players.");
@@ -8081,8 +8230,12 @@ if (VOLUMEONE) {
         clearview(0L);
         //ps[myconnectindex].palette = palette;
         //palto(0,0,0,0);
-	setgamepalette(&ps[myconnectindex], palette, 0);	// JBF 20040308
-        rotatesprite(320<<15,200<<15,65536L,0,LOADSCREEN,0,0,2+8+64,0,0,xdim-1,ydim-1);
+        setgamepalette(&ps[myconnectindex], palette, 0);	// JBF 20040308
+        if (megatondef) {
+            rotatesprite(320<<15,200<<15,65536L,0,LOADSCREEN_MEGATON,0,0,2+8+64,0,0,xdim-1,ydim-1);
+        } else {
+            rotatesprite(320<<15,200<<15,65536L,0,LOADSCREEN,0,0,2+8+64,0,0,xdim-1,ydim-1);
+        }
         menutext(160,105,0,0,"LOADING SAVED GAME...");
         nextpage();
 
@@ -8183,22 +8336,9 @@ if (!VOLUMEALL) {
 
         cheats();
         nonsharedkeys();
+        fn_gamefuncs();
         
-       
-        if (BUTTON(gamefunc_Quick_Save)) {
-            BUTTONCLEAR(gamefunc_Quick_Save);
-            if(lastsavedpos != -1) {
-                dnSaveGame(lastsavedpos);
-            } else {
-                GUI_ShowSaveMenu();
-            }
-        }
         
-        if(BUTTON(gamefunc_Quick_Load)) {
-            if (lastsavedpos != -1)
-                dnLoadGame(lastsavedpos);
-            BUTTONCLEAR(gamefunc_Quick_Load);
-        }
 
         if( (ud.show_help == 0 && ud.multimode < 2 && !(ps[myconnectindex].gm&MODE_MENU) ) || ud.multimode > 1 || ud.recstat == 2)
             i = min(max((totalclock-ototalclock)*(65536L/TICSPERFRAME),0),65536);
@@ -8239,6 +8379,10 @@ if (VOLUMEONE) {
     gameexit(" ");
 }
 
+
+    
+
+    
 char opendemoread(char which_demo) // 0 = mine
 {
     char d[13];

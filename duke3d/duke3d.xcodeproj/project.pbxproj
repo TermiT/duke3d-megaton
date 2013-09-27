@@ -9,10 +9,14 @@
 /* Begin PBXBuildFile section */
 		770D572C16AAA0FA003E9655 /* ogg.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 770D572A16AAA0FA003E9655 /* ogg.framework */; };
 		770D572D16AAA0FA003E9655 /* vorbis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 770D572B16AAA0FA003E9655 /* vorbis.framework */; };
+		7765666117BCDAFC006DA778 /* playvpx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7765665F17BCDAFC006DA778 /* playvpx.cpp */; };
+		7765666317BCDB8D006DA778 /* libvpx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7765666217BCDB8D006DA778 /* libvpx.a */; };
 		776E959A16B18E7900A1176B /* libsmpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 776E959916B18E7900A1176B /* libsmpeg.a */; };
 		7777064C16ADDBB900D532FF /* libsteam_api.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 77CF8709169F2069008D46F1 /* libsteam_api.dylib */; };
 		7777064F16ADDF0D00D532FF /* libsteam_api.dylib in Copy Files (lib) */ = {isa = PBXBuildFile; fileRef = 77CF8709169F2069008D46F1 /* libsteam_api.dylib */; };
 		7777065816ADE4CE00D532FF /* mactools.m in Sources */ = {isa = PBXBuildFile; fileRef = 7777065716ADE4CE00D532FF /* mactools.m */; };
+		7785C66D17AFEDDC00B0A611 /* common_build.c in Sources */ = {isa = PBXBuildFile; fileRef = 7785C66917AFEDDC00B0A611 /* common_build.c */; };
+		7785C66E17AFEDDC00B0A611 /* lz4.c in Sources */ = {isa = PBXBuildFile; fileRef = 7785C66B17AFEDDC00B0A611 /* lz4.c */; };
 		77BCA8B316CC227700117FBD /* icon.icns in Copy Files (Resources) */ = {isa = PBXBuildFile; fileRef = 77BCA8B216CC21EF00117FBD /* icon.icns */; };
 		77C9A15F169F3D2D003FA762 /* dnAPI_globals.c in Sources */ = {isa = PBXBuildFile; fileRef = 77C9A15D169F3D2D003FA762 /* dnAPI_globals.c */; };
 		77CF8691169F1B69008D46F1 /* csteam.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 77CF85E4169F1B69008D46F1 /* csteam.cpp */; };
@@ -29,7 +33,6 @@
 		77CF869D169F1B69008D46F1 /* ShellSystemInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 77CF85FE169F1B69008D46F1 /* ShellSystemInterface.cpp */; };
 		77CF869F169F1B69008D46F1 /* asssys.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8605169F1B69008D46F1 /* asssys.c */; };
 		77CF86A1169F1B69008D46F1 /* driver_nosound.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8609169F1B69008D46F1 /* driver_nosound.c */; };
-		77CF86A2169F1B69008D46F1 /* driver_sdl.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF860B169F1B69008D46F1 /* driver_sdl.c */; };
 		77CF86A4169F1B69008D46F1 /* drivers.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF860F169F1B69008D46F1 /* drivers.c */; };
 		77CF86A5169F1B69008D46F1 /* fx_man.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8611169F1B69008D46F1 /* fx_man.c */; };
 		77CF86A6169F1B69008D46F1 /* midi.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8615169F1B69008D46F1 /* midi.c */; };
@@ -96,6 +99,8 @@
 		77F3883E16A73625008B73A6 /* dnAPI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 77F3883D16A73625008B73A6 /* dnAPI.cpp */; };
 		95296E5516ADD2DC00A491FD /* ogg.framework in Copy Files (Frameworks) */ = {isa = PBXBuildFile; fileRef = 770D572A16AAA0FA003E9655 /* ogg.framework */; };
 		95296E5616ADD2DC00A491FD /* vorbis.framework in Copy Files (Frameworks) */ = {isa = PBXBuildFile; fileRef = 770D572B16AAA0FA003E9655 /* vorbis.framework */; };
+		954A2A29178F044F00D283F5 /* cd.c in Sources */ = {isa = PBXBuildFile; fileRef = 954A2A25178F044F00D283F5 /* cd.c */; };
+		954A2A2B178F1EF800D283F5 /* driver_coreaudio.c in Sources */ = {isa = PBXBuildFile; fileRef = 954A2A27178F044F00D283F5 /* driver_coreaudio.c */; };
 		955618D516A14AB500CBB392 /* libRocketControls.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 955618D016A14AB500CBB392 /* libRocketControls.a */; };
 		955618D616A14AB500CBB392 /* libRocketCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 955618D116A14AB500CBB392 /* libRocketCore.a */; };
 		955618D716A14AB500CBB392 /* libRocketDebugger.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 955618D216A14AB500CBB392 /* libRocketDebugger.a */; };
@@ -150,9 +155,17 @@
 /* Begin PBXFileReference section */
 		770D572A16AAA0FA003E9655 /* ogg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ogg.framework; path = ../thirdparty/frameworks/ogg.framework; sourceTree = "<group>"; };
 		770D572B16AAA0FA003E9655 /* vorbis.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = vorbis.framework; path = ../thirdparty/frameworks/vorbis.framework; sourceTree = "<group>"; };
+		7765665F17BCDAFC006DA778 /* playvpx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = playvpx.cpp; sourceTree = "<group>"; };
+		7765666017BCDAFC006DA778 /* playvpx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = playvpx.h; sourceTree = "<group>"; };
+		7765666217BCDB8D006DA778 /* libvpx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvpx.a; path = "../thirdparty/bin-osx32/libvpx.a"; sourceTree = "<group>"; };
 		776E959916B18E7900A1176B /* libsmpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsmpeg.a; path = "../thirdparty/bin-osx32/libsmpeg.a"; sourceTree = "<group>"; };
 		7777065016ADE26900D532FF /* steam_appid.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = steam_appid.txt; path = ../gameroot/steam_appid.txt; sourceTree = "<group>"; };
 		7777065716ADE4CE00D532FF /* mactools.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = mactools.m; sourceTree = "<group>"; };
+		7785C66817AFEDDC00B0A611 /* common_build.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = common_build.h; sourceTree = "<group>"; };
+		7785C66917AFEDDC00B0A611 /* common_build.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = common_build.c; sourceTree = "<group>"; };
+		7785C66A17AFEDDC00B0A611 /* lz4_encoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lz4_encoder.h; sourceTree = "<group>"; };
+		7785C66B17AFEDDC00B0A611 /* lz4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = lz4.c; sourceTree = "<group>"; };
+		7785C66C17AFEDDC00B0A611 /* lz4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lz4.h; sourceTree = "<group>"; };
 		77BCA8B216CC21EF00117FBD /* icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = icon.icns; sourceTree = "<group>"; };
 		77C9A15D169F3D2D003FA762 /* dnAPI_globals.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dnAPI_globals.c; sourceTree = "<group>"; };
 		77C9A15E169F3D2D003FA762 /* dnAPI.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dnAPI.h; sourceTree = "<group>"; };
@@ -188,8 +201,6 @@
 		77CF8606169F1B69008D46F1 /* asssys.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = asssys.h; sourceTree = "<group>"; };
 		77CF8609169F1B69008D46F1 /* driver_nosound.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = driver_nosound.c; sourceTree = "<group>"; };
 		77CF860A169F1B69008D46F1 /* driver_nosound.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = driver_nosound.h; sourceTree = "<group>"; };
-		77CF860B169F1B69008D46F1 /* driver_sdl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = driver_sdl.c; sourceTree = "<group>"; };
-		77CF860C169F1B69008D46F1 /* driver_sdl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = driver_sdl.h; sourceTree = "<group>"; };
 		77CF860F169F1B69008D46F1 /* drivers.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = drivers.c; sourceTree = "<group>"; };
 		77CF8610169F1B69008D46F1 /* drivers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = drivers.h; sourceTree = "<group>"; };
 		77CF8611169F1B69008D46F1 /* fx_man.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = fx_man.c; sourceTree = "<group>"; };
@@ -328,6 +339,10 @@
 		77F3883A16A70FBA008B73A6 /* dnAchievement.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dnAchievement.h; sourceTree = "<group>"; };
 		77F3883B16A70FF2008B73A6 /* dnAchievement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dnAchievement.cpp; sourceTree = "<group>"; };
 		77F3883D16A73625008B73A6 /* dnAPI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dnAPI.cpp; sourceTree = "<group>"; };
+		954A2A25178F044F00D283F5 /* cd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cd.c; sourceTree = "<group>"; };
+		954A2A26178F044F00D283F5 /* cd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cd.h; sourceTree = "<group>"; };
+		954A2A27178F044F00D283F5 /* driver_coreaudio.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = driver_coreaudio.c; sourceTree = "<group>"; };
+		954A2A28178F044F00D283F5 /* driver_coreaudio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = driver_coreaudio.h; sourceTree = "<group>"; };
 		955618D016A14AB500CBB392 /* libRocketControls.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libRocketControls.a; path = "../thirdparty/bin-osx32/libRocketControls.a"; sourceTree = "<group>"; };
 		955618D116A14AB500CBB392 /* libRocketCore.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libRocketCore.a; path = "../thirdparty/bin-osx32/libRocketCore.a"; sourceTree = "<group>"; };
 		955618D216A14AB500CBB392 /* libRocketDebugger.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libRocketDebugger.a; path = "../thirdparty/bin-osx32/libRocketDebugger.a"; sourceTree = "<group>"; };
@@ -365,12 +380,22 @@
 				770D572C16AAA0FA003E9655 /* ogg.framework in Frameworks */,
 				770D572D16AAA0FA003E9655 /* vorbis.framework in Frameworks */,
 				776E959A16B18E7900A1176B /* libsmpeg.a in Frameworks */,
+				7765666317BCDB8D006DA778 /* libvpx.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		7765665E17BCDAFC006DA778 /* playvpx */ = {
+			isa = PBXGroup;
+			children = (
+				7765665F17BCDAFC006DA778 /* playvpx.cpp */,
+				7765666017BCDAFC006DA778 /* playvpx.h */,
+			);
+			path = playvpx;
+			sourceTree = "<group>";
+		};
 		77CDCEA6169F1AAD00F7DCB6 = {
 			isa = PBXGroup;
 			children = (
@@ -389,6 +414,7 @@
 				776E959916B18E7900A1176B /* libsmpeg.a */,
 				955618D316A14AB500CBB392 /* libSDL.a */,
 				955618D416A14AB500CBB392 /* libSDLmain.a */,
+				7765666217BCDB8D006DA778 /* libvpx.a */,
 				770D572A16AAA0FA003E9655 /* ogg.framework */,
 				770D572B16AAA0FA003E9655 /* vorbis.framework */,
 				955618E016A14BEE00CBB392 /* Quartz.framework */,
@@ -419,6 +445,7 @@
 		77CF85E3169F1B69008D46F1 /* code */ = {
 			isa = PBXGroup;
 			children = (
+				7765665E17BCDAFC006DA778 /* playvpx */,
 				77CF85EC169F1B69008D46F1 /* rocket */,
 				77F3883D16A73625008B73A6 /* dnAPI.cpp */,
 				77F3883716A70868008B73A6 /* glguard.cpp */,
@@ -468,14 +495,16 @@
 		77CF8602169F1B69008D46F1 /* jfaudiolib */ = {
 			isa = PBXGroup;
 			children = (
+				954A2A25178F044F00D283F5 /* cd.c */,
+				954A2A26178F044F00D283F5 /* cd.h */,
+				954A2A27178F044F00D283F5 /* driver_coreaudio.c */,
+				954A2A28178F044F00D283F5 /* driver_coreaudio.h */,
 				77CF8603169F1B69008D46F1 /* _midi.h */,
 				77CF8604169F1B69008D46F1 /* _multivc.h */,
 				77CF8605169F1B69008D46F1 /* asssys.c */,
 				77CF8606169F1B69008D46F1 /* asssys.h */,
 				77CF8609169F1B69008D46F1 /* driver_nosound.c */,
 				77CF860A169F1B69008D46F1 /* driver_nosound.h */,
-				77CF860B169F1B69008D46F1 /* driver_sdl.c */,
-				77CF860C169F1B69008D46F1 /* driver_sdl.h */,
 				77CF860F169F1B69008D46F1 /* drivers.c */,
 				77CF8610169F1B69008D46F1 /* drivers.h */,
 				77CF8611169F1B69008D46F1 /* fx_man.c */,
@@ -504,6 +533,11 @@
 		77CF8623169F1B69008D46F1 /* jfbuild */ = {
 			isa = PBXGroup;
 			children = (
+				7785C66817AFEDDC00B0A611 /* common_build.h */,
+				7785C66917AFEDDC00B0A611 /* common_build.c */,
+				7785C66A17AFEDDC00B0A611 /* lz4_encoder.h */,
+				7785C66B17AFEDDC00B0A611 /* lz4.c */,
+				7785C66C17AFEDDC00B0A611 /* lz4.h */,
 				77CF8624169F1B69008D46F1 /* a-c.c */,
 				77CF8625169F1B69008D46F1 /* a.h */,
 				77CF8626169F1B69008D46F1 /* baselayer.c */,
@@ -714,7 +748,6 @@
 				77CF869D169F1B69008D46F1 /* ShellSystemInterface.cpp in Sources */,
 				77CF869F169F1B69008D46F1 /* asssys.c in Sources */,
 				77CF86A1169F1B69008D46F1 /* driver_nosound.c in Sources */,
-				77CF86A2169F1B69008D46F1 /* driver_sdl.c in Sources */,
 				77CF86A4169F1B69008D46F1 /* drivers.c in Sources */,
 				77CF86A5169F1B69008D46F1 /* fx_man.c in Sources */,
 				77CF86A6169F1B69008D46F1 /* midi.c in Sources */,
@@ -731,6 +764,7 @@
 				77CF86B1169F1B69008D46F1 /* crc32.c in Sources */,
 				77CF86B2169F1B69008D46F1 /* defs.c in Sources */,
 				77CF86B3169F1B69008D46F1 /* engine.c in Sources */,
+				954A2A2B178F1EF800D283F5 /* driver_coreaudio.c in Sources */,
 				77CF86B4169F1B69008D46F1 /* glbuild.c in Sources */,
 				77CF86B5169F1B69008D46F1 /* hightile.c in Sources */,
 				77CF86B6169F1B69008D46F1 /* kplib.c in Sources */,
@@ -778,6 +812,10 @@
 				77F3883C16A70FF2008B73A6 /* dnAchievement.cpp in Sources */,
 				77F3883E16A73625008B73A6 /* dnAPI.cpp in Sources */,
 				7777065816ADE4CE00D532FF /* mactools.m in Sources */,
+				954A2A29178F044F00D283F5 /* cd.c in Sources */,
+				7785C66D17AFEDDC00B0A611 /* common_build.c in Sources */,
+				7785C66E17AFEDDC00B0A611 /* lz4.c in Sources */,
+				7765666117BCDAFC006DA778 /* playvpx.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -910,7 +948,6 @@
 					"WIDESCREEN_HACK=1",
 					"FONT_HACK=1",
 					"CLASSIC_MENU=0",
-					"NOSTEAM=1",
 				);
 				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				HEADER_SEARCH_PATHS = (

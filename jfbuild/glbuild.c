@@ -149,7 +149,9 @@ void APIENTRY sow_GenTextures(GLsizei n, GLuint *textures) {
 int loadgldriver(const char *driver)
 {
 	int err=0;
-	
+	#ifdef __linux	
+	const char * driver2 = "libGL.so";
+	#endif
 #ifdef RENDERTYPEWIN
 	if (hGLDLL) return 0;
 #endif
@@ -160,14 +162,23 @@ int loadgldriver(const char *driver)
 #elif defined __APPLE__
 		driver = "/System/Library/Frameworks/OpenGL.framework/OpenGL";
 #else
-		driver = "libGL.so";
+		driver = "libGL.so.1";
 #endif
 	}
 
 	initprintf("Loading %s\n",driver);
 
 #if defined RENDERTYPESDL
-	if (SDL_GL_LoadLibrary(driver)) return -1;
+	if (SDL_GL_LoadLibrary(driver)){
+		return -1;
+	} 
+	#ifdef __linux
+        else if (SDL_GL_LoadLibrary(driver2)) {
+		driver = driver2;	
+		return -1;
+	}	
+	#endif
+
 #elif defined _WIN32
 	hGLDLL = LoadLibrary(driver);
 	if (!hGLDLL) return -1;

@@ -20,6 +20,14 @@
 
 #include "dnAPI.h"
 
+#if !defined(max)
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#endif
+#if !defined(min)
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
+
 boolean CONTROL_JoyPresent = false;
 boolean CONTROL_JoystickEnabled = false;
 boolean CONTROL_MousePresent = false;
@@ -1147,7 +1155,7 @@ const char* dnGetKeyName(dnKey key) {
 }
 
 dnKey dnGetKeyByName(const char *keyName) {
-	dnKey i;
+	int i;
     for (i = 0; i < DN_MAX_KEYS; i++) {
         const char *name = dnKeyNames[i];
         if (name != NULL && SDL_strcasecmp(keyName, name) == 0) {
@@ -1166,6 +1174,12 @@ static int dnIsAutoReleaseKey(dnKey key, int function) {
     switch (function) {
         case gamefunc_Map:
         case gamefunc_AutoRun:
+        case gamefunc_Map_Follow_Mode:
+        case gamefunc_Next_Track:
+        case gamefunc_View_Mode:
+        case gamefunc_Shrink_Screen:
+        case gamefunc_Enlarge_Screen:
+        case gamefunc_Mouse_Aiming:
             return 1;
     }
     return 0;
@@ -1265,9 +1279,21 @@ void dnResetBindings() {
     
     dnBindFunction(gamefunc_Shrink_Screen, 0, SDLK_MINUS);
     dnBindFunction(gamefunc_Enlarge_Screen, 0, SDLK_EQUALS);
+    dnBindFunction(gamefunc_Map_Follow_Mode, 0, SDLK_f);
     
+    dnBindFunction(gamefunc_Help_Menu, 0, SDLK_F1);
+    dnBindFunction(gamefunc_Save_Menu, 0, SDLK_F2);
+    dnBindFunction(gamefunc_Load_Menu, 0, SDLK_F3);
+    dnBindFunction(gamefunc_Sound_Menu, 0, SDLK_F4);
+    dnBindFunction(gamefunc_Next_Track, 0, SDLK_F5);
     dnBindFunction(gamefunc_Quick_Save, 0, SDLK_F6);
+    dnBindFunction(gamefunc_View_Mode, 0, SDLK_F7);
+    dnBindFunction(gamefunc_Game_Menu, 0, SDLK_F8);
     dnBindFunction(gamefunc_Quick_Load, 0, SDLK_F9);
+    dnBindFunction(gamefunc_Quit_Game, 0, SDLK_F10);
+    dnBindFunction(gamefunc_Video_Menu, 0, SDLK_F11);
+    
+    dnBindFunction(gamefunc_Mouse_Aiming, 0, SDLK_u);
 }
 
 void dnBindFunction(int function, int slot, dnKey key) {

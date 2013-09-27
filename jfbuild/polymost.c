@@ -320,6 +320,7 @@ void gltexapplyprops (void)
 	long i;
 	PTIter iter;
 	PTHead * pth;
+    long filtermode, anisotropy;
 	
 	if (glinfo.maxanisotropy > 1.0)
 	{
@@ -336,11 +337,23 @@ void gltexapplyprops (void)
 				continue;
 			}
 			bglBindTexture(GL_TEXTURE_2D,pth->pic[i]->glpic);
+            
+#if 0
 			bglTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,glfiltermodes[gltexfiltermode].mag);
 			bglTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,glfiltermodes[gltexfiltermode].min);
 			if (glinfo.maxanisotropy > 1.0) {
 				bglTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAX_ANISOTROPY_EXT,glanisotropy);
 			}
+#endif 
+            filtermode = (pth->flags & PTH_HIGHTILE) ? 5 : gltexfiltermode;
+            anisotropy = (pth->flags & PTH_HIGHTILE) ? 0 : glanisotropy;
+            
+            bglTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,glfiltermodes[filtermode].mag);
+			bglTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,glfiltermodes[filtermode].min);
+			if (glinfo.maxanisotropy > 1.0) {
+				bglTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAX_ANISOTROPY_EXT,anisotropy);
+			}
+            
 		}
 	}
 	PTIterFree(iter);
@@ -1537,7 +1550,7 @@ static void polymost_drawalls (long bunch)
 	double t, r, t0, t1, ocy0, ocy1, ofy0, ofy1, oxp0, oyp0, ft[4];
 	double oguo, ogux, oguy;
 	long i, x, y, z, cz, fz, wallnum, sectnum, nextsectnum;
-    int ypan; // for panning correction
+    int ypan, yoffs; // for panning correction
     
 	sectnum = thesector[bunchfirst[bunch]]; sec = &sector[sectnum];
     
@@ -2368,8 +2381,12 @@ static void polymost_drawalls (long bunch)
 				i = (1<<(picsiz[globalpicnum]>>4)); if (i < tilesizy[globalpicnum]) i <<= 1;
                 
                 ypan = wal->ypanning;
-                if (ypan>256-(i-tilesizy[globalpicnum])*(256./i))
-                    ypan -= (i-tilesizy[globalpicnum])*(256./i);
+                yoffs=(i-tilesizy[globalpicnum])*(255./i);
+                if (wal->cstat&4) {
+                    if (ypan>256-yoffs){
+                        ypan-=yoffs;
+                    }
+                }
                 
                 fy = (float)ypan * ((float)i) / 256.0;
 				gvx = (t0-t1)*t;
@@ -2409,9 +2426,14 @@ static void polymost_drawalls (long bunch)
 				i = (1<<(picsiz[globalpicnum]>>4)); if (i < tilesizy[globalpicnum]) i <<= 1;
                 
                 ypan = nwal->ypanning;
-				if (ypan>256-(i-tilesizy[globalpicnum])*(256./i))
-                    ypan -= (i-tilesizy[globalpicnum])*(256./i);
-                
+                yoffs=(i-tilesizy[globalpicnum])*(255./i);
+                if (!(nwal->cstat&4))
+                {
+                    if (ypan>256-yoffs)
+                    {
+                        ypan-=yoffs;
+                    }
+                }
                 fy = (float)ypan * ((float)i) / 256.0;
 				gvx = (t0-t1)*t;
 				gvy = (x1-x0)*t;
@@ -2446,8 +2468,14 @@ static void polymost_drawalls (long bunch)
 			i = (1<<(picsiz[globalpicnum]>>4)); if (i < tilesizy[globalpicnum]) i <<= 1;
             
             ypan = wal->ypanning;
-            if (ypan>256-(i-tilesizy[globalpicnum])*(256./i))
-                ypan -= (i-tilesizy[globalpicnum])*(256./i);
+            yoffs=(i-tilesizy[globalpicnum])*(255./i);
+            if (!(wal->cstat&4))
+            {
+                if (ypan>256-yoffs)
+                {
+                    ypan-=yoffs;
+                }
+            }
             
             fy = (float)ypan * ((float)i) / 256.0;
             
@@ -3355,9 +3383,6 @@ void polymost_dorotatesprite (long sx, long sy, long z, short a, short picnum,
 				if (dastat&16)
 				{
 					xsiz = tilesizx[picnum]; ysiz = tilesizy[picnum];
-                    //                    if (picnum == 3281 && !usehightile) { /// HACK HACK HACK
-                    //                        xsiz = 320;
-                    //                    }
 					xoff = (long)((signed char)((picanm[picnum]>>8)&255))+(xsiz>>1);
 					yoff = (long)((signed char)((picanm[picnum]>>16)&255))+(ysiz>>1);
                     

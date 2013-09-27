@@ -13,7 +13,6 @@ struct sdlappicon {
 	unsigned char *mask;
 };
 
-void play_video(const char * filename);
 
 #else
 #if (__build_interface_layer__ != SDL)

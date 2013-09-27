@@ -837,6 +837,8 @@ static int pt_load_hightile(PTHead * pth)
 static void pt_load_applyparameters(PTHead * pth)
 {
 	int i;
+    long filtermode, anisotropy;
+
 //    if((pth->picnum == (CHAINGUN)) ||
 //       (pth->picnum == (CHAINGUN + 1)) ||
 //        (pth->picnum == (CHAINGUN + 5))
@@ -857,6 +859,8 @@ static void pt_load_applyparameters(PTHead * pth)
 		} else if (gltexfiltermode >= (long)numglfiltermodes) {
 			gltexfiltermode = numglfiltermodes-1;
 		}
+        
+#if 0
 		bglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glfiltermodes[gltexfiltermode].mag);
 		bglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glfiltermodes[gltexfiltermode].min);
 		
@@ -866,6 +870,20 @@ static void pt_load_applyparameters(PTHead * pth)
 			}
 			bglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, glanisotropy);
 		}
+#else 
+        filtermode = (pth->flags & PTH_HIGHTILE) ? 5 : gltexfiltermode;
+        anisotropy = (pth->flags & PTH_HIGHTILE) ? 0 : glanisotropy;
+        
+		bglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glfiltermodes[filtermode].mag);
+		bglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glfiltermodes[filtermode].min);
+		
+		if (glinfo.maxanisotropy > 1.0) {
+			if (glanisotropy <= 0 || glanisotropy > glinfo.maxanisotropy) {
+				glanisotropy = (long)glinfo.maxanisotropy;
+			}
+			bglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
+		}
+#endif
 		
 		if (!(pth->flags & PTH_CLAMPED)) {
 			bglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

@@ -30,6 +30,14 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 #include "dnAchievement.h"
 #include "dnAPI.h"
 
+#ifndef min
+# define min(a,b) ( ((a) < (b)) ? (a) : (b) )
+#endif
+
+#ifndef max
+# define max(a,b) ( ((a) > (b)) ? (a) : (b) )
+#endif
+
 extern char pow2char[];
 
 short secretstosectormap[16];
@@ -196,23 +204,11 @@ void cachespritenum(short i)
 }
 
 
-static void resize_hrsprites(void) {
-    tilesizx[BOTTOMSTATUSBAR] = WIDESCREEN_SIZEX;
-    //tilesizx[LOADSCREEN] = WIDESCREEN_SIZEX;
-        /* others 2492, 2493 */
-    
-}
-
 void cachegoodsprites(void)
 {
     short i;
 
     tloadtile(BOTTOMSTATUSBAR,1);
-    
-#ifdef WIDESCREEN_HACK
-    resize_hrsprites();
-#endif
-    
     
     if( ud.multimode > 1)
         tloadtile(FRAGBAR,1);
@@ -1351,9 +1347,8 @@ void waitforeverybody()
 
 void dofrontscreens(char *statustext)
 {
+    extern int megatondef;
     long i=0;
-    long xsiz;
-
     if(ud.recstat != 2)
     {
 	if (!statustext) {
@@ -1365,10 +1360,13 @@ void dofrontscreens(char *statustext)
 		vscrn();
 		clearview(0L);
 	}
-        xsiz = tilesizx[LOADSCREEN];
-        tilesizx[LOADSCREEN] = WIDESCREEN_SIZEX;
-        rotatesprite(320<<15,200<<15,65536L,0,LOADSCREEN,0,0,2+8+64,0,0,xdim-1,ydim-1);
-        tilesizx[LOADSCREEN] = xsiz;
+
+        if (megatondef) {
+            rotatesprite(320<<15,200<<15,65536L,0,LOADSCREEN_MEGATON,0,0,2+8+64,0,0,xdim-1,ydim-1);
+        } else {
+            rotatesprite(320<<15,200<<15,65536L,0,LOADSCREEN,0,0,2+8+64,0,0,xdim-1,ydim-1);
+        }
+
 
         if( boardfilename[0] != 0 && ud.level_number == 7 && ud.volume_number == 0 )
         {
@@ -1400,11 +1398,11 @@ void dofrontscreens(char *statustext)
 		//palto(0,0,0,0);
 		setgamepalette(&ps[myconnectindex], palette, 0);	// JBF 20040308
 	}
-
-        xsiz = tilesizx[LOADSCREEN];
-        tilesizx[LOADSCREEN] = WIDESCREEN_SIZEX;
-        rotatesprite(320<<15,200<<15,65536L,0,LOADSCREEN,0,0,2+8+64,0,0,xdim-1,ydim-1);
-        tilesizx[LOADSCREEN] = WIDESCREEN_SIZEX;
+        if (megatondef) {
+            rotatesprite(320<<15,200<<15,65536L,0,LOADSCREEN_MEGATON,0,0,2+8+64,0,0,xdim-1,ydim-1);
+        } else {
+            rotatesprite(320<<15,200<<15,65536L,0,LOADSCREEN,0,0,2+8+64,0,0,xdim-1,ydim-1);
+        }
         menutext(160,105,0,0,"LOADING...");
 	if (statustext) gametext(160,180,statustext,0,2+8+16);
         nextpage();

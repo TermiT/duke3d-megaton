@@ -9,7 +9,7 @@ struct grpfile {
 	int size;
 	int game;
 	struct grpfile *next;
-} grpfiles[numgrpfiles], *foundgrps;
+};
 
 int ScanGroups(void);
 void FreeGroups(void);
