@@ -5,6 +5,7 @@
 #include "gui_private.h"
 #include <assert.h>
 #include <math.h>
+#include <stdio.h>
 #include <SDL.h>
 
 #include <Rocket/Core.h>
@@ -21,6 +22,7 @@
 #include "helpers.h"
 #include "csteam.h"
 #include "dnAPI.h"
+#include "dnMulti.h"
 //#include "duke3d.h"
 //#include "glguard.h"
 
@@ -31,16 +33,359 @@ extern "C" {
 #include "config.h"
 #include "build.h"
 #include "duke3d.h"
+#include "mmulti.h"
 }
 
 #ifndef _WIN32
 #include <unistd.h>
 #endif
 
+#include "crc32.h"
+
+#define NUM_PING_ATTEMPTS 10
+#define MAX_FAILED_ATTEMPTS 3
+#define MAX_PING 180
+
+extern "C" {
+void Sys_DPrintf(const char *format, ...);
+double Sys_GetTicks();
+extern int32_t r_usenewshading;
+extern int32_t r_usetileshades;
+extern int AccurateLighting;
+}
+
+void encode(std::string& data) {
+    std::string buffer;
+    buffer.reserve(data.size());
+    for(size_t pos = 0; pos != data.size(); ++pos) {
+        switch(data[pos]) {
+            case '&':  buffer.append("&amp;");       break;
+            case '\"': buffer.append("&quot;");      break;
+            case '\'': buffer.append("&apos;");      break;
+            case '<':  buffer.append("&lt;");        break;
+            case '>':  buffer.append("&gt;");        break;
+            default:   buffer.append(&data[pos], 1); break;
+        }
+    }
+    data.swap(buffer);
+}
+
+#ifdef _WIN32
+char* stpcpy(char *s, const char *v) {
+	strcpy(s, v);
+	return s + strlen(v);
+}
+#endif
+
+static
+const char* rml_escape( const char *string ) {
+	static char buffer[65536];
+	char *ptr = buffer;
+	*ptr = 0;
+	
+	for ( const char *inchar = string; *inchar != 0; inchar++ ) {
+		switch ( *inchar ) {
+			case '&':  ptr = stpcpy(ptr, "&amp;");   break;
+            case '\"': ptr = stpcpy(ptr, "&quot;");  break;
+            case '\'': ptr = stpcpy(ptr, "&apos;");  break;
+            case '<':  ptr = stpcpy(ptr, "&lt;");    break;
+            case '>':  ptr = stpcpy(ptr, "&gt;");    break;
+            default:   *ptr = *inchar; ptr++; *ptr = 0; break;
+		}
+	}
+	
+	return buffer;
+}
+
+static
+void doGameLoop() {
+	handleevents();
+	getpackets();
+	menus();
+	nextpage();
+	menus();
+}
+
+static
+void NotificationCallback(CSTEAM_Notification_t notification, int status, void *data, void *context) {
+    GUI *gui = (GUI*)context;
+    if (status == 0) {
+        switch (notification) {
+            case N_LOBBY_CREATED: {
+                gui->OnLobbyCreated((lobby_info_t*)data);
+                break;
+            }
+            case N_LOBBY_MATCH_LIST: {
+                gui->OnLobbyListUpdated();
+                break;
+            }
+            case N_LOBBY_ENTER: {
+                gui->OnLobbyEnter((lobby_info_t*)data);
+                break;
+            }
+            case N_LOBBY_CHAT_UPDATE: {
+                gui->OnLobbyMembersChanged((lobby_info_t*)data);
+                break;
+            }
+            case N_LOBBY_CHAT_MSG: {
+                gui->OnLobbyMessage((lobby_message_t*)data);
+                break;
+            }
+            case N_LOBBY_GAME_CREATED: {
+                gui->OnLobbyStarted((lobby_info_t*)data);
+                break;
+            }
+            case N_LOBBY_DATA_UPDATE: {
+                gui->OnLobbyDataUpdate((lobby_info_t*)data, status);
+                break;
+            }
+            case N_LOBBY_INVITE: {
+                gui->OnLobbyJoinInvite(((lobby_info_t*)data)->id);
+                break;
+            }
+			case N_WORKSHOP_UPDATE: {
+				gui->InitUserMapsPage("menu-usermaps");
+				break;
+			}
+			case N_WORKSHOP_SUBSCRIBED: {
+				gui->OnWorkshopSubscribe((workshop_item_t*)data, status);
+			}
+			default: {
+				break;
+            }
+        }
+    } else {
+        switch (notification) {
+			case N_LOBBY_DATA_UPDATE: {
+                gui->OnLobbyDataUpdate((lobby_info_t*)data, status);
+                break;
+            }
+			case N_WORKSHOP_SUBSCRIBED: {
+				gui->OnWorkshopSubscribe((workshop_item_t*)data, status);
+			}
+			default:
+				break;
+		}
+	}
+}
+
+class MessageBoxManager {
+	
+private:
+	
+	Rocket::Core::Context *m_context;
+	RocketMenuPlugin *m_menu;
+	bool m_shown;
+	int m_status;
+	
+	enum {
+		CMD_CLOSE = 999
+	};
+	
+public:
+	
+	MessageBoxManager( Rocket::Core::Context *context, RocketMenuPlugin *menu ):
+		m_context( context ),
+		m_menu( menu ),
+		m_shown( false ),
+		m_status( 0 )
+	{
+		
+	}
+	
+	virtual ~MessageBoxManager() {
+		
+	}
+	
+	void showMessageBox( const char *text, ... ) {
+		m_shown = true;
+		m_status = -1;
+		
+		Rocket::Core::ElementDocument *doc = m_context->GetDocument( "messagebox" );
+		
+		Rocket::Core::Element *queston = doc->GetElementById( "messagebox-text" );
+		queston->SetInnerRML( rml_escape( text ) );
+		
+		Rocket::Core::Element *menu = doc->GetElementById( "messagebox-menu" );
+		menu->SetInnerRML( " " );
+		
+		va_list ap;
+		va_start( ap, text );
+		
+		/* populate menu options */
+		int index = 0;
+		for ( const char *s = va_arg( ap, const char* ); s != NULL; s = va_arg( ap, const char* ), index++ ) {
+			Rocket::Core::Element *element = new Rocket::Core::Element("div");
+			element->SetId( va( "messagebox-%d", index ) );
+			element->SetAttribute( "command" , va( "messagebox-%d", index ) );
+			element->SetInnerRML( rml_escape( s ) );
+			menu->AppendChild( element );
+			m_menu->SetupMenuItem( element );
+		}
+		
+		if ( index == 0 ) {
+			/* add dummy invisible option */
+			Rocket::Core::Element *element = new Rocket::Core::Element("div");
+			element->SetId( va( "messagebox-dummy" ) );
+			element->SetInnerRML( " " );
+			element->SetProperty( "display", "none" );
+			menu->AppendChild( element );
+			m_menu->SetupMenuItem( element );
+		}
+		
+		va_end( ap );
+		
+		m_menu->ShowModalDocument( m_context, "messagebox" );
+	}
+	
+	int wait() {
+		do {
+			doGameLoop();
+		} while ( isShown() );
+		return getStatus();
+	}
+	
+	bool isShown() {
+		return m_shown;
+	}
+	
+	int getStatus() {
+		return m_status;
+	}
+	
+	void close() {
+		m_menu->HideModalDocument( m_context );
+		m_shown = false;
+	}
+	
+	bool doCommand( Rocket::Core::Element *element, const Rocket::Core::String& command ) {
+		int status = -1;
+		if ( sscanf( command.CString(), "messagebox-%d", &status ) == 1 ) {
+			if ( m_status == -1 ) {
+				m_status = status;
+			}
+			if ( status != CMD_CLOSE ) {
+				close();
+			}
+			m_shown = false;
+			return true;
+		}
+		return false;
+	}
+};
+
+class LobbyInfoRequestManager {
+	
+private:
+	
+	double m_requestStartTime;
+	double m_lastRequestTime;
+	bool m_complete;
+	bool m_success;
+	steam_id_t m_lobby_id;
+	lobby_info_t m_lobbyInfo;
+	
+public:
+	
+	LobbyInfoRequestManager() :
+		m_complete( false ),
+		m_success( false )
+	{
+	}
+	
+	virtual ~LobbyInfoRequestManager() { }
+	
+	bool requestLobbyInfo( steam_id_t lobby_id ) {
+		m_complete = false;
+		m_success = false;
+		m_lobby_id = lobby_id;
+		m_lastRequestTime = m_requestStartTime = Sys_GetTicks();
+		memset( &m_lobbyInfo, 0, sizeof( m_lobbyInfo ) );
+		return (bool)CSTEAM_GetLobbyInfo( m_lobby_id, &m_lobbyInfo );
+	}
+	
+	bool isComplete() {
+		double now = Sys_GetTicks();
+		
+		if ( now - m_lastRequestTime > 2000.0 ) {
+			m_lastRequestTime = now;
+			CSTEAM_GetLobbyInfo( m_lobby_id, &m_lobbyInfo );
+		}
+		
+		if ( m_lobbyInfo.server != 0 && m_lobbyInfo.version != 0 ) {
+			m_complete = true;
+			m_success = true;
+		}
+		return m_complete;
+	}
+	
+	bool succeeded() {
+		return m_success;
+	}
+	
+	lobby_info_t* getLobbyInfo() {
+		if ( m_complete && m_success ) {
+			return &m_lobbyInfo;
+		}
+		return NULL;
+	}
+	
+	bool isTimedOut() {
+		return Sys_GetTicks() - m_requestStartTime > 10000.0;
+	}
+	
+	void onLobbyDataUpdate( lobby_info_t *lobby_info, int status ) {
+		if ( status == 0 ) {
+			m_success = true;
+			m_complete = true;
+			memcpy( &m_lobbyInfo, lobby_info, sizeof( m_lobbyInfo ) );
+		} else {
+			m_success = false;
+			m_complete = true;
+		}
+	}
+};
+
+class WorkshopRequestManager {
+private:
+	steam_id_t m_itemId;
+	double m_requestStartTime;
+	bool m_success, m_complete;
+public:
+	WorkshopRequestManager():
+		m_itemId( 0 ),
+		m_requestStartTime( 0 )
+	{
+		
+	}
+	
+	virtual ~WorkshopRequestManager() {	}
+	
+	void subscribeItem( steam_id_t itemId ) {
+		m_itemId = itemId;
+		CSTEAM_SubscribeItem( m_itemId );
+	}
+	
+	bool isComplete() {
+		return m_complete;
+	}
+	
+	bool succeeded() {
+		return m_success;
+	}
+	
+	void onWorkshopSubscribe(workshop_item_t *item, int status) {
+		m_complete = true;
+		m_success = status == 0;
+	}
+};
+
 struct ConfirmableAction {
+    Rocket::Core::ElementDocument *doc;
     Rocket::Core::ElementDocument *back_page;
     virtual void Yes() {};
     virtual void No() {};
+    virtual void OnClose() { };
     ConfirmableAction(Rocket::Core::ElementDocument* back_page):back_page(back_page){}
     virtual ~ConfirmableAction(){}
 };
@@ -76,6 +421,7 @@ void LoadFonts(const char* directory)
 
 void GUI::LoadDocuments() {
     Rocket::Core::ElementDocument *cursor = m_context->LoadMouseCursor("data/pointer.rml");
+    
     if (cursor != NULL) {
         cursor->RemoveReference();
     }
@@ -100,8 +446,18 @@ void GUI::LoadDocuments() {
     LoadDocument("data/yesno.rml");
     LoadDocument("data/videoconfirm.rml");
     LoadDocument("data/usermaps.rml");
+    LoadDocument("data/multiplayer.rml");
+    LoadDocument("data/joingame.rml");
+    LoadDocument("data/creategame.rml");
+    LoadDocument("data/lobby.rml");
     LoadDocument("data/help.rml");
     LoadDocument("data/quitconfirm.rml");
+    LoadDocument("data/mpmaps.rml");
+    LoadDocument("data/ok.rml");
+	LoadDocument("data/messagebox.rml");
+    LoadDocument("data/waiting.rml");
+    LoadDocument("data/filters.rml");
+    LoadDocument("data/mpinfo.rml");
 }
 
 void GUI::GetAddonDocumentPath(int addon, const Rocket::Core::String& path, char * addonPath) {
@@ -149,8 +505,21 @@ void GUI::SetActionToConfirm(ConfirmableAction *action) {
     m_draw_strips = m_action_to_confirm != NULL;
 }
 
-GUI::GUI(int width, int height):m_enabled(false),m_width(width),m_height(height),m_enabled_for_current_frame(false),m_waiting_for_key(false),m_action_to_confirm(NULL),m_need_apply_video_mode(false),m_need_apply_vsync(false),m_show_press_enter(true),m_draw_strips(false) {
+GUI::GUI(int width, int height):m_enabled(false),m_width(width),m_height(height),m_enabled_for_current_frame(false),m_waiting_for_key(false),m_action_to_confirm(NULL),m_need_apply_video_mode(false),m_need_apply_vsync(false),m_show_press_enter(true),m_draw_strips(false),m_last_poll(0),m_join_on_launch(false) {
     
+	
+    for (int i = 1; i < _buildargc-1; i++) {
+        if (!strcmp(_buildargv[i], "+connect_lobby")) {
+            steam_id_t lobby_id;
+            if (sscanf(_buildargv[i+1], "%llu", &lobby_id) == 1) {
+                m_join_on_launch = true;
+				m_invited_lobby = lobby_id;
+            }
+            break;
+        }
+    }
+    
+    m_last_poll = Sys_GetTicks();
 	m_systemInterface = new ShellSystemInterface();
 	m_renderInterface = new ShellRenderInterfaceOpenGL();
 
@@ -198,6 +567,13 @@ GUI::GUI(int width, int height):m_enabled(false),m_width(width),m_height(height)
     e->SetInnerRML(version_string);
     
     menu_to_open = "menu-ingame";
+    CSTEAM_SetNotificationCallback(NotificationCallback, this);
+
+	m_messageBoxManager = new MessageBoxManager(m_context, m_menu);
+	m_lobbyInfoRequestManager = new LobbyInfoRequestManager();
+	m_workshopRequestManager = new WorkshopRequestManager();
+	
+    exittotitle = 1;
 }
 
 /*
@@ -223,6 +599,9 @@ void GUI::SetupAnimation() {
 }
 
 GUI::~GUI() {
+	delete m_workshopRequestManager;
+	delete m_lobbyInfoRequestManager;
+	delete m_messageBoxManager;
 	delete m_context;
 	Rocket::Core::Shutdown();
 	delete m_animation;
@@ -302,7 +681,619 @@ static void DrawStrips() {
     glEnd();
 }
 
+static unsigned long
+GetMapHash(const char *mapname) {
+    unsigned long result = 0;
+    FILE *f = fopen(va("%s/%s", defaultmapspath, mapname), "rb");
+    if (f != NULL) {
+        crc32init(&result);
+        crc32file(f, &result);
+        crc32finish(&result);
+        fclose(f);
+    }
+    return result;
+}
+
+
+extern "C" {
+    void Sys_DPrintf(const char *format, ...);
+    void Sys_Restart(const char *options);
+    unsigned long getgrpsig();
+}
+
+void GUI::FillLobbyInfo(lobby_info_t *lobby_info) {
+    Rocket::Core::ElementDocument *menu_page = m_context->GetDocument("menu-multiplayer-create");
+	
+	lobby_info->version = MPVERSION;
+	lobby_info->session_token = rand();
+    GetOptionNumericValue(menu_page, "gamemode", "mode-", &lobby_info->mode);
+    GetOptionNumericValue(menu_page, "maxplayers", "maxp-", &lobby_info->maxplayers);
+    GetOptionNumericValue(menu_page, "fraglimit", "fraglimit-", &lobby_info->fraglimit);
+    GetOptionNumericValue(menu_page, "timelimit", "timelimit-", &lobby_info->timelimit);
+    GetOptionNumericValue(menu_page, "skill", "skill-", &lobby_info->monster_skill);
+    if (m_menu->GetActiveOption(m_menu->GetMenuItem(menu_page, "friendlyfire"))->GetId() == "ff-enabled") {
+        lobby_info->friendly_fire = 1;
+    } else {
+        lobby_info->friendly_fire = 0;
+    }
+    if (m_menu->GetActiveOption(m_menu->GetMenuItem(menu_page, "private"))->GetId() == "private-on") {
+        lobby_info->private_ = 1;
+    } else {
+        lobby_info->private_ = 0;
+    }
+    
+    if (m_menu->GetActiveOption(m_menu->GetMenuItem(menu_page, "markers"))->GetId() == "markers-on") {
+        lobby_info->markers = 1;
+    } else {
+        lobby_info->markers = 0;
+    }
+    
+    lobby_info->addon = dnGetAddonId();
+
+    if (lobby_info->mode == 2) { //coop
+        lobby_info->fraglimit = 0;
+        lobby_info->timelimit = 0;
+    } else {
+        lobby_info->friendly_fire = 1;
+        lobby_info->monster_skill = 0;
+    }
+
+    Rocket::Core::Element *level = menu_page->GetElementById("mp-level");
+    Rocket::Core::String mapname = level->GetAttribute("mapname")->Get<Rocket::Core::String>();
+    if (mapname.Length() < sizeof(lobby_info->mapname)) {
+        strcpy(lobby_info->mapname, mapname.CString());
+    } else {
+        strcpy(lobby_info->mapname, "<N/A>"); /* TODO: handle wrong map name */
+    }
+    lobby_info->grpsig = getgrpsig();
+    lobby_info->usermap = level->IsClassSet("usermap") ? 1 : 0;
+    if (lobby_info->usermap) {
+        lobby_info->maphash = GetMapHash(lobby_info->mapname);
+    } else {
+        lobby_info->maphash = 0;
+    }
+    
+    if (level->IsClassSet("workshop")) {
+        steam_id_t item_id;
+        Rocket::Core::String item_id_string = level->GetAttribute("item-id")->Get<Rocket::Core::String>();
+        sscanf(item_id_string.CString(), "%llu", &item_id);
+        lobby_info->workshop_item_id = item_id;
+    }
+    
+    char temp[1024];
+    strcpy(temp, dnFilterUsername(CSTEAM_GetUsername()));
+    if (strlen(temp) > 11) {
+        temp[11] = '\0';
+    }
+    sprintf(lobby_info->name, "%s's lobby", temp);
+}
+
+void GUI::CreateLobby() {
+    lobby_info_t lobby_info = {0};
+    
+    FillLobbyInfo(&lobby_info);
+    
+	netcleanup();
+	
+    CSTEAM_CreateLobby(&lobby_info);
+    
+    m_menu->ShowDocument(m_context, "menu-multiplayer-lobby");
+    UpdateLobbyPage(&lobby_info);
+
+    Sys_DPrintf("*** Creating Lobby ***\n");
+    Sys_DPrintf("My SteamID: %s\n", CSTEAM_FormatId(CSTEAM_MyID()));
+    
+}
+
+void GUI::ShowErrorMessage(const char *page_id, const char *message) {
+    struct LobbyErrorMessage: public ConfirmableAction {
+        Rocket::Core::Context *context;
+        RocketMenuPlugin *menu;
+        LobbyErrorMessage(Rocket::Core::ElementDocument *back_page, Rocket::Core::Context *context, RocketMenuPlugin *menu):ConfirmableAction(back_page),context(context), menu(menu) {}
+        virtual void Yes() {
+        }
+    };
+    Rocket::Core::ElementDocument *page = m_context->GetDocument(page_id);
+
+    ShowConfirmation(new LobbyErrorMessage(page, m_context, m_menu), "ok", message);
+}
+
+bool GUI::VerifyLobby(lobby_info_t *lobby_info) {
+    
+    if ( lobby_info->version == 0 ) {
+        return false;
+    }
+    
+    if ( lobby_info->version != MPVERSION ) {
+		Sys_DPrintf( "[DUKEMP] Wrong server version: %d (mine is %d)\n", lobby_info->version, MPVERSION );
+		m_messageBoxManager->showMessageBox( "Wrong server version", "Close", NULL );
+		m_messageBoxManager->wait();
+        return false;
+    }
+    
+    if ( lobby_info->grpsig != getgrpsig() ) {
+		Sys_DPrintf( "[DUKEMP] GRP signature mismatch\n" );
+		m_messageBoxManager->showMessageBox( "GRP signature mismatch", "Close", NULL );
+		m_messageBoxManager->wait();
+        return false;
+    }
+    
+    if ( lobby_info->workshop_item_id == 0 &&
+		 lobby_info->usermap &&
+		 lobby_info->maphash != GetMapHash( lobby_info->mapname) )
+	{
+		Sys_DPrintf( "[DUKEMP] Custom map hash mismatch\n" );
+		m_messageBoxManager->showMessageBox( "Custom map hash mismatch", "Close", NULL );
+		m_messageBoxManager->wait();
+        return false;
+    }
+	
+    return true;
+}
+
+void GUI::JoinLobby(steam_id_t lobby_id) {
+	double lastPingTime;
+	bool pingSent = false;
+	int pingval = 0;
+	int succeededAttempts = 0;
+	int failedAttempts = 0;
+	bool firstAttempt = true;
+	double latencySum = 0;
+	lobby_info_t *li;
+	
+	m_messageBoxManager->showMessageBox( "Retrieving lobby info...", "Cancel", NULL );
+	m_lobbyInfoRequestManager->requestLobbyInfo( lobby_id );
+	    
+	netcleanup();
+	
+	Sys_DPrintf( "[DUKEMP] starting lobby join (%llu)\n", lobby_id );
+	
+	// Measure network quality.
+	// Measurement is done by sending sequence of 'ping' requests.
+	// We skip the very first request because initial data exchange is
+	// usually slow: steam runtime establishes direct connection between
+	// peers. Subsequent ping requests are done to measure network latency.
+	// We stop this process if the number of failed ping requests
+	// exceeds certain amount (MAX_FAILED_ATTEMPTS), this means that
+	// network doesnt work well enough. Otherwise we calculate average
+	// latency and then, if this value exceeds MAX_PING, say that
+	// the connection is too laggy. If the average latency is good
+	// we proceed with verifying the lobby. Lobby verification consists of
+	// checking GRP checksum, usermap checksum. If the lobby has custom
+	// workshop map, we sign up for this map and then wait when steam
+	// downloads it. And finally we're ready to enter the lobby.
+	
+	// latency check
+	do {
+		doGameLoop(); // true means that we skip 'getpackets', it would interfere with CSTEAM_CheckPong
+		if ( m_lobbyInfoRequestManager->isComplete() ) {
+			double timeout;
+			li = m_lobbyInfoRequestManager->getLobbyInfo();
+            
+            if (li->addon != dnGetAddonId()) {
+                Sys_Restart(va("-addon %d +connect_lobby %llu", li->addon, lobby_id));
+            }
+            
+			if ( !pingSent ) {
+				CSTEAM_CloseP2P( li->server );
+				pingval = dnPing( li->server );
+				lastPingTime = Sys_GetTicks();
+				pingSent = true;
+				firstAttempt = true;
+				timeout = MAX_PING*30;
+			}
+			if ( pingSent ) {
+				double now = Sys_GetTicks();
+				if ( dnCheckPong( li->server, pingval ) ) {
+
+					Sys_DPrintf( "[DUKEMP] got pong\n" );
+					timeout = MAX_PING;
+					if ( !firstAttempt ) { // skip the very first attempt
+						succeededAttempts++;
+						double latency = now - lastPingTime;
+						latencySum += latency;
+					} else {
+						firstAttempt = false;
+					}
+					
+					pingval = dnPing( li->server );
+					lastPingTime = Sys_GetTicks();
+				}
+				if ( now - lastPingTime > timeout ) {
+					Sys_DPrintf( "[DUKEMP] ping timed out\n" );
+					
+					failedAttempts++; // ping request failed
+					
+					pingval = dnPing( li->server );
+					lastPingTime = now;
+				}
+			}
+		}
+	} while (
+				 m_messageBoxManager->isShown() &&			 
+				 failedAttempts + succeededAttempts < NUM_PING_ATTEMPTS &&
+				 failedAttempts < MAX_FAILED_ATTEMPTS
+			 );
+	
+	double avgLatency = latencySum/succeededAttempts;
+	
+	Sys_DPrintf( "[DUKEMP] cancelled: %s\n", m_messageBoxManager->isShown() ? "no" : "yes" );
+	Sys_DPrintf( "[DUKEMP] failed attempts: %d\n", failedAttempts );
+	Sys_DPrintf( "[DUKEMP] succeded attempts: %d\n", succeededAttempts );
+	Sys_DPrintf( "[DUKEMP] avg latency: %g\n", avgLatency );
+	
+	if ( m_messageBoxManager->isShown() ) {
+		m_messageBoxManager->close();
+		
+		if ( failedAttempts >= MAX_FAILED_ATTEMPTS ) {
+			Sys_DPrintf( "[DUKEMP] Network connection is not stable enough (too many packet drops)\n" );
+			if ( succeededAttempts == 0 ) {
+				m_messageBoxManager->showMessageBox( "Timed out", "Close", NULL );
+			} else {
+				m_messageBoxManager->showMessageBox( "Unstable connection", "Close", NULL );
+			}
+			m_messageBoxManager->wait();
+			return;
+		}
+		
+		if ( avgLatency > MAX_PING ) {
+			const char *ignore = m_invited_lobby == lobby_id ? "Ignore" : NULL;
+			m_messageBoxManager->showMessageBox( "Network latency is too " /*"damn "*/ "high", "Close", ignore, NULL );
+			if ( m_messageBoxManager->wait() != 1 ) {
+				return;
+			}
+		}
+		
+		if ( !VerifyLobby( li ) ) {
+			Sys_DPrintf( "[DUKEMP] the lobby isn't suitable, no connect\n" );
+			return;
+		}
+		
+		if ( li->workshop_item_id != 0 ){ // the lobby is running an workshop map, download it if needed
+			workshop_item_t item = { 0 };
+			CSTEAM_GetWorkshopItemByID( li->workshop_item_id, &item );
+			if ( item.item_id == 0 ) { // not subscribed
+				m_workshopRequestManager->subscribeItem( li->workshop_item_id );
+				m_messageBoxManager->showMessageBox( "Downloading map...", "Cancel", NULL );
+				
+				bool mapDownloaded = false;
+				double lastCheckTime = 0.0;
+				
+				do {
+					doGameLoop();
+					if ( m_workshopRequestManager->isComplete() ) {
+						double now = Sys_GetTicks();
+						if ( now - lastCheckTime > 500.0 ) { // poll workshop item twice per second
+							lastCheckTime = now;
+							CSTEAM_GetWorkshopItemByID( li->workshop_item_id, &item );
+							if ( item.item_id != 0 ) {
+								if ( Sys_FileExists( va( "workshop/maps/%llu/%s", item.item_id, item.filename ) ) ) {
+									mapDownloaded = true;
+								}
+							}
+						}
+					}
+				} while ( m_messageBoxManager->isShown() && !mapDownloaded );
+				
+				if ( !m_messageBoxManager->isShown() ) {
+					Sys_DPrintf( "[DUKEMP] Workshop download cancelled\n" );
+					return;
+				}
+				m_messageBoxManager->close();
+				
+			}
+		}
+		
+		m_lobby_id = lobby_id;		
+		CSTEAM_JoinLobby( m_lobby_id );
+		m_context->GetDocument( "menu-multiplayer-lobby")->SetAttribute( "parent", "menu-main" );
+		m_menu->ShowDocument( m_context, "menu-multiplayer-lobby", false );
+		UpdateLobbyPage( li );
+		
+	}
+	
+}
+
+void GUI::UpdateLobbyList() {
+    CSTEAM_UpdateLobbyList();
+}
+
+void GUI::StartLobby() {
+    Rocket::Core::ElementDocument *lobby_page = m_context->GetDocument("menu-multiplayer-lobby");
+    Rocket::Core::Element *start_item = lobby_page->GetElementById("start-lobby");
+    start_item->SetProperty("display", "block");
+    start_item->SetClass("disabled", true);
+    CSTEAM_StartLobby(m_lobby_id);
+}
+
+void GUI::OnLobbyCreated(lobby_info_t *lobby_info) {
+    m_lobby_id = lobby_info->id;
+}
+
+void GUI::OnLobbyListUpdated() {
+    Rocket::Core::ElementDocument *menu_page = m_context->GetDocument("menu-multiplayer-join");
+    Rocket::Core::Element *menu = menu_page->GetElementById("menu");
+    
+    lobby_info_t lobby_info;
+    char buffer[1000];
+    char players[4];
+    int j = 0;
+    steam_id_t filtered_lobbies[1000];
+    if (CSTEAM_NumLobbies()) {
+        menu->SetInnerRML("");
+        
+        for (int i = 0, num_lobbies = CSTEAM_NumLobbies(); i < num_lobbies; i++) {
+            steam_id_t lobby_id = CSTEAM_GetLobbyId(i);
+            CSTEAM_GetLobbyInfo(lobby_id, &lobby_info);
+            if (lobby_info.addon == dnGetAddonId()) {
+                if (lobby_info.maxplayers == lobby_info.num_players && lb.show_full == 0)
+                    continue;
+                if (lobby_info.mode != lb.gamemode && lb.gamemode !=3)
+                    continue;
+                if ((lb.maps == 0) || (lb.maps == 1 && lobby_info.usermap == 0 && lobby_info.workshop_item_id == 0)
+                    || (lb.maps == 2 && lobby_info.usermap == 1 && lobby_info.workshop_item_id == 0)
+                    || (lb.maps == 3 && lobby_info.usermap == 0 && lobby_info.workshop_item_id != 0)) {
+                    filtered_lobbies[j] = lobby_id;
+                    j++;
+                }
+            }
+        }
+        
+        if (j > 0) {
+            for (int i = 0; i < j; i++) {
+                Rocket::Core::Element *element = new Rocket::Core::Element("div");   
+                steam_id_t lobby_id = filtered_lobbies[i];//CSTEAM_GetLobbyId(i);
+                CSTEAM_GetLobbyInfo(lobby_id, &lobby_info);
+                sprintf(players, "%d/%d", lobby_info.num_players, lobby_info.maxplayers);
+                sprintf(buffer, "<p class=\"column1\">%s</p><p class=\"column2\">%s</p><p class=\"column3\">%s</p><p class=\"column4\">%s</p>", lobby_info.name, lobby_info.mapname, (lobby_info.mode == 0) ? "DM" : "COOP", players);
+                element->SetInnerRML(buffer);
+                sprintf(buffer, "lobby-%llu", lobby_info.id);
+                element->SetId(buffer);
+                element->SetAttribute("command", "join-game");
+                menu->AppendChild(element);
+                m_menu->SetupMenuItem(element);
+            }
+            m_menu->HighlightItem(menu_page, menu->GetFirstChild()->GetId());
+        } else {
+            menu->SetInnerRML("<div noanim class='empty' id='stub'>No games found</div>");
+            m_menu->HighlightItem(menu_page, "stub");
+        }
+    } else {
+        menu->SetInnerRML("<div noanim class='empty' id='stub'>No games found</div>");
+        m_menu->HighlightItem(menu_page, "stub");
+    }
+//
+//    Rocket::Core::String str;
+//    menu->GetInnerRML(str);
+//    printf("Content: %s\n---------", str.CString());
+}
+
+static
+void SetElementText(Rocket::Core::ElementDocument *doc, const char *element_id, const char *text) {
+    Rocket::Core::Element *e = doc->GetElementById(element_id);
+    if (e != NULL) {
+        e->SetInnerRML(text);
+    } else {
+        Sys_DPrintf("Element not found: %s\n", element_id);
+    }
+}
+
+void GUI::UpdateLobbyPage(lobby_info_t *lobby_info) {
+    Rocket::Core::ElementDocument *lobby_page = m_menu->GetCurrentPage(m_context);
+    
+    if (lobby_page->GetId() != "menu-multiplayer-lobby") {
+        return;
+    }
+	
+	if ( lobby_info->version == 0 ) {
+		/* lobby_info is not filled, skip */
+		return;
+	}
+    
+    Rocket::Core::Element *textarea = lobby_page->GetElementById("chat");
+    
+    float scroll_top = 0;
+    
+    if (textarea != NULL) {
+        scroll_top = textarea->GetScrollTop();
+    }
+    
+    Rocket::Core::Element *member_div = lobby_page->GetElementById("member-list");
+    if (member_div != NULL) {
+        member_div->SetInnerRML("");
+        for (int i = 0; i < lobby_info->num_players; i++) {
+            Rocket::Core::Element *element = new Rocket::Core::Element("div");
+            std::string player_name(lobby_info->players[i].name);
+            encode(player_name);
+            element->SetInnerRML(player_name.c_str());
+            member_div->AppendChild(element);
+        }
+    }
+    char buffer[100];
+    switch (lobby_info->mode) {
+        case 0: strcpy(buffer, "DM"); break;
+        case 1: strcpy(buffer, "TDM"); break;
+        case 2: strcpy(buffer, "COOP"); break;
+        default: strcpy(buffer, "Unknown"); break;
+    }
+    SetElementText(lobby_page, "info-mode", va("Mode: %s", buffer));
+    SetElementText(lobby_page, "info-maxplayers", va("Max Players: %d", lobby_info->maxplayers));
+    SetElementText(lobby_page, "info-level", va("Map: %s", lobby_info->mapname));
+    SetElementText(lobby_page, "info-fraglimit", va("Fraglimit: %d", lobby_info->fraglimit));
+    SetElementText(lobby_page, "info-timelimit", va("Timelimit: %d", lobby_info->timelimit));
+    SetElementText(lobby_page, "info-markers", va("Respawn Markers: %s", lobby_info->markers ? "ON" : "OFF"));
+    SetElementText(lobby_page, "info-friendlyfire", va("Friendly Fire: %s", lobby_info->friendly_fire ? "ON" : "OFF"));
+    SetElementText(lobby_page, "info-skill", va("Monster Skill: %d", lobby_info->monster_skill));
+    
+    Rocket::Core::Element *start_item = lobby_page->GetElementById("start-lobby");
+    if (lobby_info->owner != NULL && lobby_info->owner->id == CSTEAM_MyID()) {
+        start_item->SetProperty("display", "block");
+        start_item->SetClass("disabled", (lobby_info->num_players == 1));
+    } else {
+        start_item->SetProperty("display", "none");
+        start_item->SetClass("disabled", true);
+    }
+    
+    Rocket::Core::Element *invite_item = lobby_page->GetElementById("invite-friend");
+    if (lobby_info->owner != NULL && lobby_info->owner->id == CSTEAM_MyID()) {
+        invite_item->SetProperty("display", "block");
+        invite_item->SetClass("disabled", false);
+    } else {
+        invite_item->SetProperty("display", "none");
+        invite_item->SetClass("disabled", true);
+    }
+    
+    Rocket::Core::Element *client_info_item = lobby_page->GetElementById("client-info");
+    if (lobby_info->owner != NULL && lobby_info->owner->id == CSTEAM_MyID()) {
+        client_info_item->SetProperty("display", "none");
+    } else {
+        client_info_item->SetProperty("display", "block");
+    }
+    
+    if (textarea != NULL) {
+        textarea->SetScrollTop(scroll_top);
+    }
+}
+
+bool GUI::GetOptionNumericValue(Rocket::Core::ElementDocument *menu_page, const Rocket::Core::String& option_id, const Rocket::Core::String& prefix, int *pvalue) {
+    Rocket::Core::String format;
+    format = prefix+"%d";
+    Rocket::Core::String eid = m_menu->GetActiveOption(m_menu->GetMenuItem(menu_page, option_id))->GetId();
+    int value;
+    if (sscanf(eid.CString(), format.CString(), &value) == 1) {
+        *pvalue = value;
+        return true;
+    }
+    return false;
+}
+
+void GUI::OnLobbyEnter(lobby_info_t *lobby_info) {
+    lobby_info_t li = { 0 };
+	m_invited_lobby = 0;
+    CSTEAM_GetLobbyInfo(m_lobby_id, &li);
+    UpdateLobbyPage(lobby_info);
+}
+
+void GUI::OnLobbyMembersChanged(lobby_info_t *lobby_info) {
+}
+
+void GUI::OnLobbyMessage(lobby_message_t *message) {
+    lobby_info_t lobby_info;
+    CSTEAM_GetLobbyInfo(message->lobby_id, &lobby_info);
+    for (int i = 0; i < lobby_info.num_players; i++) {
+        if (lobby_info.players[i].id == message->from) {
+            Rocket::Core::ElementDocument * doc = m_context->GetDocument("menu-multiplayer-lobby");
+            if (doc != NULL) {
+                Rocket::Core::Element * textarea =  doc->GetElementById("chat");
+                if (textarea != NULL) {
+                    Rocket::Core::Variant * value =  textarea->GetAttribute("value");
+                    Rocket::Core::String valueString;
+                    if (value != NULL) {
+                        valueString = value->Get<Rocket::Core::String>();
+                    }
+                    textarea->SetAttribute("value", va("%s%s: %s\n", valueString.CString(), lobby_info.players[i].name, message->text));
+                    textarea->SetScrollTop(textarea->GetScrollHeight());
+                }
+            }
+        }
+    }
+
+    
+}
+
+static
+void NewNetworkGame(lobby_info_t *lobby_info);
+
+void GUI::OnLobbyStarted(lobby_info_t *lobby_info) {
+	m_lobbyInfoRequestManager->requestLobbyInfo( m_lobby_id );
+	
+	double cycleStarted = Sys_GetTicks();
+	bool messageShown = false;
+	
+	do {
+		if ( !messageShown && Sys_GetTicks() - cycleStarted > 1.000 ) {
+			m_messageBoxManager->showMessageBox( "Updating lobby info...", NULL );
+		}
+		doGameLoop();
+	} while ( !m_lobbyInfoRequestManager->isComplete() && !m_lobbyInfoRequestManager->isTimedOut() );
+	
+	if ( m_lobbyInfoRequestManager->isComplete() ) {
+		Enable( false );
+		ps[myconnectindex].gm &= ~MODE_MENU;
+		m_menu->ShowDocument( m_context, "menu-ingame", false );
+
+		NewNetworkGame( m_lobbyInfoRequestManager->getLobbyInfo() );
+
+		CSTEAM_LeaveLobby( m_lobby_id );
+		m_lobby_id = 0;
+	} else {
+		m_messageBoxManager->showMessageBox( "Could not start the game", "Close", NULL );
+		m_messageBoxManager->wait();
+	}
+}
+
+void GUI::OnWorkshopSubscribe(workshop_item_t *item, int status) {
+	m_workshopRequestManager->onWorkshopSubscribe( item, status );
+}
+
+void GUI::OnLobbyDataUpdate(lobby_info_t *lobby_info, int status) {
+    if (lobby_info->version == 0) { /* empty lobby_info, the code below tends to dereference NULL pointers */
+        return;
+    }
+	
+	m_lobbyInfoRequestManager->onLobbyDataUpdate( lobby_info, status );
+    
+	if (status != 0) {
+		return;
+	}
+	
+	UpdateLobbyPage(lobby_info);
+	if (lobby_info->num_players > 1) {
+		sound(EXITMENUSOUND);
+	}
+}
+
+void GUI::OnLobbyJoinInvite(steam_id_t lobby_id) {
+    if ( dnGameModeSet() ) {
+        gameexit(" ");
+    }
+    m_menu->ShowDocument( m_context, "menu-main", false );
+	m_invited_lobby = lobby_id;
+	UpdateLobbyList();
+    JoinLobby( m_invited_lobby );
+}
+
+Uint32 GUI_NewTimerCallback(Uint32 interval, void* param) {
+    SDL_Event event = { 0 };
+    event.type = SDL_USEREVENT;
+    event.user.type = SDL_USEREVENT;
+    event.user.code = 1;
+    SDL_PushEvent(&event);
+    return 0;
+}
+
+void GUI::Poll() {
+}
+
+extern "C" long quittimer;
+
 void GUI::Render() {
+    double ticks = Sys_GetTicks();
+    GLboolean fogOn = glIsEnabled(GL_FOG);
+    if (ticks - m_last_poll > 100) { /* don't poll faster than 10 times per second */
+        Poll();
+    }
+    
+    if (quittimer > totalclock && gamequit != 0) {
+        //dnQuitToTitle("Timed out");
+//        Sys_DPrintf("Timed out");
+    }
+    
+    if (fogOn == GL_TRUE) {
+        glDisable(GL_FOG);
+    }
+    
+    CSTEAM_RunFrame();
 	Enable(dnMenuModeSet() && m_enabled_for_current_frame);
 	m_enabled_for_current_frame = false;
 	if (m_enabled) {
@@ -319,6 +1310,9 @@ void GUI::Render() {
 			DrawStrips();
         }
 	}
+    if (fogOn == GL_TRUE) {
+        glEnable(GL_FOG);
+    }
 }
 
 void GUI::Enable(bool v) {
@@ -328,11 +1322,44 @@ void GUI::Enable(bool v) {
 		dnResetMouse();
 		m_enabled = v;
 		if (m_enabled) {
-            printf("Menu enabled\n");
             if (dnGameModeSet()) {
                 m_menu->ShowDocument(m_context, menu_to_open, false);
+                if (menu_to_open == "menu-ingame" ) {
+                    Rocket::Core::ElementDocument *doc = m_context->GetDocument(menu_to_open);
+                    Rocket::Core::Element *item = doc->GetElementById("save-game");
+                    item->SetClass("disabled", (ud.multimode > 1));
+                    item->SetProperty("display", (ud.multimode > 1) ? "none" : "block");
+                    item = doc->GetElementById("load-game");
+                    item->SetClass("disabled", (ud.multimode > 1));
+                    item->SetProperty("display", (ud.multimode > 1) ? "none" : "block");
+                    item = doc->GetElementById("quit");
+                    item->SetClass("disabled", (ud.multimode > 1));
+                    item->SetProperty("display", (ud.multimode > 1) ? "none" : "block");
+                    item = doc->GetElementById("stop");
+                    if (ud.multimode > 1 && connecthead == myconnectindex) {
+                        item->SetInnerRML("STOP SERVER");
+                    } else if (ud.multimode > 1 && connecthead != myconnectindex) {
+                        item->SetInnerRML("DISCONNECT");
+                    } else {
+                        item->SetInnerRML("QUIT TO TITLE");
+                    }
+                    
+                }
+            } else if (m_join_on_launch) {
+                m_show_press_enter = false;
+                m_join_on_launch = false;
+                m_menu->ShowDocument(m_context, "menu-main", false);
+                JoinLobby( m_invited_lobby );
             } else {
                 m_menu->ShowDocument(m_context, m_show_press_enter ? "menu-start" : "menu-main", false);
+                
+                char message[1024];
+                dnGetQuitMessage(message);
+                Sys_DPrintf("Quit message: %s\n", message);
+                if (message[0] != 0) {
+                    ShowErrorMessage("menu-main", message);
+                }
+
             }
 			if (dnGameModeSet()) {
 				m_context->GetDocument("menu-bg")->Hide();
@@ -340,23 +1367,10 @@ void GUI::Enable(bool v) {
 				Rocket::Core::ElementDocument *menubg = m_context->GetDocument("menu-bg");
 				menubg->Show();
 			}
+                        
             ResetMouse();
-            /*
-			if (!m_menu->GetCurrentPage(m_context)->IsVisible()) {
-				m_menu->GetCurrentPage(m_context)->Show();
-			}
-			*/
-//			SDL_GetMouseState(&m_saved_mouse_x, &m_saved_mouse_y);
-//			SDL_WM_GrabInput(SDL_GRAB_OFF);
-//			SDL_ShowCursor(1);
-			//m_context->ShowMouseCursor(true);
-            
 		} else {
-//			SDL_WarpMouse(m_width/2, m_height/2);
-//			SDL_WM_GrabInput(SDL_GRAB_ON);
-//			SDL_ShowCursor(0);
 			m_context->ShowMouseCursor(false);
-			//SDL_WarpMouse(m_saved_mouse_x, m_saved_mouse_y);
 		}
 	}
 }
@@ -393,6 +1407,11 @@ translateKey(SDLKey key) {
 	if (TranslateRange(SDLK_a, SDLK_z, key, KI_A, &result)) { return result; }
 	if (key == SDLK_CAPSLOCK) { return KI_CAPITAL; }
 	if (key == SDLK_TAB) { return KI_TAB; }
+    if (key == SDLK_HOME) { return KI_HOME; }
+    if (key == SDLK_END) { return KI_END; }
+    if (key == SDLK_LEFT) { return KI_LEFT; }
+    if (key == SDLK_RIGHT) { return KI_RIGHT; }
+    if (key == SDLK_BACKSPACE) { return KI_BACK; }
 	return KI_UNKNOWN;
 }
 
@@ -401,6 +1420,9 @@ translateKey(SDLKey key) {
 bool GUI::InjectEvent(SDL_Event *ev) {
 	bool retval = false;
 
+    if (ev->type == SDL_USEREVENT) {
+    }
+    
 #if 0
 	if (ev->type == SDL_KEYDOWN && ev->key.keysym.sym == SDLK_BACKQUOTE) {
 		if (isEnabled()) {
@@ -420,6 +1442,7 @@ bool GUI::InjectEvent(SDL_Event *ev) {
             m_waiting_for_key = false;
 		} else 	{
 			m_draw_strips = false;
+            
 			if (!m_menu->GoBack(m_context)) {
                 menu_to_open = "menu-ingame";
 				dnHideMenu();
@@ -465,6 +1488,15 @@ bool GUI::InjectEvent(SDL_Event *ev) {
             }
         } else {
             switch (ev->type) {
+                case SDL_USEREVENT: {
+                    if (ev->user.code == 1) {
+                        //PingFailed();
+                    } else if (ev->user.code == 2) {
+                        CSTEAM_InviteFriends(m_lobby_id);
+                    }
+                    break;
+                }
+
                 case SDL_MOUSEMOTION: {
                     m_context->ShowMouseCursor(true);
                     int xrel = ev->motion.xrel;
@@ -491,23 +1523,61 @@ bool GUI::InjectEvent(SDL_Event *ev) {
                         m_context->ProcessMouseButtonUp(ev->button.button-1, 0);
                     }
                     break;
-                case SDL_KEYDOWN:
-                    if (ev->key.keysym.sym == SDLK_LEFT) {
-                        m_menu->SetPreviousItemValue(m_context);
-                    } else if (ev->key.keysym.sym == SDLK_RIGHT) {
-                        m_menu->SetNextItemValue(m_context);
-                    } else if (ev->key.keysym.sym == SDLK_DOWN) {
-                        m_menu->HighlightNextItem(m_context);
-                    } else if (ev->key.keysym.sym == SDLK_UP) {
-                        m_menu->HighlightPreviousItem(m_context);
-                    } else if (ev->key.keysym.sym == SDLK_RETURN) {
-                        m_menu->DoItemAction(ItemActionEnter, m_context);
-                    } else if (ev->key.keysym.sym == SDLK_DELETE || ev->key.keysym.sym == SDLK_BACKSPACE) {
-                        m_menu->DoItemAction(ItemActionClear, m_context);
+                case SDL_KEYDOWN: {
+                    Rocket::Core::Element *focus_target = m_menu->GetFocusTarget(m_menu->GetHighlightedItem(m_menu->GetCurrentPage(m_context)));
+                    if (focus_target != NULL) {
+                        if (ev->key.keysym.sym == SDLK_LEFT) {
+                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_LEFT, 0);
+                        } else if (ev->key.keysym.sym == SDLK_RIGHT) {
+                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_RIGHT, 0);
+                        } else if (ev->key.keysym.sym == SDLK_HOME) {
+                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_HOME, 0);
+                        } else if (ev->key.keysym.sym == SDLK_END) {
+                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_END, 0);
+                        } else if (ev->key.keysym.sym == SDLK_RETURN) {
+                            m_menu->DoItemAction(ItemActionEnter, m_context);
+                        } else if (ev->key.keysym.sym == SDLK_DELETE) {
+                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_DELETE, 0);
+                        } else if (ev->key.keysym.sym == SDLK_BACKSPACE) {
+                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_BACK, 0);
+                        } else if (ev->key.keysym.sym == SDLK_SPACE) {
+                            m_context->ProcessTextInput(' ');
+                        } else if (ev->key.keysym.sym == SDLK_DOWN) {
+                            m_menu->HighlightNextItem(m_context);
+                        } else if (ev->key.keysym.sym == SDLK_UP) {
+                            m_menu->HighlightPreviousItem(m_context);
+                        } else {
+                            m_menu->UpdateFocus(m_context);
+                            m_context->ProcessTextInput(ev->key.keysym.unicode);
+                        }
                     } else {
-                        retval = m_context->ProcessKeyDown(translateKey(ev->key.keysym.sym), 0);
+                        if (ev->key.keysym.sym == SDLK_LEFT) {
+                            m_menu->SetPreviousItemValue(m_context);
+                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_LEFT, 0);
+                        } else if (ev->key.keysym.sym == SDLK_RIGHT) {
+                            m_menu->SetNextItemValue(m_context);
+                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_RIGHT, 0);
+                        } else if (ev->key.keysym.sym == SDLK_HOME) {
+                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_HOME, 0);
+                        } else if (ev->key.keysym.sym == SDLK_END) {
+                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_END, 0);
+                        } else if (ev->key.keysym.sym == SDLK_DOWN) {
+                            m_menu->HighlightNextItem(m_context);
+                        } else if (ev->key.keysym.sym == SDLK_UP) {
+                            m_menu->HighlightPreviousItem(m_context);
+                        } else if (ev->key.keysym.sym == SDLK_RETURN) {
+                            m_menu->DoItemAction(ItemActionEnter, m_context);
+                        } else if (ev->key.keysym.sym == SDLK_DELETE || ev->key.keysym.sym == SDLK_BACKSPACE) {
+                            m_menu->DoItemAction(ItemActionClear, m_context);
+                        } else if (ev->key.keysym.sym == SDLK_SPACE) {
+                            m_menu->DoItemAction(ItemActionRefresh, m_context);
+                        } else {
+                            retval = m_context->ProcessKeyDown(translateKey(ev->key.keysym.sym), 0);
+                            m_menu->UpdateFocus(m_context);
+                        }
                     }
                     break;
+                }
                 case SDL_KEYUP:
                     retval = m_context->ProcessKeyUp(translateKey(ev->key.keysym.sym), 0);
                     break;
@@ -540,7 +1610,7 @@ void GUI::EnableForCurrentFrame() {
 
 static
 void NewGame(int skill, int episode, int level) {
-	GameDesc gamedesc;
+	GameDesc gamedesc = { 0 };
 
 	gamedesc.level				= level;
 	gamedesc.volume				= episode;
@@ -558,6 +1628,79 @@ void NewGame(int skill, int episode, int level) {
 
 	gamedesc.SplitScreen		= 0;		// JEP COOP
 	gamedesc.ffire				= 0;
+	dnNewGame(&gamedesc);
+}
+
+void GUI::NewNetworkGame(lobby_info_t *lobby_info) {
+	GameDesc gamedesc = { 0 };
+    
+    Sys_DPrintf("*** STARTING NETWORK GAME ***\n");
+    steam_id_t my_id = CSTEAM_MyID();
+    steam_id_t owner_id = lobby_info->owner->id;
+    
+    gamedesc.netgame = 1;
+    gamedesc.own_id = my_id;
+    gamedesc.numplayers = lobby_info->num_players;
+    
+    for (int i = 0; i < lobby_info->num_players; i++) {
+        steam_id_t player_id = lobby_info->players[i].id;
+        Sys_DPrintf("[%s]Player #%d: %s\n", player_id == my_id ? "*" : " ", i, CSTEAM_FormatId(player_id));
+        gamedesc.other_ids[i] = lobby_info->players[i].id;
+    }
+    
+//    /* put owner id at first array position */
+//    for (int i = 0; i < lobby_info->num_players; i++) {
+//        if (gamedesc.other_ids[i] == owner_id) {
+//            gamedesc.other_ids[i] = gamedesc.other_ids[0];
+//            gamedesc.other_ids[0] = owner_id;
+//            break;
+//        }
+//    }
+    
+    gamedesc.level				= 0;
+    gamedesc.volume				= 0;
+
+    if (!lobby_info->usermap && lobby_info->workshop_item_id == 0) {
+        int e, m;
+        if (sscanf(lobby_info->mapname, "e%dm%d", &e, &m) == 2 || sscanf(lobby_info->mapname, "E%dM%d", &e, &m) == 2) {
+            gamedesc.volume = e-1;
+            gamedesc.level = m-1;
+        }
+    } else {
+        gamedesc.volume = 0;
+        gamedesc.level = 7;
+        if(lobby_info->workshop_item_id > 0) {
+            workshop_item_t item;
+            dnUnsetWorkshopMap();
+            CSTEAM_GetWorkshopItemByID(lobby_info->workshop_item_id,  &item);
+            dnSetWorkshopMap(lobby_info->mapname, va("/workshop/maps/%llu/%s", item.item_id, item.filename));
+            if (workshopmap_group_handler == -1) {
+                ShowErrorMessage("menu-multiplayer-lobby", "The map isn't downloaded yet");
+                return;
+            }
+
+        } else
+            dnSetUserMap(lobby_info->mapname);
+    }
+    
+    gamedesc.coop				= lobby_info->mode == 2;
+    
+	gamedesc.player_skill		= lobby_info->monster_skill ? lobby_info->monster_skill : 1;
+	gamedesc.monsters_off		= lobby_info->monster_skill == 0;
+	//respawn_monsters is based on player_skill being 4
+	gamedesc.respawn_monsters	= (gamedesc.player_skill == 4) ? 1 : 0;
+	gamedesc.respawn_inventory	= 1;
+
+	gamedesc.respawn_items		= 1;
+    
+	gamedesc.marker				= lobby_info->markers ? 1 : 0;
+	gamedesc.ffire				= lobby_info->friendly_fire ? 1 : 0;
+    
+    gamedesc.fraglimit = lobby_info->fraglimit;
+    gamedesc.timelimit = lobby_info->timelimit;
+    
+	dnEnterMultiMode( lobby_info );
+	
 	dnNewGame(&gamedesc);
 }
 
@@ -590,15 +1733,30 @@ void GUI::ReadChosenSkillAndEpisode(int *pskill, int *pepisode) {
     assert(false);
 }
 
-void GUI::DoCommand(Rocket::Core::Element *element, const Rocket::Core::String& command) {
-//	printf("[GUI ] Command: %s\n", command.CString());
+Uint32 InviteFriends_TimerCallback(Uint32 interval, void* param) {
+    SDL_Event event = { 0 };
+    event.type = SDL_USEREVENT;
+    event.user.type = SDL_USEREVENT;
+    event.user.code = 2;
+    SDL_PushEvent(&event);
+    return 0;
+}
+
+bool GUI::DoCommand(Rocket::Core::Element *element, const Rocket::Core::String& command) {
+//	Sys_DPrintf("[GUI ] Command: %s\n", command.CString());
+    bool result = true;
+	
+	if ( m_messageBoxManager->doCommand( element, command ) ) {
+		return true;
+	}
+	
 	if (command == "game-start") {
 		int skill, episode;
 		ReadChosenSkillAndEpisode(&skill, &episode);
 		Enable(false);
         ps[myconnectindex].gm &= ~MODE_MENU;
 		m_menu->ShowDocument(m_context, "menu-ingame", false);
-        // for usermap level should and  episode should be 0
+        // for usermap level should be 7 and episode should be 0
 		NewGame(skill, episode, (dnIsUserMap() ? 7 : 0));
 	} else if (command == "game-quit") {
         QuitGameCommand(element);
@@ -610,27 +1768,29 @@ void GUI::DoCommand(Rocket::Core::Element *element, const Rocket::Core::String& 
 		dnChangeVideoMode(&vm);
 		UpdateApplyStatus();
 	} else if (command == "load-game") {
-        LoadGameCommand(element);
+            LoadGameCommand(element);
     } else if (command == "save-game") {
-        SaveGameCommand(element);
+            SaveGameCommand(element);
     } else if (command == "game-stop") {
         QuitToTitleCommand(element);
     } else if (command == "confirm-yes") {
         if (m_action_to_confirm != NULL) {
-            m_action_to_confirm->Yes();
             if (m_action_to_confirm->back_page != NULL) {
                 m_action_to_confirm->back_page->Hide();
             }
-            SetActionToConfirm(NULL);
             m_menu->GoBack(m_context);
+            m_action_to_confirm->Yes();
+            SetActionToConfirm(NULL);
         }
     } else if (command == "confirm-no") {
         if (m_action_to_confirm != NULL) {
             m_action_to_confirm->No();
+            
             if (m_action_to_confirm->back_page != NULL) {
                 m_action_to_confirm->back_page->Hide();
             }
             SetActionToConfirm(NULL);
+            
             m_menu->GoBack(m_context);
         }
     } else if (command == "resume-game") {
@@ -650,12 +1810,90 @@ void GUI::DoCommand(Rocket::Core::Element *element, const Rocket::Core::String& 
         CSTEAM_OpenCummunityHub();
     } else if (command == "start") {
         m_show_press_enter = false;
+    } else if (command == "load-workshopitem") {
+        Rocket::Core::ElementDocument *doc = m_context->GetDocument("menu-usermaps");
+        Rocket::Core::Element *map = m_menu->GetHighlightedItem(doc);
+        workshop_item_t item;
+        steam_id_t item_id;
+        sscanf(map->GetProperty("item-id")->ToString().CString(), "%llu", &item_id);
+        CSTEAM_GetWorkshopItemByID(item_id, &item);
+        dnSetWorkshopMap(item.itemname, va("/workshop/maps/%llu/%s", item.item_id, item.filename));
+        if (workshopmap_group_handler == -1) {
+            ShowErrorMessage(doc->GetId().CString(), "The map isn't downloaded yet");
+        } else {
+            m_menu->ShowDocument(m_context, "menu-skill");
+        }
     } else if (command == "load-usermap") {
         Rocket::Core::ElementDocument *doc = m_context->GetDocument("menu-usermaps");
         Rocket::Core::Element *map = m_menu->GetHighlightedItem(doc);
-        dnSetUserMap(map->GetId().CString());
+        dnSetUserMap(map->GetProperty("map-name")->ToString().CString());
         m_menu->ShowDocument(m_context, "menu-skill");
-    }
+    } else if (command == "create-lobby") {
+        CreateLobby();
+    } else if (command == "join-game") {
+        steam_id_t lobby_id = 0;
+        if (sscanf(element->GetId().CString(), "lobby-%llu", &lobby_id) == 1) {
+            JoinLobby(lobby_id);
+        }
+    } else if (command == "start-lobby") {
+        StartLobby();
+    } else if (command == "leave-lobby") {
+        LeaveLobbyCommand(element);
+        result = false;
+    } else if (command == "reload-lobby-info") {
+        lobby_info_t li;
+        CSTEAM_GetLobbyInfo(m_lobby_id, &li);
+    } else if (command == "choose-mp-level") {
+        Rocket::Core::String mapname = element->GetAttribute("mapname")->Get<Rocket::Core::String>();
+        bool usermap = element->IsClassSet("usermap");
+        Rocket::Core::Element *option = m_context->GetDocument("menu-multiplayer-create")->GetElementById("mp-level");
+        if (element->IsClassSet("workshop")) {
+            option->SetAttribute("item-id", element->GetAttribute("item-id")->Get<Rocket::Core::String>());
+        }
+        option->SetClass("workshop", element->IsClassSet("workshop"));
+        option->SetClass("usermap", usermap);
+        option->SetAttribute("mapname", mapname);
+        option->SetInnerRML(mapname);
+        m_menu->ShowDocument(m_context, "menu-multiplayer-create", false);
+    } else if (command == "invite-friend") {
+        SDL_AddTimer(200, InviteFriends_TimerCallback, NULL);
+    } else if (command == "send-chat-message") {
+        Rocket::Core::Element *focus_target = m_menu->GetFocusTarget(element);
+        if (focus_target != NULL) {
+            Rocket::Core::Variant *value = focus_target->GetAttribute("value");
+            if (value != NULL) {
+                Rocket::Core::String message = focus_target->GetAttribute("value")->Get<Rocket::Core::String>();
+//                Sys_DPrintf("[OUTGOING] %s\n", message.CString());
+                focus_target->SetAttribute("value", "");
+                CSTEAM_SendLobbyMessage(m_lobby_id, message.CString());
+            }
+        }
+    } else if (command == "test-msgbox") {
+		m_messageBoxManager->showMessageBox( "Test Q?", "Yes", "No", NULL );
+		m_messageBoxManager->wait();
+		printf( "Status: %d\n", m_messageBoxManager->getStatus() );
+	}
+    return result;
+}
+	
+void QuitToTitle() {
+//	if ( gamequit == 0 &&
+//		dnIsInMultiMode() &&
+//		(ps[myconnectindex].gm & MODE_GAME) &&
+//		dnIsHost()
+//		)
+//	{
+//        gamequit = 1;
+//        quittimer = totalclock + 120;
+//	} else {
+//		gameexit( " " );
+//	}
+	if ( dnIsInMultiMode() && dnIsHost() ) {
+        gamequit = 1;
+        quittimer = totalclock + 120;
+	} else {
+		gameexit( " " );
+	}
 }
 
 void GUI::QuitToTitleCommand(Rocket::Core::Element *element) {
@@ -665,12 +1903,44 @@ void GUI::QuitToTitleCommand(Rocket::Core::Element *element) {
         RocketMenuPlugin *menu;
         QuitToTitleAction(Rocket::Core::ElementDocument *back_page, Rocket::Core::Context *context, RocketMenuPlugin *menu):ConfirmableAction(back_page),context(context), menu(menu) {}
         virtual void Yes() {
-            dnQuitToTitle();
+            QuitToTitle();
             menu->ShowDocument(context, "menu-main", false);
         }
     };
     Rocket::Core::ElementDocument *page = element->GetOwnerDocument();
     ShowConfirmation(new QuitToTitleAction(page, m_context, m_menu), "yesno", "Quit To Title?");
+} 
+
+void GUI::LeaveLobbyCommand(Rocket::Core::Element *element) {
+#if 0
+    struct LeaveLobbyAction: public ConfirmableAction {
+        Rocket::Core::Context *context;
+        RocketMenuPlugin *menu;
+        steam_id_t m_lobby_id;
+        LeaveLobbyAction(Rocket::Core::ElementDocument *back_page, Rocket::Core::Context *context, RocketMenuPlugin *menu, steam_id_t lobby_id):ConfirmableAction(back_page),context(context), menu(menu), m_lobby_id(lobby_id) {}
+        virtual void Yes() {
+            if (m_lobby_id != 0) {
+                CSTEAM_LeaveLobby(m_lobby_id);
+                m_lobby_id = 0;
+            }
+            menu->ShowDocument(context, "menu-multiplayer", false);
+        }
+    };
+    Rocket::Core::ElementDocument *page = element->GetOwnerDocument();
+    ShowConfirmation(new LeaveLobbyAction(page, m_context, m_menu, m_lobby_id), "yesno", "Leave this lobby?");
+#else
+	m_messageBoxManager->showMessageBox( "Leave this lobby?", "Yes", "No", NULL );
+	do {
+		doGameLoop();
+	} while ( m_messageBoxManager->isShown() && m_lobby_id != 0 );
+	
+	if ( m_messageBoxManager->wait() == 0 ) {
+		CSTEAM_LeaveLobby( m_lobby_id );
+		m_lobby_id = 0;
+		m_menu->GoBack( m_context );
+	}
+	
+#endif
 }
 
 void GUI::QuitGameCommand(Rocket::Core::Element *element) {
@@ -679,6 +1949,8 @@ void GUI::QuitGameCommand(Rocket::Core::Element *element) {
         QuitGameAction(Rocket::Core::ElementDocument *page):ConfirmableAction(page){}
         virtual void Yes() {
             dnQuitGame();
+        }
+        virtual void OnClose() {
         }
     };
     
@@ -745,6 +2017,7 @@ void GUI::ShowConfirmation(ConfirmableAction *action, const Rocket::Core::String
     doc->PullToFront();
     page->Show();
     page->PushToBack();
+    action->doc = doc;
     SetActionToConfirm(action);
 }
 
@@ -785,6 +2058,8 @@ void GUI::DidOpenMenuPage(Rocket::Core::ElementDocument *menu_page) {
     
     intomenusounds();
     
+    m_menu->UpdateFocus(m_context);
+    
 	if (page_id != "menu-main" && page_id != "video-confirm" && page_id != "yesno" && !menu_page->HasAttribute("default-item")) {
 		m_menu->HighlightItem(m_menu->GetMenuItem(menu_page, 0));
 	}
@@ -822,9 +2097,45 @@ void GUI::DidOpenMenuPage(Rocket::Core::ElementDocument *menu_page) {
     } else if (page_id == "menu-load" || page_id == "menu-save") {
         InitLoadPage(menu_page);
     } else if (page_id == "menu-usermaps") {
-        InitUserMapsPage(menu_page);
+        CSTEAM_UpdateWorkshopItems();
+        InitUserMapsPage(page_id.CString());
     } else if (page_id == "menu-episodes") {
         dnSetUserMap(NULL);
+    } else if (page_id == "menu-multiplayer-join") {
+        InitLobbyList(menu_page);
+    } else if (page_id == "menu-multiplayer-maps") {
+        InitMpMapsPage(menu_page);
+    } else if (page_id == "menu-lobby-filter"){
+        InitLobbyFilterPage(menu_page);
+    } else if (page_id == "menu-multiplayer") {
+        menu_page->SetAttribute("parent", "menu-main");
+        if (!CSTEAM_Online()) {
+            m_menu->GoBack(m_context);
+            ShowErrorMessage("menu-main", "Please login in Steam");
+        }
+    } else if (page_id == "menu-main") {
+        Rocket::Core::Element *mp =  menu_page->GetElementById("multiplayer");
+        if (mp == NULL) return;
+        if (show_mutiplayer_info) {
+            mp->SetAttribute("submenu", "menu-mpinfo");
+        } else {
+            mp->SetAttribute("submenu", "menu-multiplayer");
+        }
+    } else if (page_id == "menu-mpinfo"){
+        Rocket::Core::Element *item =  menu_page->GetElementById("continue");
+        if (show_mutiplayer_info) {
+            item->SetProperty("display", "block");
+            item->SetClass("disabled", false);
+            show_mutiplayer_info = 0;
+        } else {
+            item->SetProperty("display", "none");
+            item->SetClass("disabled", true);
+        }
+    } else if (page_id == "menu-multiplayer-lobby"){
+        Rocket::Core::Element * textarea =  menu_page->GetElementById("chat");
+        textarea->SetAttribute("value", "");
+        Rocket::Core::Element * input =  menu_page->GetElementById("message-input");
+        input->SetAttribute("value", "");
     }
 }
 
@@ -858,8 +2169,10 @@ void GUI::InitMouseSetupPage(Rocket::Core::ElementDocument *menu_page) {
             ud.mouseflip ? "invert-y-on" : "invert-y-off",
             false);    
     m_menu->ActivateOption(m_menu->GetMenuItem(menu_page, "lock-y-axis"),
-                           ud.mouseylock ? "lock-y-on" : "lock-y-off",
+                           myaimmode ? "lock-y-off" : "lock-y-on",
                            false);
+    m_menu->SetRangeValue(m_menu->GetMenuItem(menu_page, "x-mouse-scale"), (float)xmousescale);
+    m_menu->SetRangeValue(m_menu->GetMenuItem(menu_page, "y-mouse-scale"), (float)ymousescale);
 
 }
 
@@ -875,6 +2188,8 @@ void GUI::InitVideoOptionsPage(Rocket::Core::ElementDocument *page) {
     int fps_max = clamp((int)((ud.fps_max+5)/10)*10, 30, 180);
     sprintf(buf, "fps-%d", fps_max);
     m_menu->ActivateOption(m_menu->GetMenuItem(page, "max-fps"), buf, false);
+    m_menu->ActivateOption(m_menu->GetMenuItem(page, "accurate-lighting"), AccurateLighting ? "accurate-lighting-on" : "accurate-lighting-off", false);
+
 }
 
 void GUI::InitSoundOptionsPage(Rocket::Core::ElementDocument *page) {
@@ -895,6 +2210,19 @@ void GUI::InitGameOptionsPage(Rocket::Core::ElementDocument *page) {
     m_menu->ActivateOption(m_menu->GetMenuItem(page, "weapon-switch"), b, false);
     sprintf(b, "statusbar-%d", clamp(((int)ud.screen_size)/4, 0, 2));
     m_menu->ActivateOption(m_menu->GetMenuItem(page, "statusbar"), b, false);
+    m_menu->ActivateOption(m_menu->GetMenuItem(page, "messages"), ud.fta_on ? "messages-on" : "messages-off", false);
+    m_menu->ActivateOption(m_menu->GetMenuItem(page, "mature-content"), ud.lockout ? "mature-content-off" : "mature-content-on", false);
+    m_menu->ActivateOption(m_menu->GetMenuItem(page, "opponents-weapon"), ShowOpponentWeapons ? "opponents-weapon-on" : "opponents-weapon-off", false);
+}
+
+
+void GUI::InitLobbyFilterPage(Rocket::Core::ElementDocument *page) {
+    char b[20];
+    sprintf(b, "gamemode-filter-%d", clamp((int)lb.gamemode, 0, 3));
+    m_menu->ActivateOption(m_menu->GetMenuItem(page, "gamemode-filter"), b, false);
+    m_menu->ActivateOption(m_menu->GetMenuItem(page, "show-full"), lb.show_full ? "show-full-on" : "show-full-off", false);
+    sprintf(b, "maps-filter-%d", clamp((int)lb.maps, 0, 3));
+    m_menu->ActivateOption(m_menu->GetMenuItem(page, "maps-filter"), b, false);
 }
 
 void GUI::InitKeysSetupPage(Rocket::Core::ElementDocument *page) {
@@ -917,27 +2245,206 @@ void GUI::InitKeysSetupPage(Rocket::Core::ElementDocument *page) {
 }
 
 
-void GUI::InitUserMapsPage(Rocket::Core::ElementDocument *menu_page) {
+void GUI::InitUserMapsPage(const char * page_id) {
+    Rocket::Core::ElementDocument *menu_page = m_context->GetDocument("menu-usermaps");
     CACHE1D_FIND_REC * files = dnGetMapsList();
+    dnUnsetWorkshopMap();
     Rocket::Core::Element *menu = menu_page->GetElementById("menu");
+    bool haveFiles = false;
+	Rocket::Core::String firstItem;
+    
+    int num = CSTEAM_NumWorkshopItems();
+	bool workshop_header_added = false;
+    menu->SetInnerRML("");
+    if (num > 0) {
+        for (int i=0; i < num; i++) {
+            workshop_item_t item;
+            CSTEAM_GetWorkshopItemByIndex(i, &item);
+            if (strstr(item.tags, "Singleplayer") == NULL)
+                continue;
+			if (!workshop_header_added) {
+				Rocket::Core::Element *title = new Rocket::Core::Element("div");
+				title->SetInnerRML("WORKSHOP MAPS (SINGLEPLAYER)");
+				title->SetClass("listhdr", true);
+				title->SetAttribute("noanim", "");
+				menu->AppendChild(title);
+				m_menu->SetupMenuItem(title);
+				workshop_header_added = true;
+			}
+            Rocket::Core::Element * record = new Rocket::Core::Element("div");
+            record->SetProperty("item-id", va("%llu", item.item_id));
+            std::string item_title(item.title);
+            encode(item_title);
+            record->SetInnerRML(va("%s (%s)", item_title.c_str(), item.itemname));
+            record->SetId(item.itemname);
+            record->SetAttribute("command", "load-workshopitem");
+            menu->AppendChild(record);
+            m_menu->SetupMenuItem(record);
+			haveFiles = true;
+			if (firstItem == "") {
+				firstItem = record->GetId();
+			}
+        }
+    }
+    
     if (files) {
-        menu->SetInnerRML("");
+        if (num == 0)
+            menu->SetInnerRML("");
+        haveFiles = true;
+        Rocket::Core::Element *title = new Rocket::Core::Element("div");
+        title->SetInnerRML("USER MAPS");
+        title->SetClass("listhdr", true);
+        title->SetAttribute("noanim", "");
+        menu->AppendChild(title);
+        m_menu->SetupMenuItem(title);
         while (files) {
             Rocket::Core::Element * record = new Rocket::Core::Element("div");
+            record->SetProperty("map-name", files->name);
             record->SetInnerRML(Bstrlwr(files->name));
             record->SetId(files->name);
+			if (firstItem == "") {
+				firstItem = record->GetId();
+			}
             record->SetAttribute("command", "load-usermap");
             menu->AppendChild(record);
             files = files->next;
             m_menu->SetupMenuItem(record);
         }
-        m_menu->HighlightItem(menu_page, menu->GetFirstChild()->GetId());
     }
+    if (haveFiles) {
+        m_menu->HighlightItem(menu_page, firstItem);
+	} else {
+		Rocket::Core::Element *title = new Rocket::Core::Element("div");
+		title->SetInnerRML("No maps found");
+		title->SetClass("empty", true);
+		title->SetAttribute("noanim", "");
+		title->SetId("emptyhdr");
+		menu->AppendChild(title);
+		m_menu->SetupMenuItem(title);
+		m_menu->HighlightItem(menu_page, "emptyhdr");
+	}
+}
+
+void GUI::InitMpMapsPage(Rocket::Core::ElementDocument *menu_page) {
+    Rocket::Core::Element *menu = menu_page->GetElementById("menu");
+    Rocket::Core::Element *first = NULL;
+    dnUnsetWorkshopMap();
+    menu->SetInnerRML("");
+
+    /* go through all the volumes */
+    for (int volnum = 0; volnum < sizeof(volume_names)/sizeof(volume_names[0]); volnum++) {
+        const char *volname = volume_names[volnum];
+        if (volname[0] == 0) {
+            break;
+        }
+        /* add non-functional menu item to designate volume name */
+        Rocket::Core::Element *record = new Rocket::Core::Element("div");
+        record->SetInnerRML(va("EPISODE %d: %s", volnum+1, volname));
+//        record->SetClass("empty", true);
+        record->SetClass("listhdr", true);
+        record->SetAttribute("noanim", "");
+        menu->AppendChild(record);
+        m_menu->SetupMenuItem(record);
+        /* go through all the levels of the current volume */
+        for (int levnum = 0; levnum < 11; levnum++) {
+            const char *levname = level_names[levnum+volnum*11];
+            if (levname[0] == 0) {
+                break;
+            }
+            if (volnum == 0 && levnum == 7) {
+                continue; /* skip e1m8 since that means to load a user map */
+            }
+            
+            if (volnum == 0 && levnum > 7) {
+                continue; /* skipping non-existing levels
+                          E1L9.map VOID ZONE
+                          E1L10.map ROACH CONDO
+                          E1L11.mapANTIPROFIT
+                           */
+            }
+            Rocket::Core::Element *record = new Rocket::Core::Element("div");
+            record->SetInnerRML(va("E%dM%d - %s", volnum+1, levnum+1, levname));
+            record->SetClass("builtin", true);
+            record->SetId(va("level-e%dm%d", volnum+1, levnum+1));
+            record->SetAttribute("command", "choose-mp-level");
+            record->SetAttribute("mapname", va("E%dM%d", volnum+1, levnum+1));
+            if (first != NULL) {
+                first = record;
+            }
+            menu->AppendChild(record);
+            m_menu->SetupMenuItem(record);
+        }
+    }
+        int num = CSTEAM_NumWorkshopItems();
+        if (num > 0) {
+            Rocket::Core::Element *title = new Rocket::Core::Element("div");
+            title->SetInnerRML("WORKSHOP MAPS (MULTIPLAYER)");
+            title->SetClass("listhdr", true);
+            title->SetAttribute("noanim", "");
+            menu->AppendChild(title);
+            m_menu->SetupMenuItem(title);
+            for (int i=0; i < num; i++) {
+                workshop_item_t item;
+                CSTEAM_GetWorkshopItemByIndex(i, &item);
+                if (strstr(item.tags, "Deathmatch") == NULL && strstr(item.tags, "Coop") == NULL)
+                    continue;
+                Rocket::Core::Element * record = new Rocket::Core::Element("div");
+                record->SetAttribute("item-id", va("%llu", item.item_id));
+                std::string item_title(item.title);
+                encode(item_title);
+                record->SetId(item.itemname);
+                record->SetClass("workshop", true);
+                record->SetAttribute("command", "choose-mp-level");
+                record->SetAttribute("mapname", item.itemname);
+                record->SetInnerRML(va("%s (%s)", item_title.c_str(), item.itemname));
+                menu->AppendChild(record);
+                m_menu->SetupMenuItem(record);
+            }
+        }
+    
+    bool usermap_header_added = false;
+    CACHE1D_FIND_REC * files = dnGetMapsList();
+    if (files) {
+        while (files) {
+            if (!usermap_header_added) {
+                usermap_header_added = true;
+                Rocket::Core::Element *record = new Rocket::Core::Element("div");
+                record->SetInnerRML("USER MAPS");
+                record->SetClass("listhdr", true);
+                record->SetAttribute("noanim", "");
+                menu->AppendChild(record);
+                m_menu->SetupMenuItem(record);
+
+            }
+            Rocket::Core::Element * record = new Rocket::Core::Element("div");
+            record->SetClass("usermap", true);
+            record->SetAttribute("command", "choose-mp-level");
+            record->SetAttribute("mapname", files->name);
+            record->SetInnerRML(Bstrlwr(files->name));
+            menu->AppendChild(record);
+            files = files->next;
+            m_menu->SetupMenuItem(record);
+        }
+    }
+    m_menu->HighlightItem(menu_page, "level-e1m1");
+}
+
+
+void GUI::InitLobbyList(Rocket::Core::ElementDocument *menu_page) {
+    UpdateLobbyList();
+    Rocket::Core::Element *menu = menu_page->GetElementById("menu");
+    menu->SetInnerRML("<div id='stub' noanim class='empty'>Updating...</div>");
+    m_menu->HighlightItem(menu_page, "stub");
 }
 
 
 void GUI::DidCloseMenuPage(Rocket::Core::ElementDocument *menu_page) {
     const Rocket::Core::String& page_id = menu_page->GetId();
+    
+    if (m_action_to_confirm != NULL && m_action_to_confirm->doc->GetId() == page_id) {
+        m_action_to_confirm->OnClose();
+    }
+    
 	if (page_id == "menu-video") {
     } else if (page_id == "menu-keys-setup") {
         /*
@@ -954,12 +2461,14 @@ void GUI::DidCloseMenuPage(Rocket::Core::ElementDocument *menu_page) {
         bool lock_y = m_menu->GetActiveOption(m_menu->GetMenuItem(menu_page, "lock-y-axis"))->GetId() == "lock-y-on";
         if (lock_y) {
             ps[myconnectindex].horiz = 100;
-//            ps[myconnectindex].auto_aim = AutoAim;
+            AutoAim = 1;
+            ps[myconnectindex].auto_aim = AutoAim;
             myaimmode = 0;
         } else {
             myaimmode = 1;
         }
-        ud.mouseylock = lock_y ? 1 : 0;
+        myaimmode = lock_y ? 0 : 1;
+    } else if (page_id == "menu-multiplayer-lobby") {
     }
 }
 
@@ -970,11 +2479,11 @@ void GUI::ApplyVideoMode(Rocket::Core::ElementDocument *menu_page) {
         VideoMode backup_mode;
         ApplyVideoModeAction(Rocket::Core::ElementDocument *back_page):ConfirmableAction(back_page){}
         virtual void Yes() {
-            printf("Apply Video Mode\n");
+            Sys_DPrintf("Apply Video Mode\n");
             SaveVideoMode(&new_mode);
         }
         virtual void No() {
-            printf("Restore Video Mode\n");
+            Sys_DPrintf("Restore Video Mode\n");
             dnChangeVideoMode(&backup_mode);
             SaveVideoMode(&backup_mode);
         }
@@ -1090,6 +2599,15 @@ void GUI::DidChangeOptionValue(Rocket::Core::Element *menu_item, Rocket::Core::E
 			gltexfiltermode = 5;
 			gltexapplyprops();
 		}
+    } else if (item_id == "accurate-lighting") {
+        AccurateLighting = (value_id == "accurate-lighting-on");
+        if (AccurateLighting) {
+            r_usenewshading = 2;
+            r_usetileshades = 1;
+        } else {
+            r_usenewshading = 0;
+            r_usetileshades = 0;
+        }
 	} else if (item_id == "sound") {
 		dnEnableSound( value_id == "sound-on" ? 1 : 0 );
 	} else if (item_id == "music") {
@@ -1101,15 +2619,25 @@ void GUI::DidChangeOptionValue(Rocket::Core::Element *menu_item, Rocket::Core::E
 	} else if (item_id == "level-stats") {
 		ud.levelstats = ( value_id == "stats-on" ? 1 : 0 );
 	} else if (item_id == "auto-aiming") {
-		AutoAim = ( value_id == "autoaim-on" ? 1 : 0 );
-		ps[myconnectindex].auto_aim = AutoAim;
+        if (ud.multimode < 2) {
+            AutoAim = ( value_id == "autoaim-on" ? 1 : 0 );
+            ps[myconnectindex].auto_aim = AutoAim;
+        }
 	} else if (item_id == "run-key-style") {
 		ud.runkey_mode = ( value_id == "runkey-classic" ? 1 : 0 );
-	} else if (item_id == "weapon-switch") {
-		int v = 3;
-		sscanf(value_id.CString(), "autoswitch-%d", &v);
-		ud.weaponswitch = v;
-		ps[myconnectindex].weaponswitch = ud.weaponswitch;
+	} else if (item_id == "mature-content") {
+        ud.lockout = ( value_id == "mature-content-on" ? 0 : 1 );
+    } else if (item_id == "messages") {
+        ud.fta_on = ( value_id == "messages-on" ? 1 : 0 );
+    } else if (item_id == "opponents-weapon") {
+        ud.showweapons = ShowOpponentWeapons = ( value_id == "opponents-weapon-on" ? 1 : 0 );
+    } else if (item_id == "weapon-switch") {
+        if( ud.multimode < 2) {
+            int v = 3;
+            sscanf(value_id.CString(), "autoswitch-%d", &v);
+            ud.weaponswitch = v;
+            ps[myconnectindex].weaponswitch = ud.weaponswitch;
+        }
 	} else if (item_id == "statusbar") {
 		int v = 2;
 		sscanf(value_id.CString(), "statusbar-%d", &v);
@@ -1125,7 +2653,31 @@ void GUI::DidChangeOptionValue(Rocket::Core::Element *menu_item, Rocket::Core::E
 		int a = ud.vsync ? 1 : 0;
 		int b = value_id == "vsync-on" ? 1 : 0;
 		m_need_apply_vsync = a != b;
-	}
+	} else if (item_id == "gamemode") {
+        Rocket::Core::ElementDocument *menu_page = m_context->GetDocument("menu-multiplayer-create");
+        Rocket::Core::Element *ff_item = m_menu->GetMenuItem(menu_page, "friendlyfire");
+        Rocket::Core::Element *skill_item = m_menu->GetMenuItem(menu_page, "skill");
+        Rocket::Core::Element *timelimit_item = m_menu->GetMenuItem(menu_page, "timelimit");
+        Rocket::Core::Element *fraglimit_item = m_menu->GetMenuItem(menu_page, "fraglimit");
+        
+        bool enable_ff_item = value_id != "mode-0"; /* dm */
+        bool enable_skill_item = value_id == "mode-2"; /* coop */
+        
+        ff_item->SetClass("disabled", !enable_ff_item);
+        skill_item->SetClass("disabled", !enable_skill_item);
+        timelimit_item->SetClass("disabled", enable_ff_item);
+        fraglimit_item->SetClass("disabled", enable_ff_item);
+    } else if (item_id == "gamemode-filter") {
+        int v = 3;
+        sscanf(value_id.CString(), "gamemode-filter-%d", &v);
+        lb.gamemode = v;
+    } else if (item_id == "show-full") {
+        lb.show_full = value_id == "show-full-on" ? 1 : 0;
+    } else if (item_id == "maps-filter") {
+        int v = 0;
+        sscanf(value_id.CString(), "maps-filter-%d", &v);
+        lb.maps = v;
+    }
 }
 
 void GUI::DidChangeRangeValue(Rocket::Core::Element *menu_item, float new_value) {
@@ -1137,7 +2689,11 @@ void GUI::DidChangeRangeValue(Rocket::Core::Element *menu_item, float new_value)
 		dnSetSoundVolume(clamp((int)new_value, 0, 255));
 	} else if (item_id == "music-volume") {
 		dnSetMusicVolume(clamp((int)new_value, 0, 255));
-	}
+	} else if (item_id == "x-mouse-scale") {
+        xmousescale = clamp((int)new_value, 1, 20);
+    } else if (item_id == "y-mouse-scale") {
+        ymousescale = clamp((int)new_value, 1, 20);
+    }
 }
 
 void GUI::DidRequestKey(Rocket::Core::Element *menu_item, int slot) {
@@ -1176,7 +2732,8 @@ Rocket::Core::String GetSkillName(Rocket::Core::Context *context, int skill) {
 
 void GUI::DidActivateItem(Rocket::Core::Element *menu_item) {
     int slot;
-    if (sscanf(menu_item->GetId().CString(), "slot%d", &slot) == 1) {
+    Rocket::Core::String item_id = menu_item->GetId();
+    if (sscanf(item_id.CString(), "slot%d", &slot) == 1) {
         Rocket::Core::ElementDocument *doc = menu_item->GetOwnerDocument();
         Rocket::Core::Element *thumbnail = doc->GetElementById("thumbnail");
         Rocket::Core::Element *skill = doc->GetElementById("skill");
@@ -1202,6 +2759,15 @@ void GUI::DidActivateItem(Rocket::Core::Element *menu_item) {
             level->SetInnerRML(level_rml);
         }
     }
+}
+
+bool GUI::WillChangeOptionValue(Rocket::Core::Element *menu_item, int direction) {
+    Rocket::Core::String item_id = menu_item->GetId();
+    if (item_id == "creategame-level") {
+        m_menu->ShowDocument(m_context, "menu-multiplayer-maps");
+        return false;
+    }
+    return true;
 }
 
 void GUI::DidClearKeyChooserValue(Rocket::Core::Element *menu_item, int slot) {
@@ -1242,6 +2808,14 @@ void GUI::DidClearItem(Rocket::Core::Element *menu_item) {
 		}
 	}
 }
+
+void GUI::DidRefreshItem(Rocket::Core::Element *menu_item) {
+    Rocket::Core::ElementDocument *doc = menu_item->GetOwnerDocument();
+    if (doc->GetElementById("menu-multiplayer-join") != NULL) {
+        InitLobbyList(doc);
+    }
+}
+
 
 
 void GUI::ShowMenuByID(const char * menu_id) {

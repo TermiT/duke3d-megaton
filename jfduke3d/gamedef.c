@@ -2302,7 +2302,8 @@ char parse(void)
                 {
                     for(j=0;j < ps[g_p].weapreccnt;j++)
                         if( ps[g_p].weaprecs[j] == g_sp->picnum )
-                            break;
+                            if (*(insptr+4) == HANDBOMB_WEAPON || ps[g_p].ammo_amount[*(insptr+4)] > 0)
+                                break;
 
                     parseifelse(j < ps[g_p].weapreccnt && g_sp->owner == g_i);
                 }
@@ -3240,7 +3241,16 @@ void execute(short i,short p,long x)
         if (g_sp->picnum == FECES && (p == myconnectindex) && ud.recstat != 2)
 		{
 			dnRecordShitPile();
+        }
+        
+        
+        // Don't remove cards (from XBLA)
+        if (g_sp->picnum == ACCESSCARD && ud.coop == 1 && ud.multimode > 1)
+		{
+			return;
 		}
+
+        
         if(ps[g_p].actorsqu == g_i)
             ps[g_p].actorsqu = -1;
         deletesprite(g_i);

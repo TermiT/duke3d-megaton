@@ -17,6 +17,6 @@ bool ShellSystemInterface::LogMessage(Rocket::Core::Log::Type type, const Rocket
 	OutputDebugStringA(message.CString());
 	OutputDebugStringA("\n");
 #endif
-	printf("[ROCK] %s\n", message.CString());
+//	printf("[ROCK] %s\n", message.CString());
 	return true;
 }

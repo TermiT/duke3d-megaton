@@ -97,7 +97,19 @@ static double dxb1[MAXWALLSB], dxb2[MAXWALLSB];
 #define USEZBUFFER 1 //1:use zbuffer (slow, nice sprite rendering), 0:no zbuffer (fast, bad sprite rendering)
 #define LINTERPSIZ 4 //log2 of interpolation size. 4:pretty fast&acceptable quality, 0:best quality/slow!
 #define DEPTHDEBUG 0 //1:render distance instead of texture, for debugging only!, 0:default
-#define FOGSCALE 0.0000384
+// These generally should not change.
+int32_t r_usenewshading = 2;
+int32_t r_usetileshades = 1;
+
+static inline float getshadefactor(int32_t shade)
+{
+    int32_t shadebound = (shade>=numpalookups) ? numpalookups : numpalookups-1;
+    float clamped_shade = min(max(shade, 0), shadebound);
+    if (rendmode == 3 && r_usetileshades &&
+        (!usehightile || !hicfindsubst(globalpicnum, globalpal, 0)) &&
+        (!usemodels || md_tilehasmodel(globalpicnum) < 0)) return 1.f;
+    return ((float)(numpalookups-clamped_shade))/(float)numpalookups;
+}
 
 double gxyaspect, grhalfxdown10x;
 static double gyxscale, gviewxrange, ghalfx, grhalfxdown10, ghoriz;
@@ -137,6 +149,8 @@ long gltexmiplevel = 0;		// discards this many mipmap levels
 static long lastglpolygonmode = 0; //FUK
 long glpolygonmode = 0;     // 0:GL_FILL,1:GL_LINE,2:GL_POINT //FUK
 static GLuint polymosttext = 0;
+// used for fogcalc
+float fogresult, fogresult2, fogcol[4], fogtable[4*MAXPALOOKUPS];
 #endif
 
 #if defined(USE_MSC_PRAGMAS)
@@ -252,14 +266,13 @@ static void drawline2d (float x0, float y0, float x1, float y1, char col)
 #ifdef USE_OPENGL
 
 static long drawingskybox = 0;
-static int fog_is_on = 0;
 
 long polymost_texmayhavealpha (long dapicnum, long dapalnum)
 {
 	PTHead * pth;
 	int i;
     
-	pth = PT_GetHead(dapicnum, dapalnum, 0, 1);
+	pth = PT_GetHead(dapicnum, dapalnum, 0, 0, 1);
 	if (!pth) {
 		return 1;
 	}
@@ -281,7 +294,7 @@ void polymost_texinvalidate (long dapicnum, long dapalnum, long dameth)
 	
 	iter = PTIterNewMatch(
                           PTITER_PICNUM | PTITER_PALNUM | PTITER_FLAGS,
-                          dapicnum, dapalnum, PTH_CLAMPED, (dameth & METH_CLAMPED) ? PTH_CLAMPED : 0
+                          dapicnum, dapalnum, 0, PTH_CLAMPED, (dameth & METH_CLAMPED) ? PTH_CLAMPED : 0
                           );
 	while ((pth = PTIterNext(iter)) != 0) {
 		if (pth->pic[PTHPIC_BASE]) {
@@ -425,20 +438,16 @@ void polymost_glreset ()
 // one-time initialisation of OpenGL for polymost
 void polymost_glinit()
 {
-	GLfloat col[4];
-	
-	bglFogi(GL_FOG_MODE,GL_EXP); //GL_EXP(default),GL_EXP2,GL_LINEAR
-	//bglHint(GL_FOG_HINT,GL_NICEST);
-	bglFogf(GL_FOG_DENSITY,1.0); //must be > 0, default is 1
-	bglFogf(GL_FOG_START,0.0); //default is 0
-	bglFogf(GL_FOG_END,1.0); //default is 1
-	col[0] = 0; col[1] = 0; col[2] = 0; col[3] = 0; //range:0 to 1
-	bglFogfv(GL_FOG_COLOR,col); //default is 0,0,0,0
+    if (!Bstrcmp(glinfo.vendor, "NVIDIA Corporation"))
+        bglHint(GL_FOG_HINT, GL_NICEST);
+    else
+        bglHint(GL_FOG_HINT, GL_DONT_CARE);
+    bglFogi(GL_FOG_MODE, GL_EXP2);
     
-	bglBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	bglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
-	//bglHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-	//bglEnable(GL_LINE_SMOOTH);
+    //bglPixelStorei(GL_PACK_ALIGNMENT, 1);
+    //bglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     
 	if (glmultisample > 0 && glinfo.multisample) {
 		if (glinfo.nvmultisamplehint)
@@ -446,6 +455,103 @@ void polymost_glinit()
 		bglEnable(GL_MULTISAMPLE_ARB);
 	}
 }
+
+////////// VISIBILITY FOG ROUTINES //////////
+extern char nofog;  // in windows/SDL layers
+// only for r_usenewshading!=2 (not preferred)
+static void fogcalc_old(int32_t shade, int32_t vis)
+{
+    float f;
+    bglFogi(GL_FOG_MODE, GL_EXP2);
+    if (r_usenewshading==1)
+    {
+        f = 0.9f * shade;
+        f = (vis > 239) ? (float)(gvisibility*((vis-240+f))) :
+        (float)(gvisibility*(vis+16+f));
+    }
+    else
+    {
+        f = (shade < 0) ? shade * 3.5f : shade * .66f;
+        f = (vis > 239) ? (float)(gvisibility*((vis-240+f)/(klabs(vis-256)))) :
+        (float)(gvisibility*(vis+16+f));
+    }
+    if (f < 0.001f)
+        f = 0.001f;
+    else if (f > 100.0f)
+        f = 100.0f;
+    fogresult = f;
+}
+// For GL_LINEAR fog:
+#define FOGDISTCONST 600
+#define FULLVIS_BEGIN 2.9e30
+#define FULLVIS_END 3.0e30
+static inline void fogcalc(int32_t tile, int32_t shade, int32_t vis, int32_t pal)
+{
+    Bmemcpy(fogcol, &fogtable[pal<<2], sizeof(fogcol));
+    if (rendmode == 3 && r_usetileshades == 1 && shade > 0 &&
+        (!usehightile || !hicfindsubst(tile, pal, 0)) &&
+        (!usemodels || md_tilehasmodel(tile) < 0))
+        shade >>= 1;
+    if (r_usenewshading!=2)
+    {
+        fogcalc_old(shade, vis);
+        return;
+    }
+    else
+    {
+        float combvis = (float)globalvisibility * (uint8_t)(vis+16);
+        bglFogi(GL_FOG_MODE, GL_LINEAR);
+        if (combvis == 0)
+        {
+            if (shade > 0)
+            {
+                // beg = -D*shade, end = D*(NUMSHADES-1-shade)
+                //  => end/beg = -(NUMSHADES-1-shade)/shade
+                fogresult = -FULLVIS_BEGIN;
+                fogresult2 = FULLVIS_BEGIN * (float)(numpalookups-1-shade)/shade;
+            }
+            else
+            {
+                fogresult = FULLVIS_BEGIN;
+                fogresult2 = FULLVIS_END;
+            }
+            return;
+        }
+        fogresult = -(FOGDISTCONST * shade)/combvis;
+        fogresult2 = (FOGDISTCONST * (numpalookups-1-shade))/combvis;
+    }
+}
+void calc_and_apply_fog(int32_t tile, int32_t shade, int32_t vis, int32_t pal)
+{
+    if (nofog)
+        return;
+    fogcalc(tile, shade, vis, pal);
+    bglFogfv(GL_FOG_COLOR, fogcol);
+    if (r_usenewshading!=2)
+    {
+        bglFogf(GL_FOG_DENSITY, fogresult);
+        return;
+    }
+    bglFogf(GL_FOG_START, fogresult);
+    bglFogf(GL_FOG_END, fogresult2);
+}
+void calc_and_apply_fog_factor(int32_t tile, int32_t shade, int32_t vis, int32_t pal, float factor)
+{
+    if (nofog)
+        return;
+    // NOTE: for r_usenewshading==2, the fog being/ending distance results are
+    // unused.
+    fogcalc(tile, shade, vis, pal);
+    bglFogfv(GL_FOG_COLOR, fogcol);
+    if (r_usenewshading!=2)
+    {
+        bglFogf(GL_FOG_DENSITY, fogresult*factor);
+        return;
+    }
+    bglFogf(GL_FOG_START, FULLVIS_BEGIN);
+    bglFogf(GL_FOG_END, FULLVIS_END);
+}
+////////////////////
 
 void resizeglcheck ()
 {
@@ -496,10 +602,9 @@ void resizeglcheck ()
 		bglMatrixMode(GL_MODELVIEW);
 		bglLoadIdentity();
         
-		if (!glinfo.hack_nofog) {
-			bglEnable(GL_FOG);
-			fog_is_on = 1;
-		}
+#ifdef USE_OPENGL
+        if (!nofog) bglEnable(GL_FOG);
+#endif
 	}
 }
 
@@ -509,7 +614,17 @@ void resizeglcheck ()
 //    n must be <= 8 (assume clipping can double number of vertices)
 //method: 0:solid, 1:masked(255 is transparent), 2:transluscent #1, 3:transluscent #2
 //    +4 means it's a sprite, so wraparound isn't needed
+
+// drawpoly's hack globals
 static long pow2xsplit = 0, skyclamphack = 0;
+
+static PTHead *our_texcache_fetch(unsigned short flags)
+{
+    // r_usetileshades 1 is TX's method.
+    int32_t vis = (r_usetileshades == 1) ? globvis>>3 : 0;
+    return PT_GetHead(globalpicnum, globalpal, getpalookup(vis,globalshade), flags, 0);
+}
+
 void drawpoly (double *dpx, double *dpy, long n, long method)
 {
 #define PI 3.14159265358979323
@@ -613,7 +728,7 @@ void drawpoly (double *dpx, double *dpy, long n, long method)
 		if (method & METH_CLAMPED) ptflags |= PTH_CLAMPED;
 		if (drawingskybox) ptflags |= PTH_SKYBOX;
 		
-		pth = PT_GetHead(globalpicnum, globalpal, ptflags, 0);
+        pth = our_texcache_fetch(ptflags);
 		if (pth) {
 			if (drawingskybox) {
 				picidx = drawingskybox - 1;
@@ -666,8 +781,7 @@ void drawpoly (double *dpx, double *dpy, long n, long method)
         
 		{
 			float pc[3];
-			f = ((float)(numpalookups-min(max(globalshade,0),numpalookups)))/((float)numpalookups);
-			pc[0] = pc[1] = pc[2] = f;
+			pc[0] = pc[1] = pc[2] = getshadefactor(globalshade);
 			switch(method & (METH_MASKED | METH_TRANS))
 			{
 				case METH_SOLID:   alphac = 1.0; break;
@@ -812,7 +926,7 @@ void drawpoly (double *dpx, double *dpy, long n, long method)
 							break;
 						case PTHPIC_GLOW:
 							bglColor4f(1.f,1.f,1.f,alphac);
-							if (fog_is_on) bglDisable(GL_FOG);
+							if (!nofog) bglDisable(GL_FOG);
 							bglEnable(GL_BLEND);	// blend with what's under us
 							bglDepthMask(GL_FALSE);	// don't update the Z buffer
 							bglBindTexture(GL_TEXTURE_2D, pth->pic[PTHPIC_GLOW]->glpic);
@@ -838,7 +952,7 @@ void drawpoly (double *dpx, double *dpy, long n, long method)
 						case PTHPIC_BASE:
 							break;
 						case PTHPIC_GLOW:
-							if (fog_is_on) bglEnable(GL_FOG);
+							if (!nofog) bglEnable(GL_FOG);
 							break;
 						default:
 							break;
@@ -869,7 +983,7 @@ void drawpoly (double *dpx, double *dpy, long n, long method)
 						break;
 					case PTHPIC_GLOW:
 						bglColor4f(1.f,1.f,1.f,alphac);
-						if (fog_is_on) bglDisable(GL_FOG);
+						if (!nofog) bglDisable(GL_FOG);
 						bglEnable(GL_BLEND);	// blend with what's under us
 						bglDepthMask(GL_FALSE);	// don't update the Z buffer
 						bglBindTexture(GL_TEXTURE_2D, pth->pic[PTHPIC_GLOW]->glpic);
@@ -891,7 +1005,7 @@ void drawpoly (double *dpx, double *dpy, long n, long method)
 					case PTHPIC_BASE:
 						break;
 					case PTHPIC_GLOW:
-						if (fog_is_on) bglEnable(GL_FOG);
+						if (!nofog) bglEnable(GL_FOG);
 						break;
 					default:
 						break;
@@ -1554,18 +1668,6 @@ static void polymost_drawalls (long bunch)
     
 	sectnum = thesector[bunchfirst[bunch]]; sec = &sector[sectnum];
     
-#ifdef USE_OPENGL
-	if (!glinfo.hack_nofog && rendmode == 3) {
-		float col[4];
-		col[0] = (float)palookupfog[sec->floorpal].r / 63.f;
-		col[1] = (float)palookupfog[sec->floorpal].g / 63.f;
-		col[2] = (float)palookupfog[sec->floorpal].b / 63.f;
-		col[3] = 0;
-		bglFogfv(GL_FOG_COLOR,col);
-		bglFogf(GL_FOG_DENSITY,gvisibility*((float)((unsigned char)(sec->visibility+16))));
-	}
-#endif
-    
     //DRAW WALLS SECTION!
 	for(z=bunchfirst[bunch];z>=0;z=p2[z])
 	{
@@ -1618,7 +1720,7 @@ static void polymost_drawalls (long bunch)
         
 		globalpicnum = sec->floorpicnum; globalshade = sec->floorshade; globalpal = (long)((unsigned char)sec->floorpal);
 		globalorientation = sec->floorstat;
-		if (picanm[globalpicnum]&192) globalpicnum += animateoffs(globalpicnum,sectnum);
+		DO_TILE_ANIM(globalpicnum,sectnum);
 		if (!(globalorientation&1))
 		{
             //(singlobalang/-16384*(sx-ghalfx) + 0*(sy-ghoriz) + (cosviewingrangeglobalang/16384)*ghalfx)*d + globalposx    = u*16
@@ -1719,6 +1821,10 @@ static void polymost_drawalls (long bunch)
 			}
 			domostpolymethod = (globalorientation>>7)&3;
 			if (globalposz >= getflorzofslope(sectnum,globalposx,globalposy)) domostpolymethod = -1; //Back-face culling
+            
+            
+            calc_and_apply_fog(sec->ceilingpicnum, sec->ceilingshade, sec->visibility, sec->ceilingpal);
+            
 			pow2xsplit = 0; domost(x0,fy0,x1,fy1); //flor
 			domostpolymethod = 0;
 		}
@@ -1728,10 +1834,8 @@ static void polymost_drawalls (long bunch)
 #ifdef USE_OPENGL
 			if (rendmode == 3)
 			{
-				if (!glinfo.hack_nofog) {
-					bglDisable(GL_FOG);
-					fog_is_on = 0;
-				}
+
+                calc_and_apply_fog_factor(sec->floorpicnum, sec->floorshade, sec->visibility, sec->floorpal, 0.005);                
                 
                 //Use clamping for tiled sky textures
 				for(i=(1<<pskybits)-1;i>0;i--)
@@ -1961,17 +2065,15 @@ static void polymost_drawalls (long bunch)
 			if (rendmode == 3)
 			{
 				skyclamphack = 0;
-				if (!glinfo.hack_nofog) {
-					bglEnable(GL_FOG);
-					fog_is_on = 1;
-				}
+                if (!nofog)
+                    bglEnable(GL_FOG);
 			}
 #endif
 		}
         
 		globalpicnum = sec->ceilingpicnum; globalshade = sec->ceilingshade; globalpal = (long)((unsigned char)sec->ceilingpal);
 		globalorientation = sec->ceilingstat;
-		if (picanm[globalpicnum]&192) globalpicnum += animateoffs(globalpicnum,sectnum);
+		DO_TILE_ANIM(globalpicnum,sectnum);
 		if (!(globalorientation&1))
 		{
 			if (!(globalorientation&64))
@@ -2078,10 +2180,7 @@ static void polymost_drawalls (long bunch)
 #ifdef USE_OPENGL
 			if (rendmode == 3)
 			{
-				if (!glinfo.hack_nofog) {
-					bglDisable(GL_FOG);
-					fog_is_on = 0;
-				}
+                calc_and_apply_fog_factor(sec->ceilingpicnum, sec->ceilingshade, sec->visibility, sec->ceilingpal, 0.005);
                 
                 //Use clamping for tiled sky textures
 				for(i=(1<<pskybits)-1;i>0;i--)
@@ -2310,10 +2409,8 @@ static void polymost_drawalls (long bunch)
 			if (rendmode == 3)
 			{
 				skyclamphack = 0;
-				if (!glinfo.hack_nofog) {
-					bglEnable(GL_FOG);
-					fog_is_on = 1;
-				}
+                if (!nofog)
+                    bglEnable(GL_FOG);
 			}
 #endif
 		}
@@ -2372,7 +2469,7 @@ static void polymost_drawalls (long bunch)
 			if (((cy0 < ocy0) || (cy1 < ocy1)) && (!((sec->ceilingstat&sector[nextsectnum].ceilingstat)&1)))
 			{
 				globalpicnum = wal->picnum; globalshade = wal->shade; globalpal = (long)((unsigned char)wal->pal);
-				if (picanm[globalpicnum]&192) globalpicnum += animateoffs(globalpicnum,wallnum+16384);
+				DO_TILE_ANIM(globalpicnum,wallnum+16384);
                 
 				if (!(wal->cstat&4)) i = sector[nextsectnum].ceilingz; else i = sec->ceilingz;
 				t0 = ((float)(i-globalposz))*ryp0 + ghoriz;
@@ -2402,6 +2499,8 @@ static void polymost_drawalls (long bunch)
 				}
 				if (wal->cstat&256) { gvx = -gvx; gvy = -gvy; gvo = -gvo; } //yflip
                 
+                calc_and_apply_fog(wal->picnum, wal->shade, sec->visibility, sec->floorpal);
+                
 				pow2xsplit = 1; domost(x1,ocy1,x0,ocy0);
                 
 				if (wal->cstat&8) { gux = ogux; guy = oguy; guo = oguo; }
@@ -2417,7 +2516,7 @@ static void polymost_drawalls (long bunch)
 					guy += (float)(nwal->xpanning-wal->xpanning)*gdy;
 				}
 				globalpicnum = nwal->picnum; globalshade = nwal->shade; globalpal = (long)((unsigned char)nwal->pal);
-				if (picanm[globalpicnum]&192) globalpicnum += animateoffs(globalpicnum,wallnum+16384);
+				DO_TILE_ANIM(globalpicnum,wallnum+16384);
                 
 				if (!(nwal->cstat&4)) i = sector[nextsectnum].floorz; else i = sec->ceilingz;
 				t0 = ((float)(i-globalposz))*ryp0 + ghoriz;
@@ -2448,6 +2547,8 @@ static void polymost_drawalls (long bunch)
 				}
 				if (nwal->cstat&256) { gvx = -gvx; gvy = -gvy; gvo = -gvo; } //yflip
                 
+                calc_and_apply_fog(nwal->picnum, nwal->shade, sec->visibility, sec->floorpal);
+                
 				pow2xsplit = 1; domost(x0,ofy0,x1,ofy1);
                 
 				if (wal->cstat&(2+8)) { guo = oguo; gux = ogux; guy = oguy; }
@@ -2458,7 +2559,7 @@ static void polymost_drawalls (long bunch)
 		{
 			if (nextsectnum < 0) globalpicnum = wal->picnum; else globalpicnum = wal->overpicnum;
 			globalshade = wal->shade; globalpal = (long)((unsigned char)wal->pal);
-			if (picanm[globalpicnum]&192) globalpicnum += animateoffs(globalpicnum,wallnum+16384);
+			DO_TILE_ANIM(globalpicnum,wallnum+16384);
             
 			if (nextsectnum >= 0) { if (!(wal->cstat&4)) i = nextsec->ceilingz; else i = sec->ceilingz; }
             else { if (!(wal->cstat&4)) i = sec->ceilingz;     else i = sec->floorz; }
@@ -2491,6 +2592,9 @@ static void polymost_drawalls (long bunch)
 				guo = gdo*t - guo;
 			}
 			if (wal->cstat&256) { gvx = -gvx; gvy = -gvy; gvo = -gvo; } //yflip
+            
+            calc_and_apply_fog(wal->picnum, wal->shade, sec->visibility, sec->floorpal);
+            
 			pow2xsplit = 1; domost(x0,-10000,x1,-10000);
 		}
         
@@ -2864,7 +2968,7 @@ void polymost_drawmaskwall (long damaskwallcnt)
 	z2 = min(nsec->floorz,sec->floorz);
     
 	globalpicnum = wal->overpicnum; if ((unsigned long)globalpicnum >= MAXTILES) globalpicnum = 0;
-	if (picanm[globalpicnum]&192) globalpicnum += animateoffs(globalpicnum,(short)thewall[z]+16384);
+	DO_TILE_ANIM(globalpicnum,(short)thewall[z]+16384);
     if (globalpicnum == 664) { // wrong mask wall rendering workaround
         return;
     }
@@ -2936,17 +3040,7 @@ void polymost_drawmaskwall (long damaskwallcnt)
 	method = METH_MASKED; pow2xsplit = 1;
 	if (wal->cstat&128) { if (!(wal->cstat&512)) method = METH_TRANS; else method = METH_INTRANS; }
     
-#ifdef USE_OPENGL
-	if (!glinfo.hack_nofog && rendmode == 3) {
-		float col[4];
-		col[0] = (float)palookupfog[sec->floorpal].r / 63.f;
-		col[1] = (float)palookupfog[sec->floorpal].g / 63.f;
-		col[2] = (float)palookupfog[sec->floorpal].b / 63.f;
-		col[3] = 0;
-		bglFogfv(GL_FOG_COLOR,col);
-		bglFogf(GL_FOG_DENSITY,gvisibility*((float)((unsigned char)(sec->visibility+16))));
-	}
-#endif
+    calc_and_apply_fog(wal->picnum, wal->shade, sec->visibility, sec->floorpal);
     
 	for(i=0;i<2;i++)
 	{
@@ -3033,7 +3127,7 @@ void polymost_drawsprite (long snum)
 	spritenum         = tspr->owner;
     
 	if ((globalorientation&48) != 48) {	// only non-voxel sprites should do this
-		if (picanm[globalpicnum]&192) globalpicnum += animateoffs(globalpicnum,spritenum+32768);
+		DO_TILE_ANIM(globalpicnum,spritenum+32768);
         
 		xoff = (long)((signed char)((picanm[globalpicnum]>>8)&255))+((long)tspr->xoffset);
 		yoff = (long)((signed char)((picanm[globalpicnum]>>16)&255))+((long)tspr->yoffset);
@@ -3043,16 +3137,7 @@ void polymost_drawsprite (long snum)
 	if (tspr->cstat&2) { if (!(tspr->cstat&512)) method = METH_TRANS + METH_CLAMPED; else method = METH_INTRANS + METH_CLAMPED; }
     
 #ifdef USE_OPENGL
-	if (!glinfo.hack_nofog && rendmode == 3) {
-		float col[4];
-		col[0] = (float)palookupfog[sector[tspr->sectnum].floorpal].r / 63.f;
-		col[1] = (float)palookupfog[sector[tspr->sectnum].floorpal].g / 63.f;
-		col[2] = (float)palookupfog[sector[tspr->sectnum].floorpal].b / 63.f;
-		col[3] = 0;
-		bglFogfv(GL_FOG_COLOR,col); //default is 0,0,0,0
-		bglFogf(GL_FOG_DENSITY,gvisibility*((float)((unsigned char)(sector[tspr->sectnum].visibility+16))));
-	}
-    
+    calc_and_apply_fog(tspr->picnum, globalshade, sector[tspr->sectnum].visibility, sector[tspr->sectnum].floorpal);
 	while (rendmode == 3 && !(spriteext[tspr->owner].flags&SPREXT_NOTMD)) {
 		if (usemodels && tile2model[tspr->picnum].modelid >= 0 && tile2model[tspr->picnum].framenum >= 0) {
 			if (mddraw(tspr)) return;
@@ -3609,7 +3694,13 @@ void polymost_dorotatesprite (long sx, long sy, long z, short a, short picnum,
 			if ((d < y2) != (d < 0)) { py[n] = fy; px[n] = (px2[zz]-px2[z])*d/y2 + px2[z]; n++; }
 			z = zz;
 		} while (z);
-		pow2xsplit = 0; drawpoly(px,py,n,method);
+    #ifdef USE_OPENGL
+        if (!nofog) bglDisable(GL_FOG);
+        pow2xsplit = 0; drawpoly(px,py,n,method);
+        if (!nofog) bglEnable(GL_FOG);
+    #else
+            pow2xsplit = 0; drawpoly(px,py,n,method);
+    #endif
 	}
     
 #ifdef USE_OPENGL
@@ -3819,10 +3910,10 @@ void polymost_fillpolygon (long npoints)
 	if (gloy1 != -1) setpolymost2dview(); //disables blending, texturing, and depth testing
 	bglEnable(GL_ALPHA_TEST);
 	bglEnable(GL_TEXTURE_2D);
-	pth = PT_GetHead(globalpicnum, globalpal, usehightile ? PTH_HIGHTILE : 0, 0);
+	pth = our_texcache_fetch(usehightile ? PTH_HIGHTILE : 0);
 	bglBindTexture(GL_TEXTURE_2D, (pth && pth->pic[PTHPIC_BASE]) ? pth->pic[ PTHPIC_BASE ]->glpic : 0);
     
-	f = ((float)(numpalookups-min(max(globalshade,0),numpalookups)))/((float)numpalookups);
+	f = getshadefactor(globalshade);
 	switch ((globalorientation>>7)&3) {
 		case 0:
 		case 1: a = 1.0; bglDisable(GL_BLEND); break;
@@ -3860,7 +3951,7 @@ long polymost_drawtilescreen (long tilex, long tiley, long wallnum, long dimen)
 		}
 	}
     
-	pth = PT_GetHead(wallnum, 0, (usehightile ? PTH_HIGHTILE : 0) | PTH_CLAMPED, 0);
+	pth = PT_GetHead(wallnum, 0, 0, (usehightile ? PTH_HIGHTILE : 0) | PTH_CLAMPED, 0);
 	
 	if (!pth || !pth->pic[PTHPIC_BASE]) {
 		return 0;
@@ -3987,6 +4078,9 @@ long polymost_printext256(long xpos, long ypos, short col, short backcol, char *
 	setpolymost2dview();	// disables blending, texturing, and depth testing
 	bglDisable(GL_ALPHA_TEST);
 	bglDepthMask(GL_FALSE);	// disable writing to the z-buffer
+    
+    // XXX: Don't fogify the OSD text in Mapster32 with r_usenewshading=2.
+    bglDisable(GL_FOG);
     
 	if (backcol >= 0) {
 		bglColor4ub(b.r,b.g,b.b,255);
@@ -4293,6 +4387,8 @@ void polymost_precache(long dapicnum, long dapalnum, long datype)
 	if (datype == 0) return;
     
 	mid = md_tilehasmodel(dapicnum);
+    
+    if (models == 0) return;
 	if (mid < 0 || models[mid]->mdnum < 2) return;
     
 	{

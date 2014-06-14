@@ -26,7 +26,6 @@ struct glinfo glinfo = {
 	0,		// multitexturing
 	0,		// envcombine
 	
-	0,		// no fog hack flag
 };
 #endif
 
@@ -194,6 +193,8 @@ int baselayer_init(void)
 	return 0;
 }
 
+char nofog=0;
+
 #ifdef USE_OPENGL
 void baselayer_setupopengl()
 {
@@ -238,7 +239,7 @@ void baselayer_setupopengl()
 			glinfo.texnpot = 1;
 		} else if (!Bstrcmp(p2, "WGL_3DFX_gamma_control")) {
 				// 3dfx cards have issues with fog
-			glinfo.hack_nofog = 1;
+			nofog = 1;
 			if (!(warnonce&1)) initprintf("3dfx card detected: OpenGL fog disabled\n");
 			warnonce |= 1;
 		} else if (!Bstrcmp(p2, "GL_ARB_multisample")) {

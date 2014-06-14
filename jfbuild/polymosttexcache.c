@@ -1,11 +1,10 @@
 #ifdef USE_OPENGL
 
-#include "polymosttexcache.h"
 #include "compat.h"
-#include "baselayer.h"
-
-#include "glbuild.h"
 #include "build.h"
+#include "polymosttexcache.h"
+#include "baselayer.h"
+#include "glbuild.h"
 #include "hightile_priv.h"
 #include "polymosttex_priv.h"
 
@@ -64,11 +63,11 @@ static unsigned int gethashhead(const char * filename)
 	unsigned long hash = 5381;
 	int c;
 	
-        while ((c = *filename++)) {
+    while ((c = (unsigned char)*filename++)) {
 		hash = ((hash << 5) + hash) ^ c; /* hash * 33 ^ c */
 	}
 	
-        return hash & (PTCACHEHASHSIZ-1);
+    return hash & (PTCACHEHASHSIZ-1);
 }
 
 /**

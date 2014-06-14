@@ -25,14 +25,37 @@ void dnRecordCountAchievement(const char* achievement, const char* stat, int max
 	}
 }
 
-void dnRecordDancerTip(){
-    if (dnGetAddonId() != 0) return;
+void dnRecordDancerTip() {
+    if (dnGetAddonId() != 0 || ud.multimode > 1) return;
     CSTEAM_UnlockAchievement(ACHIEVEMENT_SHAKE_IT_BABY);
 }
 
+void dnRecordMultiplayerKill() {
+    if (ud.coop == 1) return;
+    int number = CSTEAM_GetStat(STAT_MP);
+    if (number > -1) {
+        number++;
+        CSTEAM_SetStat(STAT_MP, number);
+        if (number == 1 || (number < ACHIEVEMENT_MP_TIER1_MAX && number % 10 == 0)) {
+            CSTEAM_IndicateProgress(ACHIEVEMENT_MP_TIER1, number, ACHIEVEMENT_MP_TIER1_MAX);
+        } else if (number >= ACHIEVEMENT_MP_TIER1_MAX && number < ACHIEVEMENT_MP_TIER2_MAX &&  number % 25 == 0) {
+            CSTEAM_IndicateProgress(ACHIEVEMENT_MP_TIER2, number, ACHIEVEMENT_MP_TIER2_MAX);
+            if (number == ACHIEVEMENT_MP_TIER1_MAX) {
+                CSTEAM_UnlockAchievement(ACHIEVEMENT_MP_TIER1);
+            }
+        } else if (number >= ACHIEVEMENT_MP_TIER2_MAX && number % 50 == 0) {
+            CSTEAM_IndicateProgress(ACHIEVEMENT_MP_TIER3, number, ACHIEVEMENT_MP_TIER3_MAX);
+            if (number == ACHIEVEMENT_MP_TIER2_MAX) {
+                CSTEAM_UnlockAchievement(ACHIEVEMENT_MP_TIER2);
+            } else if (number == ACHIEVEMENT_MP_TIER3_MAX){
+                CSTEAM_UnlockAchievement(ACHIEVEMENT_MP_TIER3);
+            }
+        }
+    }
+}
+
 void dnHandleEndLevelAchievements(int Volume, int Level, int Time, int MaxKills, int Kills) {
-    printf("Level: %d",Level);
-    
+    if (ud.multimode > 1) return;    
 	if (Volume == 0 && Level == 0 && (Time / (26*60)) < 3 && dnGetAddonId() == 0) {
         CSTEAM_UnlockAchievement(ACHIEVEMENT_THOSE_ALIEN_BASTARDS);
 	}
@@ -61,31 +84,35 @@ void dnHandleEndLevelAchievements(int Volume, int Level, int Time, int MaxKills,
 }
 
 void dnRecordEnemyKilled() {
+    if (ud.multimode > 1) return;
     dnRecordCountAchievement(ACHIEVEMENT_INVADERS_MUST_DIE, STAT_INVADERS_MUST_DIE, ACHIEVEMENT_INVADERS_MUST_DIE_MAX, 10);
 }
 
 
 void dnRecordEnemyStomp() {
+    if (ud.multimode > 1) return;
     dnRecordCountAchievement(ACHIEVEMENT_THE_MIGHTY_FOOT, STAT_THE_MIGHTY_FOOT, ACHIEVEMENT_THE_MIGHTY_FOOT_MAX, 5);
 }
 
 void dnRecordShitPile() {
-    if (dnGetAddonId() != 0) return;
+    if (dnGetAddonId() != 0 || ud.multimode > 1) return;
 	CSTEAM_UnlockAchievement(ACHIEVEMENT_SHIT_HAPPENS);
 }
 
 void dnRecordSecret(int Volume, int Level, short SecretIndex) {
+    if (ud.multimode > 1) return;
     //printf("volum %d, level %d, secret index: %d\n", Volume, Level, SecretIndex);
     //doom marine: 0, 2, 3
     dnRecordCountAchievement(ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT, STAT_OOMP_UUGH_WHERE_IS_IT, ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT_MAX, 10);
 }
 
 void dnRecordCheat() {
+    if (ud.multimode > 1) return;
     CSTEAM_UnlockAchievement(ACHIEVEMENT_SHAME);
 }
 
 void dnRecordDukeTalk(short num) {
-    if (dnGetAddonId() != 0) return;
+    if (dnGetAddonId() != 0 || ud.multimode > 1) return;
 //            printf("NUM %d", num);
     if (num == 193) { //Doomed space marine
         CSTEAM_UnlockAchievement(ACHIEVEMENT_DOOMED_MARINE);

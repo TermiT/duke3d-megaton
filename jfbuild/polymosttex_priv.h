@@ -25,18 +25,39 @@ struct PTMHead_typ {
 	GLuint glpic;
 	
 	int flags;
-	long sizx, sizy;		// padded texture dimensions
-	long tsizx, tsizy;		// true texture dimensions
+	int sizx, sizy;		// padded texture dimensions
+	int tsizx, tsizy;		// true texture dimensions
 };
 
 typedef struct PTMHead_typ PTMHead;
+
+/** identifying information for a PolymostTex texture manager entry */
+struct PTMIdent_typ {
+    int type;       //see PTMIDENT_* constants
+    int flags;
+    int palnum;
+    int picnum;
+    int shade;
+    int layer;      //see PTHPIC_* constants
+	int effects;    //see HICEFFECT_* constants
+	char filename[BMAX_PATH];
+};
+
+typedef struct PTMIdent_typ PTMIdent;
+
+enum {
+    PTMIDENT_ART = 0,
+    PTMIDENT_HIGHTILE = 1,
+    PTMIDENT_MDSKIN = 2,
+};
 
 /** PolymostTex texture header */
 struct PTHead_typ {
 	PTMHead *pic[PTHPIC_SIZE];	// when (flags & PTH_SKYBOX), each is a face of the cube
 					// when !(flags & PTH_SKYBOX), see PTHPIC_* constants
-	long picnum;
-	long palnum;
+	int picnum;
+	int palnum;
+	int shade;
 	unsigned short flags;
 	
 	hicreplctyp *repldef;
@@ -49,7 +70,8 @@ typedef struct PTHead_typ PTHead;
 enum {
 	PTITER_PICNUM = 1,
 	PTITER_PALNUM = 2,
-	PTITER_FLAGS  = 4,
+	PTITER_SHADE  = 4,
+	PTITER_FLAGS  = 8,
 };
 
 struct PTIter_typ;	// an opaque iterator type for walking the internal hash
@@ -65,7 +87,7 @@ void PTBeginPriming(void);
 /**
  * Flag a texture as required for priming
  */
-void PTMarkPrime(long picnum, long palnum, unsigned short flags);
+void PTMarkPrime(int picnum, int palnum, unsigned short flags);
 
 /**
  * Runs a cycle of the priming process. Call until nonzero is returned.
@@ -91,11 +113,12 @@ void PTClear();
  * @param match PTITER_* flags indicating which parameters to test
  * @param picnum when (match&PTITER_PICNUM), specifies the picnum
  * @param palnum when (match&PTITER_PALNUM), specifies the palnum
+ * @param shade when (match&PTITER_SHADE), specifies the shade
  * @param flagsmask when (match&PTITER_FLAGS), specifies the mask to apply to flags
  * @param flags when (match&PTITER_FLAGS), specifies the flags to test
  * @return an iterator
  */
-PTIter PTIterNewMatch(int match, long picnum, long palnum, unsigned short flagsmask, unsigned short flags);
+PTIter PTIterNewMatch(int match, int picnum, int palnum, int shade, unsigned short flagsmask, unsigned short flags);
 
 /**
  * Creates a new iterator for walking the entire header hash
@@ -129,17 +152,24 @@ void PTIterFree(PTIter iter);
  *
  * Shared method for polymost.c to call.
  */
-PTHead * PT_GetHead(long picnum, long palnum, unsigned short flags, int peek);
+PTHead * PT_GetHead(int picnum, int palnum, int shade, unsigned short flags, int peek);
 
 
 /**
+ * Initialise a PTMIdent structure from a PTHead
+ * @param id the PTMIdent to initialise from...
+ * @param pth the PTHead structure
+ */
+void PTM_InitIdent(PTMIdent *id, PTHead *pth);
+
+/**
  * Returns a PTMHead pointer for the given texture id
- * @param id the texture id
+ * @param id the texture identifier struct
  * @return the PTMHead item, or null if it couldn't be created
  *
  * Shared method for polymost.c and mdsprite.c to call.
  */
-PTMHead * PTM_GetHead(const unsigned char id[16]);
+PTMHead * PTM_GetHead(const PTMIdent *id);
 
 /**
  * Loads a texture file into OpenGL

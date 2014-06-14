@@ -8,9 +8,22 @@
 #ifdef _WIN32
 #define isnan _isnan
 #define NAN 0
+#include <io.h>
+#include <fcntl.h>
+#include <time.h>
+#include <sys/types.h>
+#include <share.h>
 #else
 #include <math.h>
+#include <unistd.h>
 #endif
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+
+#include "crc32.h"
 
 template<typename t>
 t clamp(t v, t min, t max) {
@@ -170,4 +183,68 @@ rgb rgb_interp(rgb a, rgb b, float k) {
 rgb rgb_lerp(rgb a, rgb b, float k) {
 	rgb result(lerp(a.r, b.r, k), lerp(a.g, b.g, k), lerp(a.b, b.b, k));
 	return result;
+}
+
+extern "C"
+char *str_replace ( const char *string, const char *substr, const char *replacement ){
+    char *tok = NULL;
+    char *newstr = NULL;
+    char *oldstr = NULL;
+    char *head = NULL;
+    
+    if ( substr == NULL || replacement == NULL ) return strdup (string);
+    newstr = strdup (string);
+    head = newstr;
+    while ( (tok = strstr ( head, substr ))){
+        oldstr = newstr;
+        newstr = (char *) malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
+        if ( newstr == NULL ){
+            free (oldstr);
+            return NULL;
+        }
+        memcpy ( newstr, oldstr, tok - oldstr );
+        memcpy ( newstr + (tok - oldstr), replacement, strlen ( replacement ) );
+        memcpy ( newstr + (tok - oldstr) + strlen( replacement ), tok + strlen ( substr ), strlen ( oldstr ) - strlen ( substr ) - ( tok - oldstr ) );
+        memset ( newstr + strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) , 0, 1 );
+        head = newstr + (tok - oldstr) + strlen( replacement );
+        free (oldstr);
+    }
+    return newstr;
+}
+
+
+
+extern "C"
+
+const char* va(const char *format, ...) {
+    static char buffer[2048];
+    va_list ap;
+    va_start(ap, format);
+    vsprintf(buffer, format, ap);
+    va_end(ap);
+    return buffer;
+}
+
+extern "C"
+void crc32file(FILE *f, unsigned long *result) {
+    unsigned char buf[1024];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), f)) != 0) {
+        crc32block(result, buf, sizeof(buf));
+    }
+}
+
+extern "C"
+long get_modified_time(const char * path) {
+#ifdef _WIN32
+	struct _stat attr;
+	int fd = 0;
+	_sopen_s(&fd, path, _O_RDONLY, _SH_DENYNO, _S_IREAD);
+	_fstat(fd, &attr);
+	_close(fd);
+#else
+    struct stat attr;
+    stat(path, &attr);
+#endif
+    return attr.st_mtime;
 }

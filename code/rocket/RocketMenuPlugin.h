@@ -12,19 +12,26 @@
 struct OptionsData;
 
 struct RocketMenuDelegate {
-	virtual void DoCommand(Rocket::Core::Element *element, const Rocket::Core::String& command) = 0;
+	virtual bool DoCommand(Rocket::Core::Element *element, const Rocket::Core::String& command) = 0;
 	virtual void PopulateOptions(Rocket::Core::Element *menu_item, Rocket::Core::Element *options_element) = 0;
 
 	virtual void DidOpenMenuPage(Rocket::Core::ElementDocument *menu_page) = 0;
 	virtual void DidCloseMenuPage(Rocket::Core::ElementDocument *menu_page) = 0;
 
+    virtual bool WillChangeOptionValue(Rocket::Core::Element *menu_item, int direction) { return true; }
 	virtual void DidChangeOptionValue(Rocket::Core::Element *menu_item, Rocket::Core::Element *new_value) = 0;
+
 	virtual void DidChangeRangeValue(Rocket::Core::Element *menu_item, float new_value) = 0;
     virtual void DidClearKeyChooserValue(Rocket::Core::Element *menu_item, int slot) = 0;
+    
+    virtual void DidClearItem(Rocket::Core::Element *menu_item) = 0;
+    
+    virtual void DidRefreshItem(Rocket::Core::Element *menu_item) = 0;
 
     virtual void DidRequestKey(Rocket::Core::Element *menu_item, int slot) = 0;
     
     virtual void DidActivateItem(Rocket::Core::Element *menu_item) = 0;
+    
 };
 
 enum ItemAction {
@@ -32,6 +39,7 @@ enum ItemAction {
 	ItemActionLeft,
 	ItemActionRight,
     ItemActionClear,
+    ItemActionRefresh,
 };
 
 class RocketMenuPlugin: public Rocket::Core::Plugin, public Rocket::Core::EventListener {
@@ -70,6 +78,9 @@ public:
 
 	virtual bool GoBack(Rocket::Core::Context *context, bool notify_delegate = true);
 	virtual void ShowDocument(Rocket::Core::Context* context, const Rocket::Core::String& id, bool backlink = true);
+	
+	virtual void ShowModalDocument(Rocket::Core::Context* context, const Rocket::Core::String& id);
+	virtual void HideModalDocument(Rocket::Core::Context* context);
 
 	virtual void SetAnimationPlugin(RocketAnimationPlugin *p);
 
@@ -123,6 +134,13 @@ public:
     virtual const Rocket::Core::String GetKeyChooserValue(Rocket::Core::Element *menu_item, int slot);
 
     virtual void ClearMenuItem(Rocket::Core::Element *menu_item);
+    virtual void SetupMenuItem(Rocket::Core::Element *element);
+    virtual void RefreshMenuItem(Rocket::Core::Element *menu_item);
+    
+    virtual void UpdateFocus(Rocket::Core::Context *context);
+    
+    virtual Rocket::Core::Element* GetFocusTarget(Rocket::Core::Element *menu_item);
+    
 private:
 	RocketAnimationPlugin *m_animation;
 	RocketMenuDelegate *m_delegate;
@@ -130,13 +148,11 @@ private:
 	virtual void SetupOptions(Rocket::Core::Element *menu_item, Rocket::Core::Element *options_element);
 	virtual void SetupRange(Rocket::Core::Element *menu_item, Rocket::Core::Element *range_element);
 	virtual void SetupKeyChooser(Rocket::Core::Element *element);
-
-	virtual void SetupMenuItem(Rocket::Core::Element *element);
 	virtual void ActivateOption(OptionsData *data, Rocket::Core::ElementList::iterator next, bool notify_delegate = true);
 	virtual Rocket::Core::Element* FindNextItem(Rocket::Core::Element *menu_item);
 	virtual Rocket::Core::Element* FindPreviousItem(Rocket::Core::Element *menu_item);
 
-    virtual void RequestKeyForKeyChooser(Rocket::Core::Element *menu_item);
+    virtual void RequestKeyForKeyChooser(Rocket::Core::Element *menu_item);    
 };
 
 #endif /* ROCKET_MENU_PLUGIN_H */

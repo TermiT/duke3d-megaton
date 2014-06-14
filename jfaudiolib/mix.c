@@ -35,9 +35,11 @@ extern int    MV_RightChannelOffset;
 void ClearBuffer_DW( void *ptr, unsigned data, int length )
 {
     unsigned *ptrdw = ptr;
-    while (length--) {
-        *(ptrdw++) = data;
-    }
+	if (ptr != 0) {
+		while (length--) {
+			*(ptrdw++) = data;
+		}
+	}
 }
 
 /*

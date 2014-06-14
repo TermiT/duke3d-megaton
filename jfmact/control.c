@@ -1180,6 +1180,9 @@ static int dnIsAutoReleaseKey(dnKey key, int function) {
         case gamefunc_Shrink_Screen:
         case gamefunc_Enlarge_Screen:
         case gamefunc_Mouse_Aiming:
+        case gamefunc_Show_Opponents_Weapon:
+        case gamefunc_Toggle_Crosshair:
+        case gamefunc_See_Coop_View:
             return 1;
     }
     return 0;
@@ -1294,6 +1297,7 @@ void dnResetBindings() {
     dnBindFunction(gamefunc_Video_Menu, 0, SDLK_F11);
     
     dnBindFunction(gamefunc_Mouse_Aiming, 0, SDLK_u);
+    dnBindFunction(gamefunc_SendMessage, 0, SDLK_t);
 }
 
 void dnBindFunction(int function, int slot, dnKey key) {

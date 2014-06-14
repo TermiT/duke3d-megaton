@@ -11,7 +11,10 @@
 #include <mach/mach_time.h>
 #include <sys/time.h>
 
+
 #define MAX_PATH 2048
+
+
 
 const char* Sys_GetResourceDir(void) {
     static char data[MAX_PATH] = { 0 };
@@ -87,6 +90,10 @@ double Sys_GetTicks() {
     return subtractTimes(current, timer_start);
 }
 
+int Sys_FileExists( const char *path ) {
+	return access( path, F_OK ) != -1 ? 1 : 0;
+}
+
 void Sys_ThrottleFPS(int max_fps) {
     static int throttler_ready = 0;
 	static double end_of_prev_frame;
@@ -121,4 +128,23 @@ void Sys_GetScreenSize(int *width, int *height) {
 
 void Sys_CenterWindow(int width, int height) {
     
+}
+
+void Sys_DPrintf(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    
+    vprintf(format, args);
+    
+    va_end(args);
+}
+
+void Sys_Restart(const char *options) {
+    NSTask *task = [[NSTask alloc] init];
+    NSBundle *bundle = [NSBundle bundleWithPath:[[[NSBundle mainBundle] bundlePath] stringByAppendingPathComponent:@"../duke3d.app"]];
+    [task setLaunchPath:[bundle executablePath]];
+    NSArray *arguments = [[NSString stringWithUTF8String:options] componentsSeparatedByString:@" "];
+    [task setArguments:arguments];
+    [task launch];
+    exit(0);
 }

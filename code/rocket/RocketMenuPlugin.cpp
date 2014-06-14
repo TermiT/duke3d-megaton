@@ -17,8 +17,9 @@ void SetActiveKeySlot(Rocket::Core::Element *menu_item, int active_key);
 
 struct ContextData {
 	Rocket::Core::ElementDocument *current_document;
+	Rocket::Core::ElementDocument *saved_current_document;
 
-	ContextData():current_document(0) {}
+	ContextData():current_document(0),saved_current_document(0) {}
 	virtual ~ContextData(){};
 };
 
@@ -399,7 +400,12 @@ void RocketMenuPlugin::ProcessEvent(Rocket::Core::Event& event) {
             SetPreviousItemValue(element->GetParentNode()->GetParentNode());
             event.StopPropagation();
         } else {
-            DoItemAction(ItemActionEnter, element);
+            Rocket::Core::Element *focus_target = GetFocusTarget(element);
+            if (focus_target == NULL) {
+                DoItemAction(ItemActionEnter, element);
+            } else {
+                element->Focus();
+            }
         }
     } else if (event.GetType() == "mousemove") {
         if (element->GetTagName() == "div") {
@@ -426,9 +432,67 @@ void RocketMenuPlugin::ProcessEvent(Rocket::Core::Event& event) {
     }
 }
 
+void RocketMenuPlugin::ShowModalDocument(Rocket::Core::Context* context, const Rocket::Core::String& id) {
+	ContextData *cd = GetContextData(context);
+	
+	if (cd->saved_current_document == NULL) {
+		
+		Rocket::Core::ElementDocument *new_doc = context->GetDocument(id);
+		
+		if (new_doc != NULL) {
+			cd->saved_current_document = cd->current_document;
+			cd->current_document = new_doc;
+		}
+		
+		DocumentData *dd = GetDocumentData(cd->current_document);
+		if (cd->current_document->HasAttribute("default-item")) {
+			Rocket::Core::String def;
+			cd->current_document->GetAttribute("default-item")->GetInto(def);
+			if (dd->menu != NULL) {
+				HighlightItem(cd->current_document->GetElementById(def));
+			}
+		} else {
+			if (dd->active_item == NULL) {
+				if (dd->menu != NULL) {
+					HighlightItem(dd->menu->GetChild(0));
+				}
+			}
+		}
+		if (!cd->current_document->IsVisible()) {
+			cd->current_document->Show();
+			if (m_delegate) {
+				m_delegate->DidOpenMenuPage(cd->current_document);
+			}
+		}
+		
+	} else {
+		printf("[ROCK] Trying to open modal when modal is active\n" );
+	}
+}
+
+void RocketMenuPlugin::HideModalDocument(Rocket::Core::Context* context) {
+	ContextData *cd = GetContextData(context);
+	if (cd->current_document != NULL && cd->saved_current_document != NULL) {
+		cd->current_document->Hide();
+		if (cd->current_document->HasAttribute("closecmd")) {
+			Rocket::Core::String closecmd;
+			Rocket::Core::ElementDocument *doc = cd->current_document;
+			doc->GetAttribute("closecmd")->GetInto(closecmd);
+			doc->RemoveAttribute("closecmd");
+			m_delegate->DoCommand(doc, closecmd);
+			doc->SetAttribute("closecmd", closecmd);
+		}
+		cd->current_document = cd->saved_current_document;
+		cd->saved_current_document = NULL;
+	}
+}
+
 void RocketMenuPlugin::ShowDocument(Rocket::Core::Context* context, const Rocket::Core::String& id, bool backlink) {
 	ContextData *cd = GetContextData(context);
 	Rocket::Core::ElementDocument *new_doc = context->GetDocument(id);
+	if (cd->saved_current_document != NULL) {
+		HideModalDocument(context);
+	}
 	if (new_doc != NULL) {
 		if (new_doc != cd->current_document) {
 			if (cd->current_document != NULL) {
@@ -472,18 +536,26 @@ void RocketMenuPlugin::ShowDocument(Rocket::Core::Context* context, const Rocket
 bool RocketMenuPlugin::GoBack(Rocket::Core::Context *context, bool notify_delegate) {
 	ContextData *cd = GetContextData(context);
 	if (cd->current_document != NULL) {
-		Rocket::Core::Variant *attr = cd->current_document->GetAttribute("parent");
-		if (attr != NULL) {
-			Rocket::Core::String menu_id = attr->Get<Rocket::Core::String>();
-            if (cd->current_document->HasAttribute("closecmd") && notify_delegate) {
-                Rocket::Core::String closecmd;
-                cd->current_document->GetAttribute("closecmd")->GetInto(closecmd);
-                cd->current_document->RemoveAttribute("closecmd");
-                m_delegate->DoCommand(cd->current_document, closecmd);
-                cd->current_document->SetAttribute("closecmd", closecmd);
-            }
-			ShowDocument(context, menu_id, false);
-			return true;
+		if (cd->saved_current_document == NULL) {
+			Rocket::Core::Variant *attr = cd->current_document->GetAttribute("parent");
+			if (attr != NULL) {
+				Rocket::Core::String menu_id = attr->Get<Rocket::Core::String>();
+				if (cd->current_document->HasAttribute("closecmd") && notify_delegate) {
+					Rocket::Core::String closecmd;
+					Rocket::Core::ElementDocument *doc = cd->current_document;
+					doc->GetAttribute("closecmd")->GetInto(closecmd);
+					doc->RemoveAttribute("closecmd");
+					if (m_delegate->DoCommand(doc, closecmd)) {
+						ShowDocument(context, menu_id, false);
+					}
+					doc->SetAttribute("closecmd", closecmd);
+				} else {
+					ShowDocument(context, menu_id, false);
+				}
+				return true;
+			}
+		} else {
+			HideModalDocument(context);
 		}
 	}
 	return false;
@@ -544,6 +616,14 @@ UpdateKeyChooser(KeyData *data, int active_key, bool highlight) {
 	ShowElement(data->ftr2, highlight && active_key);
 }
 
+Rocket::Core::Element* RocketMenuPlugin::GetFocusTarget(Rocket::Core::Element *menu_item) {
+    Rocket::Core::Element *result = NULL;
+    if (menu_item != NULL && menu_item->HasAttribute("focus")) {
+        result = menu_item->GetOwnerDocument()->GetElementById(menu_item->GetAttribute("focus")->Get<Rocket::Core::String>());
+    }
+    return result;
+}
+
 void RocketMenuPlugin::HighlightItem(Rocket::Core::Element *e) {
 	static ColorAnimation colorAnimation(rgb(255,255,255), rgb(235, 156, 9), 1);
 	DocumentData *doc_data = GetDocumentData(e->GetOwnerDocument());
@@ -591,8 +671,23 @@ void RocketMenuPlugin::HighlightItem(Rocket::Core::Element *e) {
                 m_delegate->DidActivateItem(e);
 			}
 			doc_data->active_item = e;
+            if (doc_data->active_item != NULL) {
+                UpdateFocus(doc_data->active_item->GetContext());
+            }
 		}
 	}
+}
+
+void RocketMenuPlugin::UpdateFocus(Rocket::Core::Context *context) {
+    ContextData *cd = GetContextData(context);
+    cd->current_document->GetFocusLeafNode()->Blur();
+    DocumentData *dd = GetDocumentData(cd->current_document);
+    if (dd->active_item != NULL) {
+        Rocket::Core::Element *focus_target = GetFocusTarget(dd->active_item);
+        if (focus_target != NULL) {
+            focus_target->Focus();
+        }
+    }
 }
 
 void RocketMenuPlugin::HighlightItem(Rocket::Core::ElementDocument *document, const Rocket::Core::String& id) {
@@ -622,23 +717,41 @@ void RocketMenuPlugin::HighlightItem(Rocket::Core::Context *context, const Rocke
 
 Rocket::Core::Element* RocketMenuPlugin::FindNextItem(Rocket::Core::Element *menu_item) {
 	Rocket::Core::Element *next = menu_item;
-	do {
-		next = next->GetNextSibling();
-		if (next == NULL) {
-			next = menu_item->GetParentNode()->GetChild(0);
-		}
-	} while (next->IsClassSet("disabled") && next != menu_item);
+    
+    do {
+        if (next->HasAttribute("next")) {
+            Rocket::Core::Context *context = next->GetContext();
+            ContextData *cd = GetContextData(context);
+            Rocket::Core::ElementDocument *document = cd->current_document;
+            next = document->GetElementById(next->GetAttribute("next")->Get<Rocket::Core::String>());
+        } else {
+            next = next->GetNextSibling();
+            if (next == NULL) {
+                next = menu_item->GetParentNode()->GetChild(0);
+            }
+        }
+    } while (next->IsClassSet("disabled") && next != menu_item);
+
 	return next;
 }
 
 Rocket::Core::Element* RocketMenuPlugin::FindPreviousItem(Rocket::Core::Element *menu_item) {
 	Rocket::Core::Element *next = menu_item;
-	do {
-		next = next->GetPreviousSibling();
-		if (next == NULL) {
-			next = menu_item->GetParentNode()->GetChild(menu_item->GetParentNode()->GetNumChildren()-1);
-		}
-	} while (next->IsClassSet("disabled") && next != menu_item);
+    
+    do {
+        if (next->HasAttribute("previous")) {
+            Rocket::Core::Context *context = next->GetContext();
+            ContextData *cd = GetContextData(context);
+            Rocket::Core::ElementDocument *document = cd->current_document;
+            next = document->GetElementById(next->GetAttribute("previous")->Get<Rocket::Core::String>());
+        } else {
+            next = next->GetPreviousSibling();
+            if (next == NULL) {
+                next = menu_item->GetParentNode()->GetChild(menu_item->GetParentNode()->GetNumChildren()-1);
+            }
+        }
+    } while (next->IsClassSet("disabled") && next != menu_item);
+    
 	return next;
 }
 
@@ -716,25 +829,36 @@ void RocketMenuPlugin::DoItemAction(ItemAction action, Rocket::Core::Element *e)
 					m_delegate->DoCommand(e, command);
 				}
 				if (e->HasAttribute("options")) {
-					ActivateNextOption(e);
+                    if (m_delegate == NULL || m_delegate->WillChangeOptionValue(e, 0)) {
+                        ActivateNextOption(e);
+                    }
 				}
                 RequestKeyForKeyChooser(e);
 				break;
 			}
 			case ItemActionLeft:
 				if (e->HasAttribute("options")) {
-					ActivatePreviousOption(e);
+                    if (m_delegate == NULL || m_delegate->WillChangeOptionValue(e, -1)) {
+                        ActivatePreviousOption(e);
+                    }
 				}
 				break;
 			case ItemActionRight:
 				if (e->HasAttribute("options")) {
-					ActivateNextOption(e);
+                    if (m_delegate == NULL || m_delegate->WillChangeOptionValue(e, +1)) {
+                        ActivateNextOption(e);
+                    }
 				}
 				break;
             case ItemActionClear: {
                 ClearMenuItem(e);
                 break;
             }
+            case ItemActionRefresh: {
+                RefreshMenuItem(e);
+                break;
+            }
+
 		}
 	}
 }
@@ -1013,13 +1137,15 @@ void RocketMenuPlugin::SetNextItemValue(Rocket::Core::Element *menu_item) {
 }
 
 void RocketMenuPlugin::SetPreviousItemValue(Rocket::Core::Element *menu_item) {
-	ActivatePreviousOption(menu_item);
-	DecreaseRangeValue(menu_item);
-	ChangeActiveKeySlot(menu_item);
+    if (menu_item != NULL) {
+        ActivatePreviousOption(menu_item);
+        DecreaseRangeValue(menu_item);
+        ChangeActiveKeySlot(menu_item);
+    }
 }
 
 void RocketMenuPlugin::RequestKeyForKeyChooser(Rocket::Core::Element *menu_item) {
-    Rocket::Core::Context *context = menu_item->GetContext();
+//    Rocket::Core::Context *context = menu_item->GetContext();
     DocumentData *document_data = GetDocumentData(menu_item->GetOwnerDocument());
     KeyData *key_data = GetKeyData(menu_item);
     if (document_data != NULL && key_data != NULL && m_delegate != NULL) {
@@ -1058,5 +1184,15 @@ void RocketMenuPlugin::ClearMenuItem(Rocket::Core::Element *menu_item) {
                 m_delegate->DidClearKeyChooserValue(menu_item, document_data->active_key);
             }
         }
+    } else {
+        if (m_delegate != NULL) {
+            m_delegate->DidClearItem(menu_item);
+        }
+    }
+}
+
+void RocketMenuPlugin::RefreshMenuItem(Rocket::Core::Element *menu_item) {
+    if (m_delegate != NULL) {
+        m_delegate->DidRefreshItem(menu_item);
     }
 }

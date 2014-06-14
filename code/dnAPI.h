@@ -17,6 +17,7 @@ extern "C" {
 #endif
     
 #include "duke3d.h"
+#include "csteam.h"
     
 #pragma pack(push, 1)
 
@@ -29,12 +30,16 @@ typedef struct _GameDesc {
 	unsigned char respawn_monsters;
 	unsigned char respawn_items;
 	unsigned char respawn_inventory;
+    unsigned char netgame;
+    unsigned char numplayers;
 	unsigned char coop;
 	unsigned char marker;
 	unsigned char ffire;
-	unsigned char fraglimit;
-	unsigned long timelimit;
+	int32 fraglimit;
+	int32 timelimit;
 	unsigned char SplitScreen;
+    steam_id_t    own_id;
+    steam_id_t    other_ids[MAXPLAYERS];
 } GameDesc;
 
 typedef struct _VideMode {
@@ -44,6 +49,8 @@ typedef struct _VideMode {
 	int fullscreen;
 } VideoMode;
 #pragma pack(pop)
+
+void Sys_ThrottleFPS(int max_fps);
 
 void dnNewGame(GameDesc *gamedesc);
 void dnQuitGame();
@@ -81,7 +88,8 @@ int dnGetTile(int tile_no, int *width, int *height, void *data);
 int dnLoadGame(int slot);
 void dnCaptureScreen();
 int dnSaveGame(int slot);
-void dnQuitToTitle();
+void dnQuitToTitle(const char *message);
+void dnGetQuitMessage(char *message);
 void dnResetMouse();
 void dnResetMouseWheel();
 int dnIsVsyncOn();
@@ -95,6 +103,8 @@ const char* dnGetVersion();
 void dnSetLastSaveSlot(short i);
 CACHE1D_FIND_REC *dnGetMapsList();
 void dnSetUserMap(const char * mapname);
+void dnSetWorkshopMap(const char * mapname, const char * zipname);
+void dnUnsetWorkshopMap();
 int dnIsUserMap();
 const char* dnGetEpisodeName(int episode);
 const char* dnGetLevelName(int episode, int level);
@@ -142,12 +152,15 @@ SDLKey dnGetFunctionBinding(int function, int slot);
 void dnClearFunctionBindings();
 void dnApplyBindings();
 void dnDetectVideoMode();
+char * dnFilterUsername(const char * name);
 
 void Sys_GetScreenSize(int *width, int *height);
 void Sys_CenterWindow(int width, int height);
+double Sys_GetTicks();
+void Sys_DPrintf(const char *format, ...);
+int Sys_FileExists(const char *path);
     
 void play_vpx_video(const char * filename, void (*frame_callback)(int));
-void play_smpeg_video(const char * filename);
     
 #ifdef __cplusplus
 }

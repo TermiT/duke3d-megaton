@@ -17,6 +17,8 @@
 #ifdef WITHKPLIB
 #include "kplib.h"
 
+#include "crc32.h"
+
 	//Insert '|' in front of filename
 	//Doing this tells kzopen to load the file only if inside a .ZIP file
 static long kzipopen(char *filnam)
@@ -1294,6 +1296,27 @@ static long lzwuncompress(char *lzwinbuf, long compleng, char *lzwoutbuf)
 		if (currstr > oneupnumbits) { numbits++; oneupnumbits <<= 1; }
 	} while (currstr < strtot);
 	return((long)B_LITTLE16(shortptr[0])); //uncompleng
+}
+
+void crc32file( FILE *file, unsigned long *outCrc32 );
+
+unsigned long getgrpsig(void) {
+    unsigned long result;
+	int i;
+	FILE *f;
+    result = 0;
+    crc32init(&result);
+    for (i = 0; i < MAXGROUPFILES; i++) {
+        if (gfilelist[i] && gfilelist[i][0] != 0) {
+			f = fopen(gfilelist[i], "rb");
+			if (f != NULL) {
+				crc32file(f, &result);
+				fclose(f);
+			}
+        }
+    }
+    crc32finish(&result);
+    return result;
 }
 
 /*

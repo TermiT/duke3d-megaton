@@ -30,7 +30,7 @@
 #  ifdef __compat_h_macrodef__
 #   include <cstdio>
 #   include <cstring>
-#   include <cstdlib>
+//#   include <cstdlib>
 #   include <ctime>
 #  endif
 # endif

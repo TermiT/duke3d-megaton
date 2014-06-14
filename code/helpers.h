@@ -5,6 +5,8 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
+#include <stdio.h>
+
 #ifdef __cplusplus
 
 template<typename t>
@@ -32,7 +34,10 @@ int clampi(int v, int min, int max);
 unsigned int clampui(unsigned int v, unsigned int min, unsigned int max);
 float clampf(float v, float min, float max);
 double clampd(double v, double min, double max);
-
+const char* va(const char *format, ...);
+void crc32file(FILE *f, unsigned long *result);
+char *str_replace (const char *string, const char *substr, const char *replacement);
+long get_modified_time(const char * path);
 
 #ifdef __cplusplus
 }

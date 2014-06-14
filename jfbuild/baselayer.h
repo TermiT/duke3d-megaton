@@ -44,7 +44,6 @@ struct glinfo {
 	char multitex;
 	char envcombine;
 	
-	char hack_nofog;
 };
 extern struct glinfo glinfo;
 #endif

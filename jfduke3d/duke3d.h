@@ -323,6 +323,14 @@ struct user_defs
     int32 player_skill,level_number,volume_number,m_marker,marker,mouseflip;
 
 	int32 vsync, fps_max, mouseylock;
+    
+    int32 fraglimit; /* 0 if not set */
+    int32 timelimit; /* measured in seconds, 0 if not set */
+    unsigned long matchtime;
+};
+    
+struct lobby_filters {
+    int32 gamemode, show_full, maps;
 };
 
 struct player_orig
@@ -394,7 +402,7 @@ struct player_struct
     long max_secret_rooms,secret_rooms,max_actors_killed,actors_killed;
 };
 
-extern unsigned char tempbuf[2048], packbuf[576];
+extern unsigned char tempbuf[2048], packbuf[65536];
 
 extern long gc,max_player_health,max_armour_amount,max_ammo_amount[MAX_WEAPONS];
 
@@ -406,10 +414,14 @@ extern short spriteq[1024],spriteqloc,spriteqamount;
 extern struct player_struct ps[MAXPLAYERS];
 extern struct player_orig po[MAXPLAYERS];
 extern struct user_defs ud;
+extern struct lobby_filters lb;
+extern int show_mutiplayer_info;
 extern short int global_random;
 extern long scaredfallz;
 extern char buf[1024]; //My own generic input buffer
 
+extern int32 xmousescale, ymousescale;
+    
 extern char fta_quotes[NUMOFFIRSTTIMEACTIVE][64];
 extern char scantoasc[128],ready2send;
 extern char scantoascwithshift[128];
@@ -420,6 +432,7 @@ extern int32 VoiceToggle,AmbienceToggle;
 extern SOUNDOWNER SoundOwner[NUM_SOUNDS][4];
 
 extern char playerreadyflag[MAXPLAYERS],playerquitflag[MAXPLAYERS];
+extern char playersync[MAXPLAYERS];
 extern char sounds[NUM_SOUNDS][14];
 
 	// JBF 20040531: adding 16 extra to the script so we have some leeway
@@ -501,6 +514,7 @@ extern char restorepalette;
 extern short buttonstat;
 extern long cachecount;
 extern char boardfilename[BMAX_PATH],waterpal[768],slimepal[768],titlepal[768],drealms[768],endingpal[768];
+extern long workshopmap_group_handler;
 extern char betaname[80];
 extern char cachedebug,earthquaketime;
 extern char networkmode;

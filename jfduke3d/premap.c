@@ -29,6 +29,7 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 #include "osd.h"
 #include "dnAchievement.h"
 #include "dnAPI.h"
+#include "dnMulti.h"
 
 #ifndef min
 # define min(a,b) ( ((a) < (b)) ? (a) : (b) )
@@ -283,8 +284,10 @@ void precachenecessarysounds(void)
         if(Sound[i].ptr == 0)
         {
             j++;
+#if 0 /* as PLK says, this causes race conditions */
             if( (j&7) == 0 )
                 { handleevents(); getpackets(); }
+#endif
             getsound(i);
         }
 }
@@ -413,7 +416,7 @@ void vscrn(void)
      if ( ud.screen_size > 0 && ud.coop != 1 && ud.multimode > 1)
 	 {
          j = 0;
-         for(i=connecthead;i>=0;i=connectpoint2[i])
+         dnIterPlayers(i)
              if(i > j) j = i;
 
          if (j >= 1) y1 += 8;
@@ -1021,11 +1024,15 @@ void newgame(char vn,char ln,char sk)
     struct player_struct *p = &ps[0];
     short i;
 
-    if(globalskillsound >= 0)
-        while(issoundplaying(globalskillsound, 0)) { handleevents(); getpackets(); }
+    if(globalskillsound >= 0 && numplayers < 2)
+        while(issoundplaying(globalskillsound, 0)) {
+			resettimeout();
+			handleevents();
+			getpackets();
+		}
     globalskillsound = -1;
-
-    waitforeverybody();
+    
+//    waitforeverybody(); // commented out by serge
     ready2send = 0;
 
     if( ud.m_recstat != 2 && ud.last_level >= 0 && ud.multimode > 1 && ud.coop != 1)
@@ -1055,7 +1062,7 @@ void newgame(char vn,char ln,char sk)
         FX_StopAllSounds();
     }
     
-    if(dnGetAddonId() == 2) { //Nuclear Winter
+    if(dnGetAddonId() == 2 && ud.multimode < 2) { //Nuclear Winter
         FX_StopAllSounds();
         stopmusic();
         clearview(0L);
@@ -1077,7 +1084,7 @@ void newgame(char vn,char ln,char sk)
     }
 
     show_shareware = 26*34;
-
+//зачем я зачем я зачем я полюбила идиота?..
     ud.level_number =   ln;
     ud.volume_number =  vn;
     ud.player_skill =   sk;
@@ -1100,8 +1107,9 @@ void newgame(char vn,char ln,char sk)
         p->last_weapon = -1;
     }
 
-    display_mirror =        0;
+    display_mirror =        0; 
 
+#if 0
     if(ud.multimode > 1 )
     {
         if(numplayers < 2)
@@ -1110,12 +1118,18 @@ void newgame(char vn,char ln,char sk)
             for(i=0;i<MAXPLAYERS;i++) connectpoint2[i] = i+1;
             connectpoint2[ud.multimode-1] = -1;
         }
+        getnames();
     }
     else
     {
         connecthead = 0;
         connectpoint2[0] = -1;
     }
+#else
+	if ( dnIsInMultiMode() ) {
+		getnames();
+	}
+#endif
 }
 
 
@@ -1253,7 +1267,7 @@ void resetpspritevars(char g)
 
             updatesector(s->x,s->y,&ps[j].cursectnum);
 
-            j = connectpoint2[j];
+            j = dnGetNextPlayer(j);
 
         }
         else deletesprite(i);
@@ -1315,37 +1329,95 @@ void genspriteremaps(void)
     kclose(fp);
 }
 
-void waitforeverybody()
-{
-	long i;
+#if 0
 
-	if (numplayers < 2) return;
-	packbuf[0] = 250;
-	for(i=connecthead;i>=0;i=connectpoint2[i])
-	{
-		if (i != myconnectindex) sendpacket(i,packbuf,1);
-		if ((!networkmode) && (myconnectindex != connecthead)) break; //slaves in M/S mode only send to master
+void waitforeverybody() {
+	long i = 0;
+	double dStart, dWait;
+	
+	if ( numplayers < 2 ) {
+		return;
 	}
+	
+	Sys_DPrintf( "[DUKEMP] waitforeverybody\n" );
+	
 	playerreadyflag[myconnectindex]++;
-
-	while (1)
-	{
+	
+	if ( myconnectindex != connecthead ) {
+		Sys_DPrintf( "[DUKEMP] Sending waitforeverybody packet\n");
+		
+		// clients tell the server we're ready
+		packbuf[0] = 250;
+		sendpacket( i, packbuf, 1 );
+	}
+	
+	dStart = Sys_GetTicks();
+	
+	if ( myconnectindex == connecthead ) {
+		dWait = 4000.0;
+	} else {
+		dWait = 8000.0;
+	}
+	
+	do {
+		resettimeout();
 		handleevents();
-
-		if (quitevent || keystatus[1]) gameexit("");
-
 		getpackets();
-
-		for(i=connecthead;i>=0;i=connectpoint2[i])
-		{
-			if (playerreadyflag[i] < playerreadyflag[myconnectindex]) break;
-			if ((!networkmode) && (myconnectindex != connecthead)) { i = -1; break; } //slaves in M/S mode only wait for master
+		
+		if ( myconnectindex != connecthead ) {
+			//slaves in M/S mode only wait for master
+			if ( playerreadyflag[0] == playerreadyflag[myconnectindex] ) {
+				i = -1;
+			}
+		} else {
+			// server waits for all clients
+			for ( i = connectpoint2[0]; i >= 0; i = connectpoint2[i] ) {
+				if ( playerreadyflag[i] < playerreadyflag[myconnectindex] ) {
+					break;
+				}
+			}
 		}
-		if (i < 0) return;
+	} while ( i >= 0 && dStart + dWait > Sys_GetTicks() );
+	
+	clearfifo();
+	
+	if ( i >= 0 ) {
+		if ( myconnectindex != connecthead ) {
+			// server isn't responding, quit the game
+			Sys_DPrintf( "[DUKEMP] Server did not respond to a waitforeverybody msg\n" );
+			gameexit( " " );
+		} else {
+			for ( i = connectpoint2[0]; i >= 0; i = connectpoint2[i] ) {
+				if ( playerreadyflag[i] < playerreadyflag[myconnectindex] ) {
+					Sys_DPrintf( "[DUKEMP] player %d is not ready\n", i );
+				}
+			}
+		}
+	}
+	
+
+	
+	if ( myconnectindex == connecthead ) {
+		Sys_DPrintf( "Sending waitforeverybody all clear packets\n" );
+		
+		// server signals the clients
+		for ( i = connectpoint2[0]; i >= 0; i = connectpoint2[i] ) {
+			packbuf[0] = 250;
+			sendpacket( i, packbuf, 1 );
+		}
+		handleevents();
 	}
 }
 
-void dofrontscreens(char *statustext)
+#else
+
+void waitforeverybody() {
+	dnWaitForEverybody( 0 );
+}
+
+#endif
+
+void dofrontscreens(const char *statustext)
 {
     extern int megatondef;
     long i=0;
@@ -1450,6 +1522,53 @@ void resetmys(void)
       myreturntocenter = ps[myconnectindex].return_to_center;
 }
 
+void resetinterpolations( void ) {
+	int k, i;
+	
+	numinterpolations = 0;
+	startofdynamicinterpolations = 0;
+	
+	k = headspritestat[3];
+	while(k >= 0)
+	{
+        switch(sprite[k].lotag)
+        {
+            case 31:
+                setinterpolation(&sector[sprite[k].sectnum].floorz);
+                break;
+            case 32:
+                setinterpolation(&sector[sprite[k].sectnum].ceilingz);
+                break;
+            case 25:
+                setinterpolation(&sector[sprite[k].sectnum].floorz);
+                setinterpolation(&sector[sprite[k].sectnum].ceilingz);
+                break;
+            case 17:
+                setinterpolation(&sector[sprite[k].sectnum].floorz);
+                setinterpolation(&sector[sprite[k].sectnum].ceilingz);
+                break;
+            case 0:
+            case 5:
+            case 6:
+            case 11:
+            case 14:
+            case 15:
+            case 16:
+            case 26:
+            case 30:
+                setsectinterpolate(k);
+                break;
+        }
+		
+        k = nextspritestat[k];
+	}
+	
+	for(i=numinterpolations-1;i>=0;i--) bakipos[i] = *curipos[i];
+	for(i = animatecnt-1;i>=0;i--)
+		setinterpolation(animateptr[i]);
+
+}
+
 int enterlevel(char g)
 {
     short i;
@@ -1486,15 +1605,15 @@ if (!VOLUMEONE) {
         {
             initprintf("Map %s not found!\n",boardfilename);
             //gameexit(tempbuf);
-	    return 1;
+            return 1;
         } else {
             char *p;
             strcpy(levname, boardfilename);
-	    p = Bstrrchr(levname,'.');
-	    if (!p) strcat(levname,".mhk");
-	    else { p[1]='m'; p[2]='h'; p[3]='k'; p[4]=0; }
-	    if (!loadmaphack(levname)) initprintf("Loaded map hack file %s\n",levname);
-	}
+            p = Bstrrchr(levname,'.');
+            if (!p) strcat(levname,".mhk");
+            else { p[1]='m'; p[2]='h'; p[3]='k'; p[4]=0; }
+            if (!loadmaphack(levname)) initprintf("Loaded map hack file %s\n",levname);
+        }
     }
     else if ( loadboard( level_file_names[ (ud.volume_number*11)+ud.level_number],0,&ps[0].posx, &ps[0].posy, &ps[0].posz, &ps[0].ang,&ps[0].cursectnum ) == -1)
     {
@@ -1567,8 +1686,9 @@ if (!VOLUMEONE) {
 if (VOLUMEONE) {
     if(ud.level_number == 0 && ud.recstat != 2) FTA(40,&ps[myconnectindex]);
 }
-
-    for(i=connecthead;i>=0;i=connectpoint2[i])
+    /* Reset all player structs */
+    
+    dnIterPlayers(i)
         switch(sector[sprite[ps[i].i].sectnum].floorpicnum)
         {
             case HURTRAIL:

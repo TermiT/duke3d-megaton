@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <SDL/SDL.h>
+#include <unistd.h>
 
 #define MAX_PATH 2048
 
@@ -111,4 +112,23 @@ void Sys_GetScreenSize(int *width, int *height) {
 
 void Sys_CenterWindow(int width, int height) {
     
+}
+
+void Sys_DPrintf(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    
+    vprintf(format, args);
+    
+    va_end(args);
+}
+
+
+void Sys_Restart(const char *options) {
+   execl("../bin/duke3d.sh", options, NULL);
+   exit(0);
+}
+
+int Sys_FileExists( const char *path ) {
+    return access( path, F_OK ) != -1 ? 1 : 0;
 }

@@ -27,6 +27,7 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 
 #include "duke3d.h"
 #include "dnAchievement.h"
+#include "dnMulti.h"
 
 extern char numenvsnds,actor_tog;
 
@@ -779,11 +780,15 @@ void guts(spritetype *s,short gtype, short n, short p)
     if( badguy(s) && s->pal == 6)
         pal = 6;
     else pal = 0;
-
+    
     for(j=0;j<n;j++)
     {
         a = TRAND&2047;
         i = EGS(s->sectnum,s->x+(TRAND&255)-128,s->y+(TRAND&255)-128,gutz-(TRAND&8191),gtype,-32,sx,sy,a,48+(TRAND&31),-512-(TRAND&2047),ps[p].i,5);
+        
+        if (i < 0)
+			return;
+        
         if(PN == JIBS2)
         {
             sprite[i].xrepeat >>= 2;
@@ -1016,10 +1021,14 @@ short ifhitbyweapon(short sn)
                 j = hittype[sn].owner;
 
                 if( j >= 0 &&
-                    sprite[j].picnum == APLAYER &&
-                    ud.coop == 1 &&
-                    ud.ffire == 0 )
-                        return -1;
+                   j != sn &&
+                   sprite[j].picnum == APLAYER &&
+                   ud.coop == 1 &&
+                   ud.ffire == 0 )
+				{
+					hittype[sn].extra = -1;
+                    return -1;
+				}
 
                 npc->extra -= hittype[sn].extra;
 
@@ -1386,7 +1395,7 @@ void movefx(void)
                     if( (soundm[s->lotag]&16) )
                     {
                         if(T5 > 0) T5--;
-                        else for(p=connecthead;p>=0;p=connectpoint2[p])
+                        else dnIterPlayers( p )
                             if( p == myconnectindex && ps[p].cursectnum == s->sectnum )
                         {
                             j = s->lotag+((unsigned)global_random%(s->hitag+1));
@@ -2837,7 +2846,7 @@ void movetransports(void)
                                     spritesound(TELEPORTER,i);
                                 }
 
-                                for(k=connecthead;k>=0;k=connectpoint2[k])
+                                dnIterPlayers(k)
                                     if(ps[k].cursectnum == sprite[OW].sectnum)
                                 {
                                     ps[k].frag_ps = p;
@@ -3135,7 +3144,6 @@ void moveactors(void)
     short a, i, j, nexti, nextj, sect, p;
     spritetype *s;
     unsigned short k;
-    char namBoom = 0;
 
     i = headspritestat[1];
     while(i >= 0)
@@ -3435,7 +3443,10 @@ void moveactors(void)
                             RANDOMSCRAP;
                         spritesound(LASERTRIP_EXPLODE,i);
                         spawn(i,PIGCOP);
-                        ps[myconnectindex].actors_killed++;
+						{
+							short player = findplayer(s, &x);
+							ps[player].actors_killed++;
+						}
                         dnRecordEnemyKilled();
                         KILLIT(i);
                     }
@@ -4098,21 +4109,9 @@ void moveactors(void)
                 }
 
                 DETONATEB:
-
-		namBoom = 0;
-		if( ( l >= 0 && ps[l].hbomb_on == 0 ) || t[3] == 1)
-			namBoom=1;
-		if (NAM) {
-			if( s->picnum == HEAVYHBOMB)
-			{
-				s->extra--;	// FIXME: bug
-				if(s->extra <= 0)
-					namBoom=1;
-			}
-		}
-
-		if (namBoom)
+                if( ( l >= 0 && ps[l].hbomb_on == 0 ) || t[3] == 1)
                 {
+
                     t[4]++;
 
                     if(t[4] == 2)
@@ -4162,6 +4161,9 @@ void moveactors(void)
                         if(ps[p].ammo_amount[HANDBOMB_WEAPON] < max_ammo_amount[HANDBOMB_WEAPON] )
                 {
                     if(ud.coop >= 1 && s->owner == i)
+                        // PLK - COOP HACK so you can't run out of pipebombs
+                        if (ps[p].ammo_amount[HANDBOMB_WEAPON] > 0)
+                        
                     {
                         for(j=0;j<ps[p].weapreccnt;j++)
                             if(ps[p].weaprecs[j] == s->picnum)
@@ -4460,12 +4462,13 @@ void moveexplosions(void)  // STATNUM 5
             case NUKEBUTTON+2:
             case NUKEBUTTON+3:
 
-                if(t[0])
+                if(t[0] && ((ud.multimode > 1  && ud.coop == 1) || ud.multimode < 2 ))
                 {
                     t[0]++;
                     if(t[0] == 8) s->picnum = NUKEBUTTON+1;
                     else if(t[0] == 16)
                     {
+                        
                         s->picnum = NUKEBUTTON+2;
                         ps[sprite[s->owner].yvel].fist_incs = 1;
                     }
@@ -5066,7 +5069,7 @@ void moveeffectors(void)   //STATNUM 3
 
                 if( l && (sc->floorstat&64) )
                 {
-                    for(p=connecthead;p>=0;p=connectpoint2[p])
+                    dnIterPlayers( p )
                     {
                         if( ps[p].cursectnum == s->sectnum && ps[p].on_ground == 1)
                         {
@@ -5245,7 +5248,7 @@ void moveeffectors(void)   //STATNUM 3
                     if( (sc->floorz-sc->ceilingz) < (108<<8) )
                     {
                         if(ud.clipping == 0 && s->xvel >= 192)
-                            for(p=connecthead;p>=0;p=connectpoint2[p])
+                            dnIterPlayers( p )
                                 if(sprite[ps[p].i].extra > 0)
                         {
                             k = ps[p].cursectnum;
@@ -5265,7 +5268,7 @@ void moveeffectors(void)   //STATNUM 3
                     m = (s->xvel*sintable[(s->ang+512)&2047])>>14;
                     x = (s->xvel*sintable[s->ang&2047])>>14;
 
-                    for(p = connecthead;p >= 0;p=connectpoint2[p])
+                    dnIterPlayers(p)
                        if(sector[ps[p].cursectnum].lotag != 2)
                     {
                         if(po[p].os == s->sectnum)
@@ -5327,7 +5330,7 @@ void moveeffectors(void)   //STATNUM 3
                     if( (sc->floorz-sc->ceilingz) < (108<<8) )
                     {
                         if(ud.clipping == 0 && s->xvel >= 192)
-                            for(p=connecthead;p>=0;p=connectpoint2[p])
+                            dnIterPlayers( p )
                                 if(sprite[ps[p].i].extra > 0)
                         {
                             k = ps[p].cursectnum;
@@ -5426,7 +5429,7 @@ void moveeffectors(void)   //STATNUM 3
 
                     if( (sc->floorz-sc->ceilingz) < (108<<8) )
                         if(ud.clipping == 0)
-                            for(p=connecthead;p>=0;p=connectpoint2[p])
+                            dnIterPlayers( p )
                                 if(sprite[ps[p].i].extra > 0)
                     {
                         k = ps[p].cursectnum;
@@ -5442,7 +5445,7 @@ void moveeffectors(void)   //STATNUM 3
                         }
                     }
 
-                    for(p = connecthead;p >= 0;p = connectpoint2[p])
+                    dnIterPlayers( p )
                     {
                         if( sprite[ps[p].i].sectnum == s->sectnum )
                         {
@@ -5495,7 +5498,7 @@ void moveeffectors(void)   //STATNUM 3
                     if( (sc->floorz-sc->ceilingz) < (108<<8) )
                     {
                         if(ud.clipping == 0)
-                            for(p=connecthead;p>=0;p=connectpoint2[p])
+                            dnIterPlayers( p )
                                 if(sprite[ps[p].i].extra > 0)
                         {
                             k = ps[p].cursectnum;
@@ -5579,7 +5582,7 @@ void moveeffectors(void)   //STATNUM 3
                     x = (s->xvel*sintable[s->ang&2047])>>14;
 
 
-                    for(p=connecthead;p>=0;p=connectpoint2[p])
+                    dnIterPlayers( p )
                         if(ps[p].cursectnum == s->sectnum && ps[p].on_ground)
                         {
                             ps[p].posx += m;
@@ -5865,7 +5868,7 @@ void moveeffectors(void)   //STATNUM 3
                     j = 1;
 
                     if( (sc->lotag&0xff) != 27)
-                        for(p=connecthead;p>=0;p=connectpoint2[p])
+                        dnIterPlayers( p )
                             if( sc->lotag != 30 && sc->lotag != 31 && sc->lotag != 0 )
                                 if(s->sectnum == sprite[ps[p].i].sectnum)
                                     j = 0;
@@ -6480,7 +6483,7 @@ void moveeffectors(void)   //STATNUM 3
                     dragpoint((short)t[1],wall[t[1]].x+x,wall[t[1]].y+l);
                     dragpoint((short)t[2],wall[t[2]].x+x,wall[t[2]].y+l);
 
-                    for(p=connecthead;p>=0;p=connectpoint2[p])
+                    dnIterPlayers( p )
                         if(ps[p].cursectnum == s->sectnum && ps[p].on_ground)
                         {
                             ps[p].posx += x;
@@ -6727,7 +6730,7 @@ void moveeffectors(void)   //STATNUM 3
                     fricyv += x<<5;
                 }
 
-                for(p = connecthead;p >= 0;p = connectpoint2[p])
+                dnIterPlayers( p )	
                     if(sprite[ps[p].i].sectnum == s->sectnum && ps[p].on_ground)
                         ps[p].posz += s->zvel;
 

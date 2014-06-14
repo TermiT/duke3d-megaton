@@ -29,6 +29,7 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 
 #include "osd.h"
 #include "dnAchievement.h"
+#include "dnMulti.h"
 
 // PRIMITIVE
 
@@ -198,7 +199,7 @@ char isanearoperator(short lotag)
 short checkcursectnums(short sect)
 {
     short i;
-    for(i=connecthead;i>=0;i=connectpoint2[i])
+    dnIterPlayers(i)
         if( sprite[ps[i].i].sectnum == sect ) return i;
     return -1;
 }
@@ -234,7 +235,7 @@ short findplayer(spritetype *s,long *d)
     closest = 0x7fffffff;
     closest_player = 0;
 
-    for(j=connecthead;j>=0;j=connectpoint2[j])
+    dnIterPlayers(j)
     {
         x = klabs(ps[j].oposx-s->x) + klabs(ps[j].oposy-s->y) + ((klabs(ps[j].oposz-s->z+(28<<8)))>>4);
         if( x < closest && sprite[ps[j].i].extra > 0 )
@@ -256,7 +257,7 @@ short findotherplayer(short p,long *d)
     closest = 0x7fffffff;
     closest_player = p;
 
-    for(j=connecthead;j>=0;j=connectpoint2[j])
+    dnIterPlayers(j)
         if(p != j && sprite[ps[j].i].extra > 0)
     {
         x = klabs(ps[j].oposx-ps[p].posx) + klabs(ps[j].oposy-ps[p].posy) + (klabs(ps[j].oposz-ps[p].posz)>>4);
@@ -308,7 +309,7 @@ void doanimations(void)
 
         if( animateptr[i] == &sector[animatesect[i]].floorz)
         {
-            for(p=connecthead;p>=0;p=connectpoint2[p])
+            dnIterPlayers(p)
                 if (ps[p].cursectnum == dasect)
                     if ((sector[dasect].floorz-ps[p].posz) < (64<<8))
                         if (sprite[ps[p].i].owner >= 0)
@@ -2422,7 +2423,7 @@ void cheatkeys(short snum)
     if(p->cheat_phase == 1) return;
 
     // 1<<0  =  jump
-    // 1<<1  =  crouch
+    // 1<<1	  =  crouch
     // 1<<2  =  fire
     // 1<<3  =  aim up
     // 1<<4  =  aim down
@@ -2444,7 +2445,7 @@ void cheatkeys(short snum)
     // 1<<23 =  aim mode
     // 1<<24 = !holoduke
     // 1<<25 = !jetpack
-    // 1<<26 =  gamequit
+    // 1<<26 =  gamequit	
     // 1<<27 = !inventory right
     // 1<<28 = !turn around
     // 1<<29 = !open
@@ -2940,7 +2941,7 @@ void checksectors(short snum)
 			}
             return;
         case -1:
-            for(i=connecthead;i>=0;i=connectpoint2[i])
+            dnIterPlayers(i)
                 ps[i].gm = MODE_EOL;
             sector[p->cursectnum].lotag = 0;
             if(ud.from_bonus)

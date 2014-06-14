@@ -274,12 +274,27 @@ void intomenusounds(void)
 }
 
 const char* dnGetAddonMusicDir();
+int dnIsUserMap();
 int CD_PlayByName(const char *songname, const char *folder, int loop);
+char *str_replace (const char *string, const char *substr, const char *replacement);
+const char* va(const char *format, ...);
+int32_t check_file_exist(const char *fn);
 void playmusic(char *fn)
 {
     int fp;
     char * testfn, * extension;
-    const char * folder = dnGetAddonMusicDir();
+    char * folder = (char *)dnGetAddonMusicDir();
+    char * usermaps_folder = "music/usermaps";
+    char usermaps_songname[128];
+    
+    if (dnIsUserMap()) {
+        Bstrcpy(usermaps_songname, str_replace(str_replace(Bstrlwr(boardfilename), "maps/", ""), ".map", ".ogg"));
+        fp = fopen(va("%s/%s", usermaps_folder, usermaps_songname), "r");
+        if (fp) {
+            fn =  str_replace(usermaps_songname, ".ogg", ".mid");
+            folder =  usermaps_folder;
+        }
+    }
 
     if(MusicToggle == 0) return;
     if(MusicDevice < 0) return;

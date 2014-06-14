@@ -195,6 +195,7 @@ void CONFIG_SetDefaults( void )
 {
 	int32 i,f;
 	byte k1,k2;
+    extern int AccurateLighting;
 
 	FXDevice = 0;
 	MusicDevice = 0;
@@ -230,7 +231,15 @@ void CONFIG_SetDefaults( void )
 	ud.levelstats = 0;
 	ud.vsync = 0;
 	ud.fps_max = 180;
-    ud.mouseylock = 0;
+    ud.mouseylock = 0; // not in use anymore
+    
+    lb.gamemode = 3; // 3 - show all game modes, 0 - show DM, 2 - show COOP
+    lb.show_full = 1; // Show full lobies
+    lb.maps = 0; // 0 - Show lobbies with all maps, 1 - show only with classic maps, 2 - show only with usermaps
+    
+    AccurateLighting = 1;
+    show_mutiplayer_info = 1;
+    
 	ShowOpponentWeapons = 0;
 	Bstrcpy(ud.rtsname, "DUKE.RTS");
 	Bstrcpy(myname, "Duke");
@@ -468,11 +477,14 @@ void CONFIG_SetupMouse( void )
 
    function = 32768;
    SCRIPT_GetNumber( scripthandle, "Controls","MouseSensitivity",&function);
+       
+
 #if 0
    CONTROL_SetMouseSensitivity(function);
 #else
    dnSetMouseSensitivity(function);
 #endif
+           
 #if 0
    for (i=0; i<MAXMOUSEBUTTONS; i++)
       {
@@ -599,6 +611,9 @@ int32 CONFIG_ReadSetup( void )
 	int32 dummy,i;
 	char commmacro[] = "CommbatMacro# ";
 	extern int32 CommandWeaponChoice;
+    extern int32_t r_usenewshading;
+    extern int32_t r_usetileshades;
+    extern int AccurateLighting;
 
     dnInitKeyNames();   
 	CONTROL_ClearAssignments();
@@ -631,6 +646,14 @@ int32 CONFIG_ReadSetup( void )
             SCRIPT_GetNumber( scripthandle, "Screen Setup", "GLAnisotropy", &glanisotropy);
             SCRIPT_GetNumber( scripthandle, "Screen Setup", "GLUseTextureCompr", &glusetexcompr);
             SCRIPT_GetNumber( scripthandle, "Screen Setup", "GLUseCompressedTextureCache", &glusetexcache);
+            SCRIPT_GetNumber(scripthandle, "Screen Setup", "AccurateLighting", &AccurateLighting);
+            if (AccurateLighting) {
+                r_usenewshading = 2;
+                r_usetileshades = 1;
+            } else {
+                r_usenewshading = 0;
+                r_usetileshades = 0;
+            }
         }
     }
 	
@@ -644,7 +667,8 @@ int32 CONFIG_ReadSetup( void )
 		commmacro[13] = dummy+'0';
 		SCRIPT_GetString( scripthandle, "Comm Setup",commmacro,&ud.ridecule[dummy][0]);
 	}
-	SCRIPT_GetString( scripthandle, "Comm Setup","PlayerName",&myname[0]);
+//	SCRIPT_GetString( scripthandle, "Comm Setup","PlayerName",&myname[0]);
+
 	SCRIPT_GetString( scripthandle, "Comm Setup","RTSName",&ud.rtsname[0]);
 
 
@@ -684,6 +708,18 @@ int32 CONFIG_ReadSetup( void )
 	SCRIPT_GetNumber( scripthandle, "Controls","MouseAimingFlipped",&ud.mouseflip);	// mouse aiming inverted
     SCRIPT_GetNumber( scripthandle, "Controls","MouseYLock",&ud.mouseylock);
 	SCRIPT_GetNumber( scripthandle, "Controls","MouseAiming",&ud.mouseaiming);		// 1=momentary/0=toggle
+    
+    SCRIPT_GetNumber(scripthandle, "Controls", "MouseScaleX", &xmousescale);
+    if (xmousescale == 0)
+        xmousescale = 10;
+    else
+        xmousescale = clamp(xmousescale, 1, 20);
+    SCRIPT_GetNumber(scripthandle, "Controls", "MouseScaleY", &ymousescale);
+    if (ymousescale == 0)
+        ymousescale = 10;
+    else
+        ymousescale = clamp(ymousescale, 1, 20);
+
 	//SCRIPT_GetNumber( scripthandle, "Controls","GameMouseAiming",(int32 *)&ps[0].aim_mode);	// dupe of below (?)
 	ps[0].aim_mode = ud.mouseaiming;
 	SCRIPT_GetNumber( scripthandle, "Controls","AimingFlag",(int32 *)&myaimmode);	// (if toggle mode) gives state
@@ -691,7 +727,13 @@ int32 CONFIG_ReadSetup( void )
 	SCRIPT_GetNumber( scripthandle, "Controls","AutoAim",&AutoAim);			// JBF 20031125
 	ps[0].auto_aim = AutoAim;
 	SCRIPT_GetNumber( scripthandle, "Controls","WeaponSwitchMode",&ud.weaponswitch);
-
+    
+    SCRIPT_GetNumber( scripthandle, "Lobby Filter", "GameMode",&lb.gamemode);
+    SCRIPT_GetNumber( scripthandle, "Lobby Filter", "ShowFullLobies",&lb.show_full);
+    SCRIPT_GetNumber( scripthandle, "Lobby Filter", "Maps",&lb.maps);
+    
+    SCRIPT_GetNumber( scripthandle, "Multiplayer", "ShowInfo",&show_mutiplayer_info);
+    
 	CONFIG_ReadKeys();
 
 	//CONFIG_SetupMouse(scripthandle);
@@ -710,6 +752,7 @@ int32 CONFIG_ReadSetup( void )
 void CONFIG_WriteSetup( void )
 {
 	int32 dummy;
+    extern int AccurateLighting;
 
 	if (!setupread) return;
     
@@ -737,7 +780,7 @@ void CONFIG_WriteSetup( void )
 	SCRIPT_PutNumber( scripthandle, "Screen Setup", "GLUseCompressedTextureCache", glusetexcache,false,false);
 	SCRIPT_PutNumber( scripthandle, "Screen Setup", "ScreenSize",ud.screen_size,false,false);
 	SCRIPT_PutNumber( scripthandle, "Screen Setup", "ScreenGamma",ud.brightness,false,false);
-
+    SCRIPT_PutNumber( scripthandle, "Screen Setup", "AccurateLighting", AccurateLighting,false,false);
     
     SCRIPT_Save (scripthandle, localsetupfilename);
 	SCRIPT_Free (scripthandle);
@@ -778,6 +821,13 @@ void CONFIG_WriteSetup( void )
 	SCRIPT_PutNumber( scripthandle, "Controls","RunKeyBehaviour",ud.runkey_mode,false,false);
 	SCRIPT_PutNumber( scripthandle, "Controls","AutoAim",AutoAim,false,false);
 	SCRIPT_PutNumber( scripthandle, "Controls","WeaponSwitchMode",ud.weaponswitch,false,false);
+    
+    SCRIPT_PutNumber( scripthandle, "Lobby Filter","GameMode",lb.gamemode,false,false);
+    SCRIPT_PutNumber( scripthandle, "Lobby Filter","ShowFullLobies",lb.show_full,false,false);
+    SCRIPT_PutNumber( scripthandle, "Lobby Filter","Maps",lb.maps,false,false);
+    
+    SCRIPT_PutNumber( scripthandle, "Multiplayer","ShowInfo",show_mutiplayer_info,false,false);
+    
 
 	// JBF 20031211
 #if 0
@@ -825,6 +875,10 @@ void CONFIG_WriteSetup( void )
     dummy = dnGetMouseSensitivity();
 #endif
 	SCRIPT_PutNumber( scripthandle, "Controls","MouseSensitivity",dummy,false,false);
+    
+    SCRIPT_PutNumber(scripthandle, "Controls", "MouseScaleX", xmousescale,false,false);
+    SCRIPT_PutNumber(scripthandle, "Controls", "MouseScaleY", ymousescale,false,false);
+
 
 	for (dummy=0;dummy<MAXJOYBUTTONS;dummy++) {
 		Bsprintf(buf,"JoystickButton%ld",dummy);
@@ -912,6 +966,21 @@ void dnDetectVideoMode() {
         }
         #endif
     }
+}
+
+char * dnFilterUsername(const char * name) {
+    const char * allowed_characters = ".,:;!?@#$%^&*(){}_-=+[]|/\\abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    char * newstr = malloc(strlen(name) + 1);
+    int counter = 0;
+    
+    for ( ; *name; name++) {
+        if (strchr(allowed_characters, *name)) {
+            newstr[ counter ] = *name;
+            ++counter;
+        }
+    }
+    newstr[counter] = 0;
+    return newstr;
 }
 
 /*

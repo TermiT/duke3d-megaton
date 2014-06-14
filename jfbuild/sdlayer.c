@@ -28,9 +28,15 @@
 
 #include "csteam.h"
 #include "dnAPI.h"
-#include "smpeg/smpeg.h"
 
+#include "dnSnapshot.h"
+#include "lz4.h"
+#include "mmulti.h"
 
+static snapshot_t snapshot0 = { 0 };
+static snapshot_t snapshot1 = { 0 };
+
+static int snapshot_number = 0;
 
 #if 1
 
@@ -249,8 +255,10 @@ int initsystem(void)
 
 #ifdef USE_OPENGL
 	if (loadgldriver(getenv("BUILD_GLDRV"))) {
-		initprintf("Failed loading OpenGL driver. GL modes will be unavailable.\n");
-		nogl = 1;
+//		initprintf("Failed loading OpenGL driver. GL modes will be unavailable.\n");
+//		nogl = 1;
+        initprintf("Failed loading OpenGL driver. Exiting...\n");
+        return 1;
 	}
 #endif
 
@@ -1278,7 +1286,6 @@ static
 Uint32 WheelTimerCallback(Uint32 interval, void *param) {
     int32 button = (int32)param;
     mouseb &= ~(1<<button);
-    printf("Release %d\n", button);
     return 0;
 }
 
@@ -1311,38 +1318,15 @@ int handleevents(void)
             pointer.x = pointer.y = 0;
 			continue;
 		}
+
 		switch (ev.type) {
-#if 0
-
-			case SDL_KEYDOWN:
-			case SDL_KEYUP:
-				code = keytranslation[ev.key.keysym.sym];
-
-				if (ev.key.keysym.unicode != 0 && ev.key.type == SDL_KEYDOWN &&
-				    (ev.key.keysym.unicode & 0xff80) == 0 &&
-				    ((keyasciififoend+1)&(KEYFIFOSIZ-1)) != keyasciififoplc) {
-					keyasciififo[keyasciififoend] = ev.key.keysym.unicode & 0x7f;
-					keyasciififoend = ((keyasciififoend+1)&(KEYFIFOSIZ-1));
-				}
-
-				// hook in the osd
-				if (OSD_HandleKey(code, (ev.key.type == SDL_KEYDOWN)) == 0)
-					break;
-
-				if (ev.key.type == SDL_KEYDOWN) {
-					if (!keystatus[code]) {
-						SetKey(code, 1);
-						if (keypresscallback)
-							keypresscallback(code, 1);
-					}
-				} else {
-					SetKey(code, 0);
-					if (keypresscallback)
-						keypresscallback(code, 0);
-				}
-				break;
-#else
             case SDL_KEYDOWN:
+#if 0
+#pragma message( "to be removed from release version" )
+				if ( ev.key.keysym.sym == SDLK_LEFTBRACKET ) {
+					forcesync();
+				}
+#endif
                 if (ev.key.keysym.sym == SDLK_ESCAPE) {
                     keystatus[1] = 1;
                 } else {
@@ -1373,7 +1357,6 @@ int handleevents(void)
                     keypresscallback(code, 0);
                 }
                 break;
-#endif
             
 			case SDL_ACTIVEEVENT:
 				if (ev.active.state & SDL_APPINPUTFOCUS) {
@@ -1393,27 +1376,6 @@ int handleevents(void)
 				}
 				break;
                 
-#if 0
-
-			case SDL_MOUSEBUTTONDOWN:
-			case SDL_MOUSEBUTTONUP:
-				switch (ev.button.button) {
-					case SDL_BUTTON_LEFT: j = 0; break;
-					case SDL_BUTTON_RIGHT: j = 1; break;
-					case SDL_BUTTON_MIDDLE: j = 2; break;
-					default: j = -1; break;
-				}
-				if (j<0) break;
-				if (ev.button.state == SDL_PRESSED)
-					mouseb |= (1<<j);
-				else {
-                    mouseb &= ~(1<<j);
-                }
-
-				if (mousepresscallback)
-					mousepresscallback(j+1, ev.button.state == SDL_PRESSED);
-				break;
-#else
             case SDL_MOUSEBUTTONDOWN:
                 dnPressKey(DNK_MOUSE0+ev.button.button-1);
                 break;
@@ -1423,7 +1385,6 @@ int handleevents(void)
                     dnReleaseKey(DNK_MOUSE0+ev.button.button-1);
                 }
                 break;
-#endif
 
 			case SDL_MOUSEMOTION:
                 if (0 && skip_next_motion) {
@@ -1441,6 +1402,8 @@ int handleevents(void)
                     }
                 }
 				break;
+
+#if 0
 
 			case SDL_JOYAXISMOTION:
 				if (appactive && ev.jaxis.axis < joynumaxes)
@@ -1480,7 +1443,8 @@ int handleevents(void)
 						joyb &= ~(1 << ev.jbutton.button);
 				}
 				break;
-
+#endif
+				
 			case SDL_QUIT:
 				quitevent = 1;
 				rv=-1;
@@ -1711,11 +1675,13 @@ static double clampd(double v, double min, double max) {
 void dnOverrideInput(input *loc) {
     
     vector2 total_velocity = { 0.0, 0.0 };
-    vector2 mouse_velocity;
+    vector2 mouse_velocity = { 0.0, 0.0 };
        
-    mouse_velocity.x = pointer.x*sensitivity.x;
-    if (!ud.mouseylock) {
-         mouse_velocity.y = pointer.y*sensitivity.y*(((double)xdim)/((double)ydim));
+    mouse_velocity.x = pointer.x*sensitivity.x*(xmousescale/10.0);
+    if (ps[myconnectindex].aim_mode) {
+         mouse_velocity.y = pointer.y*sensitivity.y*(((double)xdim)/((double)ydim))*(ymousescale/10.0);
+    } else {
+        loc->horz = 1;
     }
     total_velocity.x += mouse_velocity.x;
     total_velocity.y += mouse_velocity.y;

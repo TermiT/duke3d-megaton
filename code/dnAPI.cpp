@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <stdio.h>
 #include "playvpx/playvpx.h"
-#include <smpeg/smpeg.h>
 #include "dnAPI.h"
 #include "build.h"
 #include "SDL.h"
@@ -70,11 +69,21 @@ bool operator == (const VideoMode& a, const VideoMode& b) {
 	return (a.bpp==b.bpp) && (clamp(a.fullscreen,0,1)==clamp(b.fullscreen,0,1)) && (a.height==b.height) && (a.width==b.width);
 }
 
+extern "C" {
+    extern int delete_saves;
+}
+
 void dnPullCloudFiles() {
     extern char cloudFileNames[MAX_CLOUD_FILES][MAX_CLOUD_FILE_LENGTH];
 	for (int i = 0; i < MAX_CLOUD_FILES; i++) {
 		CSTEAM_DownloadFile(cloudFileNames[i]);
+        if (delete_saves && i != MAX_CLOUD_FILES) { //delete only saves, don't delete duke3d.cfg
+            CSTEAM_DeleteCloudFile(cloudFileNames[i]);
+            unlink(cloudFileNames[i]);
+        }
+
 	}
+
 }
 
 void dnPushCloudFiles() {
@@ -143,118 +152,5 @@ void play_vpx_video(const char * filename, void (*frame_callback)(int)) {
     }
     
     playvpx_deinit(&data);
-    printf("ticks: %d\n",SDL_GetTicks()-ticks);
     SDL_FreeSurface(screen);
-}
-
-#ifndef APIENTRY
-#define APIENTRY
-#endif
-
-extern "C" int APIENTRY gluBuild2DMipmaps (
-    GLenum      target, 
-    GLint       components, 
-    GLint       width, 
-    GLint       height, 
-    GLenum      format, 
-    GLenum      type, 
-    const void  *data);
-
-void DrawIMG(SDL_Surface *img, int x, int y)
-{
-    GLuint texture;
-    
-    glPixelStorei(GL_UNPACK_ALIGNMENT,4);
-    
-    glGenTextures(1,&texture);
-    glBindTexture(GL_TEXTURE_2D,texture);
-    
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,0);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,0);
-    
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 4, img->w, img->h, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
-    
-    
-    glBindTexture(GL_TEXTURE_2D, texture);
-    
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex3f( -1, -1,  0.0f);
-    glTexCoord2f(1.0f, 0.0f); glVertex3f(  1, -1,  0.0f);
-    glTexCoord2f(1.0f, 1.0f); glVertex3f(  1,  1,  0.0f);
-    glTexCoord2f(0.0f, 1.0f); glVertex3f( -1,  1,  0.0f);
-    glEnd();
-    
-    glDeleteTextures(1, &texture);
-}
-
-static
-void smpeg_callback(SDL_Surface* dst, int x, int y,
-                    unsigned int w, unsigned int h) {
-    
-}
-
-
-void play_smpeg_video(const char * filename) {
-    SMPEG *movie = NULL;
-    SDL_Surface *movieSurface = 0;
-    SMPEGstatus mpgStatus;
-    SMPEG_Info movieInfo;
-	char *error;
-	int done;
-    
-    movie = SMPEG_new(filename, &movieInfo, true);
-    
-    error = SMPEG_error(movie);
-    
-    if( error != NULL || movie == NULL ) {
-        printf( "Error loading MPEG: %s\n", error );
-        return;
-    }
-    
-    movieSurface = SDL_CreateRGBSurface(SDL_SWSURFACE, 512, 512, 32, 0xFF, 0xFF00, 0xFF0000, 0);
-    
-    SMPEG_setdisplay(movie, movieSurface, 0, &smpeg_callback);
-    SDL_ShowCursor(SDL_DISABLE);
-    
-    SMPEG_play(movie);
-    SMPEG_getinfo(movie, &movieInfo);
-    
-    glEnable(GL_TEXTURE_2D);
-	glClearColor(1, 0, 1, 1);
-    
-    glDisable(GL_DEPTH_TEST);
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-    
-	glViewport(0, 0, ScreenWidth, ScreenHeight);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-    glOrtho(-1, 1, 1, -1, 0, 1);
-    glScalef((16.0f/9.0f)/(ScreenWidth/(float)ScreenHeight), 1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-    
-    done = 0;
-    
-    while(done == 0) {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)){
-            if (event.type == SDL_QUIT|| event.type == SDL_KEYDOWN || event.type == SDL_MOUSEBUTTONDOWN)  {
-                done = 1;
-            }
-        }
-        glClear(GL_COLOR_BUFFER_BIT);
-        
-        DrawIMG(movieSurface, 0, 0);
-        mpgStatus = SMPEG_status(movie);
-        if(mpgStatus != SMPEG_PLAYING) {
-            done = 1;
-        }
-        SDL_GL_SwapBuffers();
-        
-    }
-    
-    SMPEG_stop(movie);
-    SMPEG_delete(movie);
-    movie = NULL;
-    SDL_FreeSurface(movieSurface);
 }

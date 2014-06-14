@@ -36,14 +36,26 @@
 
 
 //MULTIPLAYER
-#define ACHIEVEMENT_BLOW_IT_OUT_YOUR_ASS            "ACHIEVEMENT_BLOW_IT_OUT_YOUR_ASS"
-#define ACHIEVEMENT_IVE_GOT_BALLS_OF_STEEL          "ACHIEVEMENT_IVE_GOT_BALLS_OF_STEEL"
-#define ACHIEVEMENT_HAIL_TO_THE_KING_BABY           "ACHIEVEMENT_HAIL_TO_THE_KING_BABY"
+#define ACHIEVEMENT_MP_TIER1                        "ACHIEVEMENT_MP_TIER1"
+#define ACHIEVEMENT_MP_TIER2                        "ACHIEVEMENT_MP_TIER2"
+#define ACHIEVEMENT_MP_TIER3                        "ACHIEVEMENT_MP_TIER3"
+
+#define STAT_MP                                     "STAT_MP"
+
+//#define ACHIEVEMENT_BLOW_IT_OUT_YOUR_ASS            "ACHIEVEMENT_BLOW_IT_OUT_YOUR_ASS"
+//#define ACHIEVEMENT_IVE_GOT_BALLS_OF_STEEL          "ACHIEVEMENT_IVE_GOT_BALLS_OF_STEEL"
+//#define ACHIEVEMENT_HAIL_TO_THE_KING_BABY           "ACHIEVEMENT_HAIL_TO_THE_KING_BABY"
 
 
 #define ACHIEVEMENT_THE_MIGHTY_FOOT_MAX				40
 #define ACHIEVEMENT_OOMP_UUGH_WHERE_IS_IT_MAX		70
 #define ACHIEVEMENT_INVADERS_MUST_DIE_MAX           1000
+
+#define ACHIEVEMENT_MP_TIER1_MAX                    100
+#define ACHIEVEMENT_MP_TIER2_MAX                    250
+#define ACHIEVEMENT_MP_TIER3_MAX                    500
+
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,6 +70,7 @@ void dnFoundSecret(short sectorindex);
 void dnRecordEnemyKilled();
 void dnRecordCheat();
 void dnRecordDukeTalk(short num);
+void dnRecordMultiplayerKill();
     
     
 #ifdef __cplusplus

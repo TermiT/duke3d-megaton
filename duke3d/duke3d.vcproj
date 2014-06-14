@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/J"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(SolutionDir)/steamworks_sdk_122/public/steam&quot;;&quot;$(Solutiondir)/code/rocket&quot;;&quot;$(SolutionDir)/code&quot;;&quot;$(SolutionDir)/jfduke3d&quot;;&quot;$(SolutionDir)/jfbuild&quot;;&quot;$(SolutionDir)/jfaudiolib&quot;;&quot;$(SolutionDir)/jfmact&quot;;&quot;$(SolutionDir)/thirdparty/include&quot;"
+				AdditionalIncludeDirectories="&quot;$(SolutionDir)/steamworks_sdk_126/public/steam&quot;;&quot;$(Solutiondir)/code/rocket&quot;;&quot;$(SolutionDir)/code&quot;;&quot;$(SolutionDir)/jfduke3d&quot;;&quot;$(SolutionDir)/jfbuild&quot;;&quot;$(SolutionDir)/jfaudiolib&quot;;&quot;$(SolutionDir)/jfmact&quot;;&quot;$(SolutionDir)/thirdparty/include&quot;"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_DEBUG;_WINDOWS;SUPERBUILD=1;POLYMOST=1;USE_OPENGL=1;DYNAMIC_OPENGL=1;KSFORBUILD=1;RENDERTYPESDL=1;HAVE_SDL=1;ENGINE_USING_A_C=1a;NOASM=1;NOCOPYPROTECT=1;GLGUARD=0;STATIC_LIB;STEAM_OVERLAY_WORKAROUND=0;HAVE_VORBIS=1;WIDESCREEN_HACK=1;FONT_HACK=1;NOSTEAM=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -62,9 +62,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib smpeg.lib steam_api.lib libcmtd.lib libcpmtd.lib freetype2411MT_D.lib dsound.lib dinput.lib ddraw.lib dxguid.lib dxerr.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib vpxmtd.lib"
+				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib steam_api.lib libcmtd.lib libcpmtd.lib freetype2411MT_D.lib dsound.lib dinput.lib ddraw.lib dxguid.lib dxerr.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib vpxmtd.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)/thirdparty/bin-win32/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/redistributable_bin&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/public/steam/lib/win32&quot;;&quot;$(SolutionDir)/thirdparty/bin-win32/&quot;;&quot;$(SolutionDir)/thirdparty/sources/support/lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)/thirdparty/bin-win32/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/steamworks_sdk_126/redistributable_bin&quot;;&quot;$(SolutionDir)/steamworks_sdk_126/public/steam/lib/win32&quot;;&quot;$(SolutionDir)/thirdparty/bin-win32/&quot;;&quot;$(SolutionDir)/thirdparty/sources/support/lib&quot;"
 				IgnoreAllDefaultLibraries="true"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
@@ -120,12 +120,13 @@
 				AdditionalOptions="/J"
 				Optimization="0"
 				FavorSizeOrSpeed="0"
-				AdditionalIncludeDirectories="&quot;$(SolutionDir)/steamworks_sdk_122/public/steam&quot;;&quot;$(Solutiondir)/code/rocket&quot;;&quot;$(SolutionDir)/code&quot;;&quot;$(SolutionDir)/jfduke3d&quot;;&quot;$(SolutionDir)/jfbuild&quot;;&quot;$(SolutionDir)/jfaudiolib&quot;;&quot;$(SolutionDir)/jfmact&quot;;&quot;$(SolutionDir)/thirdparty/include&quot;"
+				AdditionalIncludeDirectories="&quot;$(SolutionDir)/steamworks_sdk_126/public/steam&quot;;&quot;$(Solutiondir)/code/rocket&quot;;&quot;$(SolutionDir)/code&quot;;&quot;$(SolutionDir)/jfduke3d&quot;;&quot;$(SolutionDir)/jfbuild&quot;;&quot;$(SolutionDir)/jfaudiolib&quot;;&quot;$(SolutionDir)/jfmact&quot;;&quot;$(SolutionDir)/thirdparty/include&quot;"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_WINDOWS;SUPERBUILD=1;POLYMOST=1;USE_OPENGL=1;DYNAMIC_OPENGL=1;KSFORBUILD=1;RENDERTYPESDL=1;HAVE_SDL=1;ENGINE_USING_A_C=1a;NOASM=1;NOCOPYPROTECT=1;GLGUARD=0;STATIC_LIB;STEAM_OVERLAY_WORKAROUND=1;HAVE_VORBIS=1;WIDESCREEN_HACK=1;FONT_HACK=1;_NDEBUG=1;NDEBUG=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
+				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -141,13 +142,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib smpeg.lib steam_api.lib libcmt.lib libcpmt.lib freetype2411MT.lib dsound.lib dinput.lib ddraw.lib dxguid.lib dxerr.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib libirc.lib libm.lib vpxmt.lib"
+				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib steam_api.lib libcmt.lib libcpmt.lib freetype2411MT.lib dsound.lib dinput.lib ddraw.lib dxguid.lib dxerr.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib libirc.lib libm.lib vpxmt.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)/thirdparty/bin-win32/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/redistributable_bin&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/public/steam/lib/win32&quot;;&quot;$(SolutionDir)/thirdparty/bin-win32/&quot;;&quot;$(SolutionDir)/thirdparty/sources/support/lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)/thirdparty/bin-win32/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/steamworks_sdk_126/redistributable_bin&quot;;&quot;$(SolutionDir)/steamworks_sdk_126/public/steam/lib/win32&quot;;&quot;$(SolutionDir)/thirdparty/bin-win32/&quot;;&quot;$(SolutionDir)/thirdparty/sources/support/lib&quot;"
 				IgnoreAllDefaultLibraries="true"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
 				SubSystem="2"
+				StackReserveSize="8000000"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -198,7 +200,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/J"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(SolutionDir)/steamworks_sdk_122/public/steam&quot;;&quot;$(Solutiondir)/code/rocket&quot;;&quot;$(SolutionDir)/code&quot;;&quot;$(SolutionDir)/jfduke3d&quot;;&quot;$(SolutionDir)/jfbuild&quot;;&quot;$(SolutionDir)/jfaudiolib&quot;;&quot;$(SolutionDir)/jfmact&quot;;&quot;$(SolutionDir)/thirdparty/include&quot;"
+				AdditionalIncludeDirectories="&quot;$(SolutionDir)/steamworks_sdk_126/public/steam&quot;;&quot;$(Solutiondir)/code/rocket&quot;;&quot;$(SolutionDir)/code&quot;;&quot;$(SolutionDir)/jfduke3d&quot;;&quot;$(SolutionDir)/jfbuild&quot;;&quot;$(SolutionDir)/jfaudiolib&quot;;&quot;$(SolutionDir)/jfmact&quot;;&quot;$(SolutionDir)/thirdparty/include&quot;"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_DEBUG;_WINDOWS;SUPERBUILD=1;POLYMOST=1;USE_OPENGL=1;DYNAMIC_OPENGL=1;KSFORBUILD=1;RENDERTYPESDL=1;HAVE_SDL=1;ENGINE_USING_A_C=1a;NOASM=1;NOCOPYPROTECT=1;GLGUARD=0;STATIC_LIB;STEAM_OVERLAY_WORKAROUND=1;HAVE_VORBIS=1;WIDESCREEN_HACK=1;NOSTEAM=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -220,7 +222,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib steam_api.lib libcmtd.lib libcpmtd.lib freetype2411MT_D.lib dsound.lib dinput.lib ddraw.lib dxguid.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib vpxmt.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)/thirdparty/bin-win32/Debug&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/redistributable_bin&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/public/steam/lib/win32&quot;;&quot;$(SolutionDir)/thirdparty/sources/dxsdk/lib&quot;;&quot;$(SolutionDir)/thirdparty/sources/support/lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)/thirdparty/bin-win32/Debug&quot;;&quot;$(SolutionDir)/steamworks_sdk_126/redistributable_bin&quot;;&quot;$(SolutionDir)/steamworks_sdk_126/public/steam/lib/win32&quot;;&quot;$(SolutionDir)/thirdparty/sources/dxsdk/lib&quot;;&quot;$(SolutionDir)/thirdparty/sources/support/lib&quot;"
 				IgnoreAllDefaultLibraries="true"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
@@ -295,7 +297,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib steam_api.lib libcmtd.lib libcpmtd.lib freetype2411MT_D.lib dsound.lib dinput.lib ddraw.lib dxguid.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib smpeg.lib vpxmt.lib"
+				AdditionalDependencies="RocketCore.lib RocketControls.lib RocketDebugger.lib ws2_32.lib opengl32.lib glu32.lib winmm.lib SDL.lib SDLmain.lib steam_api.lib libcmtd.lib libcpmtd.lib freetype2411MT_D.lib dsound.lib dinput.lib ddraw.lib dxguid.lib oldnames.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib vpxmt.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(SolutionDir)/thirdparty/bin-win32/Debug&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/redistributable_bin&quot;;&quot;$(SolutionDir)/steamworks_sdk_122/public/steam/lib/win32&quot;;&quot;$(SolutionDir)/thirdparty/sources/dxsdk/lib&quot;;&quot;$(SolutionDir)/thirdparty/sources/support/lib&quot;"
 				IgnoreAllDefaultLibraries="true"
@@ -710,11 +712,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\jfbuild\mmulti.c"
+				RelativePath="..\jfbuild\mmulti.h"
 				>
 			</File>
 			<File
-				RelativePath="..\jfbuild\mmulti.h"
+				RelativePath="..\jfbuild\mmulti_steam.c"
 				>
 			</File>
 			<File
@@ -926,6 +928,14 @@
 			Name="code"
 			>
 			<File
+				RelativePath="..\code\base64.c"
+				>
+			</File>
+			<File
+				RelativePath="..\code\crc32.h"
+				>
+			</File>
+			<File
 				RelativePath="..\code\csteam.cpp"
 				>
 			</File>
@@ -951,6 +961,22 @@
 			</File>
 			<File
 				RelativePath="..\code\dnAPI_globals.c"
+				>
+			</File>
+			<File
+				RelativePath="..\code\dnMulti.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\code\dnMulti.h"
+				>
+			</File>
+			<File
+				RelativePath="..\code\dnSnapshot.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\code\dnSnapshot.h"
 				>
 			</File>
 			<File
@@ -983,6 +1009,10 @@
 			</File>
 			<File
 				RelativePath="..\code\helpers.h"
+				>
+			</File>
+			<File
+				RelativePath="..\code\miniz.h"
 				>
 			</File>
 			<File

@@ -50,7 +50,7 @@ short cyclers[MAXCYCLERS][6],numcyclers;
 
 char fta_quotes[NUMOFFIRSTTIMEACTIVE][64];
 
-unsigned char tempbuf[2048], packbuf[576];
+unsigned char tempbuf[2048], packbuf[ 65536 ];
 
 char buf[1024];
 
@@ -87,6 +87,9 @@ struct player_orig po[MAXPLAYERS];
 struct player_struct ps[MAXPLAYERS];
 struct user_defs ud;
 
+struct lobby_filters lb;
+int show_mutiplayer_info = 1;
+
 char pus, pub;
 char syncstat, syncval[MAXPLAYERS][MOVEFIFOSIZ];
 long syncvalhead[MAXPLAYERS], syncvaltail, syncvaltottail;
@@ -95,6 +98,7 @@ input sync[MAXPLAYERS], loc;
 input recsync[RECSYNCBUFSIZ];
 long avgfvel, avgsvel, avgavel, avghorz, avgbits;
 
+int32 xmousescale = 10, ymousescale = 10;
 
 input inputfifo[MOVEFIFOSIZ][MAXPLAYERS];
 
@@ -108,6 +112,7 @@ long movefifoend[MAXPLAYERS];
     //Game recording variables
 
 char playerreadyflag[MAXPLAYERS],ready2send;
+char playersync[MAXPLAYERS];
 char playerquitflag[MAXPLAYERS];
 long vel, svel, angvel, horiz, ototalclock, respawnactortime=768, respawnitemtime=768, groupfile;
 

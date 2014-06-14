@@ -45,5 +45,4 @@ void polymost_fillpolygon (long npoints);
 long polymost_printext256(long xpos, long ypos, short col, short backcol, char *name, char fontsize);
 void polymost_initosdfuncs(void);
 
-
 #endif

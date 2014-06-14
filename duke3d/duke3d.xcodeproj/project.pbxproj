@@ -9,11 +9,10 @@
 /* Begin PBXBuildFile section */
 		770D572C16AAA0FA003E9655 /* ogg.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 770D572A16AAA0FA003E9655 /* ogg.framework */; };
 		770D572D16AAA0FA003E9655 /* vorbis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 770D572B16AAA0FA003E9655 /* vorbis.framework */; };
+		771DB7D818435AAE00D61F47 /* libsteam_api.dylib in Copy Files (lib) */ = {isa = PBXBuildFile; fileRef = 776000071834D5F300D686D8 /* libsteam_api.dylib */; };
+		7760000C1834D5F500D686D8 /* libsteam_api.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 776000071834D5F300D686D8 /* libsteam_api.dylib */; };
 		7765666117BCDAFC006DA778 /* playvpx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7765665F17BCDAFC006DA778 /* playvpx.cpp */; };
 		7765666317BCDB8D006DA778 /* libvpx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7765666217BCDB8D006DA778 /* libvpx.a */; };
-		776E959A16B18E7900A1176B /* libsmpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 776E959916B18E7900A1176B /* libsmpeg.a */; };
-		7777064C16ADDBB900D532FF /* libsteam_api.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 77CF8709169F2069008D46F1 /* libsteam_api.dylib */; };
-		7777064F16ADDF0D00D532FF /* libsteam_api.dylib in Copy Files (lib) */ = {isa = PBXBuildFile; fileRef = 77CF8709169F2069008D46F1 /* libsteam_api.dylib */; };
 		7777065816ADE4CE00D532FF /* mactools.m in Sources */ = {isa = PBXBuildFile; fileRef = 7777065716ADE4CE00D532FF /* mactools.m */; };
 		7785C66D17AFEDDC00B0A611 /* common_build.c in Sources */ = {isa = PBXBuildFile; fileRef = 7785C66917AFEDDC00B0A611 /* common_build.c */; };
 		7785C66E17AFEDDC00B0A611 /* lz4.c in Sources */ = {isa = PBXBuildFile; fileRef = 7785C66B17AFEDDC00B0A611 /* lz4.c */; };
@@ -46,7 +45,6 @@
 		77CF86AE169F1B69008D46F1 /* baselayer.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8626169F1B69008D46F1 /* baselayer.c */; };
 		77CF86AF169F1B69008D46F1 /* cache1d.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8629169F1B69008D46F1 /* cache1d.c */; };
 		77CF86B0169F1B69008D46F1 /* compat.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF862B169F1B69008D46F1 /* compat.c */; };
-		77CF86B1169F1B69008D46F1 /* crc32.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF862D169F1B69008D46F1 /* crc32.c */; };
 		77CF86B2169F1B69008D46F1 /* defs.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF862F169F1B69008D46F1 /* defs.c */; };
 		77CF86B3169F1B69008D46F1 /* engine.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8632169F1B69008D46F1 /* engine.c */; };
 		77CF86B4169F1B69008D46F1 /* glbuild.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8634169F1B69008D46F1 /* glbuild.c */; };
@@ -57,7 +55,6 @@
 		77CF86B9169F1B69008D46F1 /* lzwnew.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF863F169F1B69008D46F1 /* lzwnew.c */; };
 		77CF86BA169F1B69008D46F1 /* md4.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8641169F1B69008D46F1 /* md4.c */; };
 		77CF86BB169F1B69008D46F1 /* mdsprite.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8643169F1B69008D46F1 /* mdsprite.c */; };
-		77CF86BC169F1B69008D46F1 /* mmulti.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8645169F1B69008D46F1 /* mmulti.c */; };
 		77CF86BD169F1B69008D46F1 /* osd.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8648169F1B69008D46F1 /* osd.c */; };
 		77CF86BE169F1B69008D46F1 /* polymost.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF864A169F1B69008D46F1 /* polymost.c */; };
 		77CF86BF169F1B69008D46F1 /* polymosttex.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF864C169F1B69008D46F1 /* polymosttex.c */; };
@@ -68,7 +65,6 @@
 		77CF86C4169F1B69008D46F1 /* smalltextfont.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8656169F1B69008D46F1 /* smalltextfont.c */; };
 		77CF86C5169F1B69008D46F1 /* textfont.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8657169F1B69008D46F1 /* textfont.c */; };
 		77CF86C6169F1B69008D46F1 /* actors.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF865B169F1B69008D46F1 /* actors.c */; };
-		77CF86C7169F1B69008D46F1 /* build_icon.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF865C169F1B69008D46F1 /* build_icon.c */; };
 		77CF86C8169F1B69008D46F1 /* config.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF865D169F1B69008D46F1 /* config.c */; };
 		77CF86C9169F1B69008D46F1 /* game.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8663169F1B69008D46F1 /* game.c */; };
 		77CF86CA169F1B69008D46F1 /* gamedef.c in Sources */ = {isa = PBXBuildFile; fileRef = 77CF8664169F1B69008D46F1 /* gamedef.c */; };
@@ -97,8 +93,12 @@
 		77F3883916A70868008B73A6 /* glguard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 77F3883716A70868008B73A6 /* glguard.cpp */; };
 		77F3883C16A70FF2008B73A6 /* dnAchievement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 77F3883B16A70FF2008B73A6 /* dnAchievement.cpp */; };
 		77F3883E16A73625008B73A6 /* dnAPI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 77F3883D16A73625008B73A6 /* dnAPI.cpp */; };
+		950BFBCA188AB6E4003DCED7 /* dnMulti.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 950BFBC9188AB6E4003DCED7 /* dnMulti.cpp */; };
+		9524262217A9085F003C6CFF /* mmulti_steam.c in Sources */ = {isa = PBXBuildFile; fileRef = 9524262117A9085F003C6CFF /* mmulti_steam.c */; };
 		95296E5516ADD2DC00A491FD /* ogg.framework in Copy Files (Frameworks) */ = {isa = PBXBuildFile; fileRef = 770D572A16AAA0FA003E9655 /* ogg.framework */; };
 		95296E5616ADD2DC00A491FD /* vorbis.framework in Copy Files (Frameworks) */ = {isa = PBXBuildFile; fileRef = 770D572B16AAA0FA003E9655 /* vorbis.framework */; };
+		952D11E617F96B0400E0464C /* crc32.c in Sources */ = {isa = PBXBuildFile; fileRef = 952D11E517F96B0400E0464C /* crc32.c */; };
+		95455CE217D889B000A72955 /* base64.c in Sources */ = {isa = PBXBuildFile; fileRef = 95455CE117D889B000A72955 /* base64.c */; };
 		954A2A29178F044F00D283F5 /* cd.c in Sources */ = {isa = PBXBuildFile; fileRef = 954A2A25178F044F00D283F5 /* cd.c */; };
 		954A2A2B178F1EF800D283F5 /* driver_coreaudio.c in Sources */ = {isa = PBXBuildFile; fileRef = 954A2A27178F044F00D283F5 /* driver_coreaudio.c */; };
 		955618D516A14AB500CBB392 /* libRocketControls.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 955618D016A14AB500CBB392 /* libRocketControls.a */; };
@@ -113,6 +113,7 @@
 		955618E316A14BEE00CBB392 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 955618E116A14BEE00CBB392 /* QuartzCore.framework */; };
 		955618E616A14D5E00CBB392 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77CF872B169F302F008D46F1 /* Carbon.framework */; };
 		955618E816A14D9B00CBB392 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 955618E716A14D9B00CBB392 /* libz.dylib */; };
+		955A18131869B76F008E6C2B /* dnSnapshot.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 955A18121869B76F008E6C2B /* dnSnapshot.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -133,7 +134,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				7777064F16ADDF0D00D532FF /* libsteam_api.dylib in Copy Files (lib) */,
+				771DB7D818435AAE00D61F47 /* libsteam_api.dylib in Copy Files (lib) */,
 			);
 			name = "Copy Files (lib)";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -155,10 +156,14 @@
 /* Begin PBXFileReference section */
 		770D572A16AAA0FA003E9655 /* ogg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ogg.framework; path = ../thirdparty/frameworks/ogg.framework; sourceTree = "<group>"; };
 		770D572B16AAA0FA003E9655 /* vorbis.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = vorbis.framework; path = ../thirdparty/frameworks/vorbis.framework; sourceTree = "<group>"; };
+		776000071834D5F300D686D8 /* libsteam_api.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsteam_api.dylib; path = ../steamworks_sdk_126/redistributable_bin/osx32/libsteam_api.dylib; sourceTree = "<group>"; };
+		776000081834D5F300D686D8 /* libsteam.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsteam.dylib; path = ../steamworks_sdk_126/redistributable_bin/osx32/libsteam.dylib; sourceTree = "<group>"; };
+		776000091834D5F300D686D8 /* libtier0_s.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtier0_s.dylib; path = ../steamworks_sdk_126/redistributable_bin/osx32/libtier0_s.dylib; sourceTree = "<group>"; };
+		7760000A1834D5F400D686D8 /* libvstdlib_s.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libvstdlib_s.dylib; path = ../steamworks_sdk_126/redistributable_bin/osx32/libvstdlib_s.dylib; sourceTree = "<group>"; };
+		7760000B1834D5F400D686D8 /* steamclient.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = steamclient.dylib; path = ../steamworks_sdk_126/redistributable_bin/osx32/steamclient.dylib; sourceTree = "<group>"; };
 		7765665F17BCDAFC006DA778 /* playvpx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = playvpx.cpp; sourceTree = "<group>"; };
 		7765666017BCDAFC006DA778 /* playvpx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = playvpx.h; sourceTree = "<group>"; };
 		7765666217BCDB8D006DA778 /* libvpx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvpx.a; path = "../thirdparty/bin-osx32/libvpx.a"; sourceTree = "<group>"; };
-		776E959916B18E7900A1176B /* libsmpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsmpeg.a; path = "../thirdparty/bin-osx32/libsmpeg.a"; sourceTree = "<group>"; };
 		7777065016ADE26900D532FF /* steam_appid.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = steam_appid.txt; path = ../gameroot/steam_appid.txt; sourceTree = "<group>"; };
 		7777065716ADE4CE00D532FF /* mactools.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = mactools.m; sourceTree = "<group>"; };
 		7785C66817AFEDDC00B0A611 /* common_build.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = common_build.h; sourceTree = "<group>"; };
@@ -166,12 +171,13 @@
 		7785C66A17AFEDDC00B0A611 /* lz4_encoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lz4_encoder.h; sourceTree = "<group>"; };
 		7785C66B17AFEDDC00B0A611 /* lz4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = lz4.c; sourceTree = "<group>"; };
 		7785C66C17AFEDDC00B0A611 /* lz4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lz4.h; sourceTree = "<group>"; };
+		77B67165186C33750095AC2E /* miniz.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = miniz.h; sourceTree = "<group>"; };
 		77BCA8B216CC21EF00117FBD /* icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = icon.icns; sourceTree = "<group>"; };
 		77C9A15D169F3D2D003FA762 /* dnAPI_globals.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dnAPI_globals.c; sourceTree = "<group>"; };
 		77C9A15E169F3D2D003FA762 /* dnAPI.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dnAPI.h; sourceTree = "<group>"; };
 		77CDCEB1169F1AAD00F7DCB6 /* duke3d.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = duke3d.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		77CF85E4169F1B69008D46F1 /* csteam.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = csteam.cpp; sourceTree = "<group>"; };
-		77CF85E5169F1B69008D46F1 /* csteam.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = csteam.h; sourceTree = "<group>"; };
+		77CF85E4169F1B69008D46F1 /* csteam.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = csteam.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		77CF85E5169F1B69008D46F1 /* csteam.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = csteam.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
 		77CF85E6169F1B69008D46F1 /* gui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gui.cpp; sourceTree = "<group>"; };
 		77CF85E7169F1B69008D46F1 /* gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gui.h; sourceTree = "<group>"; };
 		77CF85E8169F1B69008D46F1 /* gui_private.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gui_private.cpp; sourceTree = "<group>"; };
@@ -230,8 +236,6 @@
 		77CF862A169F1B69008D46F1 /* cache1d.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cache1d.h; sourceTree = "<group>"; };
 		77CF862B169F1B69008D46F1 /* compat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = compat.c; sourceTree = "<group>"; };
 		77CF862C169F1B69008D46F1 /* compat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = compat.h; sourceTree = "<group>"; };
-		77CF862D169F1B69008D46F1 /* crc32.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = crc32.c; sourceTree = "<group>"; };
-		77CF862E169F1B69008D46F1 /* crc32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crc32.h; sourceTree = "<group>"; };
 		77CF862F169F1B69008D46F1 /* defs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = defs.c; sourceTree = "<group>"; };
 		77CF8630169F1B69008D46F1 /* dxdidf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dxdidf.h; sourceTree = "<group>"; };
 		77CF8631169F1B69008D46F1 /* editor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = editor.h; sourceTree = "<group>"; };
@@ -254,7 +258,6 @@
 		77CF8642169F1B69008D46F1 /* md4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = md4.h; sourceTree = "<group>"; };
 		77CF8643169F1B69008D46F1 /* mdsprite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mdsprite.c; sourceTree = "<group>"; };
 		77CF8644169F1B69008D46F1 /* mdsprite_priv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mdsprite_priv.h; sourceTree = "<group>"; };
-		77CF8645169F1B69008D46F1 /* mmulti.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mmulti.c; sourceTree = "<group>"; };
 		77CF8646169F1B69008D46F1 /* mmulti.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mmulti.h; sourceTree = "<group>"; };
 		77CF8647169F1B69008D46F1 /* mmultimsgs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mmultimsgs.h; sourceTree = "<group>"; };
 		77CF8648169F1B69008D46F1 /* osd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = osd.c; sourceTree = "<group>"; };
@@ -276,14 +279,13 @@
 		77CF8659169F1B69008D46F1 /* _functio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = _functio.h; sourceTree = "<group>"; };
 		77CF865A169F1B69008D46F1 /* _rts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = _rts.h; sourceTree = "<group>"; };
 		77CF865B169F1B69008D46F1 /* actors.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = actors.c; sourceTree = "<group>"; };
-		77CF865C169F1B69008D46F1 /* build_icon.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = build_icon.c; sourceTree = "<group>"; };
 		77CF865D169F1B69008D46F1 /* config.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = config.c; sourceTree = "<group>"; };
 		77CF865E169F1B69008D46F1 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		77CF865F169F1B69008D46F1 /* develop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = develop.h; sourceTree = "<group>"; };
 		77CF8660169F1B69008D46F1 /* duke3d.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = duke3d.h; sourceTree = "<group>"; };
 		77CF8661169F1B69008D46F1 /* funct.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = funct.h; sourceTree = "<group>"; };
 		77CF8662169F1B69008D46F1 /* function.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = function.h; sourceTree = "<group>"; };
-		77CF8663169F1B69008D46F1 /* game.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = game.c; sourceTree = "<group>"; };
+		77CF8663169F1B69008D46F1 /* game.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = game.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		77CF8664169F1B69008D46F1 /* gamedef.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = gamedef.c; sourceTree = "<group>"; };
 		77CF8665169F1B69008D46F1 /* gamedefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gamedefs.h; sourceTree = "<group>"; };
 		77CF8666169F1B69008D46F1 /* GameListSource.game.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GameListSource.game.h; sourceTree = "<group>"; };
@@ -325,11 +327,6 @@
 		77CF868E169F1B69008D46F1 /* types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
 		77CF868F169F1B69008D46F1 /* util_lib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = util_lib.c; sourceTree = "<group>"; };
 		77CF8690169F1B69008D46F1 /* util_lib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = util_lib.h; sourceTree = "<group>"; };
-		77CF8709169F2069008D46F1 /* libsteam_api.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsteam_api.dylib; path = ../steamworks_sdk_122/redistributable_bin/osx32/libsteam_api.dylib; sourceTree = "<group>"; };
-		77CF870A169F2069008D46F1 /* libSteam.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libSteam.dylib; path = ../steamworks_sdk_122/redistributable_bin/osx32/libSteam.dylib; sourceTree = "<group>"; };
-		77CF870B169F2069008D46F1 /* libtier0_s.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtier0_s.dylib; path = ../steamworks_sdk_122/redistributable_bin/osx32/libtier0_s.dylib; sourceTree = "<group>"; };
-		77CF870C169F2069008D46F1 /* libvstdlib_s.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libvstdlib_s.dylib; path = ../steamworks_sdk_122/redistributable_bin/osx32/libvstdlib_s.dylib; sourceTree = "<group>"; };
-		77CF870D169F2069008D46F1 /* steamclient.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = steamclient.dylib; path = ../steamworks_sdk_122/redistributable_bin/osx32/steamclient.dylib; sourceTree = "<group>"; };
 		77CF8721169F2B67008D46F1 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		77CF8723169F2B72008D46F1 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		77CF872B169F302F008D46F1 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
@@ -339,6 +336,13 @@
 		77F3883A16A70FBA008B73A6 /* dnAchievement.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dnAchievement.h; sourceTree = "<group>"; };
 		77F3883B16A70FF2008B73A6 /* dnAchievement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dnAchievement.cpp; sourceTree = "<group>"; };
 		77F3883D16A73625008B73A6 /* dnAPI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dnAPI.cpp; sourceTree = "<group>"; };
+		950BFBC9188AB6E4003DCED7 /* dnMulti.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dnMulti.cpp; sourceTree = "<group>"; };
+		950BFBCB188AB831003DCED7 /* dnMulti.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dnMulti.h; sourceTree = "<group>"; };
+		9524262117A9085F003C6CFF /* mmulti_steam.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mmulti_steam.c; sourceTree = "<group>"; };
+		952D11DC17F1C82D00E0464C /* base64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = base64.h; sourceTree = "<group>"; };
+		952D11E317F4C53D00E0464C /* crc32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crc32.h; sourceTree = "<group>"; };
+		952D11E517F96B0400E0464C /* crc32.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = crc32.c; sourceTree = "<group>"; };
+		95455CE117D889B000A72955 /* base64.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = base64.c; sourceTree = "<group>"; };
 		954A2A25178F044F00D283F5 /* cd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cd.c; sourceTree = "<group>"; };
 		954A2A26178F044F00D283F5 /* cd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cd.h; sourceTree = "<group>"; };
 		954A2A27178F044F00D283F5 /* driver_coreaudio.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = driver_coreaudio.c; sourceTree = "<group>"; };
@@ -354,6 +358,8 @@
 		955618E016A14BEE00CBB392 /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
 		955618E116A14BEE00CBB392 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		955618E716A14D9B00CBB392 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/usr/lib/libz.dylib; sourceTree = DEVELOPER_DIR; };
+		955A18111869B6F3008E6C2B /* dnSnapshot.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dnSnapshot.h; sourceTree = "<group>"; };
+		955A18121869B76F008E6C2B /* dnSnapshot.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dnSnapshot.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -376,11 +382,10 @@
 				955618D816A14AB500CBB392 /* libSDL.a in Frameworks */,
 				955618D916A14AB500CBB392 /* libSDLmain.a in Frameworks */,
 				955618DB16A14B1000CBB392 /* libfreetype.a in Frameworks */,
-				7777064C16ADDBB900D532FF /* libsteam_api.dylib in Frameworks */,
 				770D572C16AAA0FA003E9655 /* ogg.framework in Frameworks */,
 				770D572D16AAA0FA003E9655 /* vorbis.framework in Frameworks */,
-				776E959A16B18E7900A1176B /* libsmpeg.a in Frameworks */,
 				7765666317BCDB8D006DA778 /* libvpx.a in Frameworks */,
+				7760000C1834D5F500D686D8 /* libsteam_api.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -411,7 +416,6 @@
 				955618D016A14AB500CBB392 /* libRocketControls.a */,
 				955618D116A14AB500CBB392 /* libRocketCore.a */,
 				955618D216A14AB500CBB392 /* libRocketDebugger.a */,
-				776E959916B18E7900A1176B /* libsmpeg.a */,
 				955618D316A14AB500CBB392 /* libSDL.a */,
 				955618D416A14AB500CBB392 /* libSDLmain.a */,
 				7765666217BCDB8D006DA778 /* libvpx.a */,
@@ -425,12 +429,12 @@
 				77CF872B169F302F008D46F1 /* Carbon.framework */,
 				77CF8723169F2B72008D46F1 /* CoreFoundation.framework */,
 				77CF8721169F2B67008D46F1 /* OpenGL.framework */,
-				77CF8709169F2069008D46F1 /* libsteam_api.dylib */,
-				77CF870A169F2069008D46F1 /* libSteam.dylib */,
-				77CF870B169F2069008D46F1 /* libtier0_s.dylib */,
-				77CF870C169F2069008D46F1 /* libvstdlib_s.dylib */,
-				77CF870D169F2069008D46F1 /* steamclient.dylib */,
 				955618E716A14D9B00CBB392 /* libz.dylib */,
+				776000071834D5F300D686D8 /* libsteam_api.dylib */,
+				776000081834D5F300D686D8 /* libsteam.dylib */,
+				776000091834D5F300D686D8 /* libtier0_s.dylib */,
+				7760000A1834D5F400D686D8 /* libvstdlib_s.dylib */,
+				7760000B1834D5F400D686D8 /* steamclient.dylib */,
 			);
 			sourceTree = "<group>";
 		};
@@ -445,6 +449,9 @@
 		77CF85E3169F1B69008D46F1 /* code */ = {
 			isa = PBXGroup;
 			children = (
+				77B67165186C33750095AC2E /* miniz.h */,
+				952D11DC17F1C82D00E0464C /* base64.h */,
+				95455CE117D889B000A72955 /* base64.c */,
 				7765665E17BCDAFC006DA778 /* playvpx */,
 				77CF85EC169F1B69008D46F1 /* rocket */,
 				77F3883D16A73625008B73A6 /* dnAPI.cpp */,
@@ -463,6 +470,10 @@
 				77F3883A16A70FBA008B73A6 /* dnAchievement.h */,
 				77F3883B16A70FF2008B73A6 /* dnAchievement.cpp */,
 				7777065716ADE4CE00D532FF /* mactools.m */,
+				955A18111869B6F3008E6C2B /* dnSnapshot.h */,
+				955A18121869B76F008E6C2B /* dnSnapshot.cpp */,
+				950BFBC9188AB6E4003DCED7 /* dnMulti.cpp */,
+				950BFBCB188AB831003DCED7 /* dnMulti.h */,
 			);
 			name = code;
 			path = ../code;
@@ -533,6 +544,9 @@
 		77CF8623169F1B69008D46F1 /* jfbuild */ = {
 			isa = PBXGroup;
 			children = (
+				952D11E517F96B0400E0464C /* crc32.c */,
+				952D11E317F4C53D00E0464C /* crc32.h */,
+				9524262117A9085F003C6CFF /* mmulti_steam.c */,
 				7785C66817AFEDDC00B0A611 /* common_build.h */,
 				7785C66917AFEDDC00B0A611 /* common_build.c */,
 				7785C66A17AFEDDC00B0A611 /* lz4_encoder.h */,
@@ -547,8 +561,6 @@
 				77CF862A169F1B69008D46F1 /* cache1d.h */,
 				77CF862B169F1B69008D46F1 /* compat.c */,
 				77CF862C169F1B69008D46F1 /* compat.h */,
-				77CF862D169F1B69008D46F1 /* crc32.c */,
-				77CF862E169F1B69008D46F1 /* crc32.h */,
 				77CF862F169F1B69008D46F1 /* defs.c */,
 				77CF8630169F1B69008D46F1 /* dxdidf.h */,
 				77CF8631169F1B69008D46F1 /* editor.h */,
@@ -571,7 +583,6 @@
 				77CF8642169F1B69008D46F1 /* md4.h */,
 				77CF8643169F1B69008D46F1 /* mdsprite.c */,
 				77CF8644169F1B69008D46F1 /* mdsprite_priv.h */,
-				77CF8645169F1B69008D46F1 /* mmulti.c */,
 				77CF8646169F1B69008D46F1 /* mmulti.h */,
 				77CF8647169F1B69008D46F1 /* mmultimsgs.h */,
 				77CF8648169F1B69008D46F1 /* osd.c */,
@@ -601,7 +612,6 @@
 				77CF8659169F1B69008D46F1 /* _functio.h */,
 				77CF865A169F1B69008D46F1 /* _rts.h */,
 				77CF865B169F1B69008D46F1 /* actors.c */,
-				77CF865C169F1B69008D46F1 /* build_icon.c */,
 				77CF865D169F1B69008D46F1 /* config.c */,
 				77CF865E169F1B69008D46F1 /* config.h */,
 				77CF865F169F1B69008D46F1 /* develop.h */,
@@ -725,7 +735,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo \"Running prepare script\"\nAPP_ID=225140\nOUTPUT_DIR=$HOME/Downloads\nrm -rf $OUTPUT_DIR/$FULL_PRODUCT_NAME\n$SRCROOT/../steamworks_sdk_122/tools/ContentPrep.app/Contents/MacOS/contentprep.py --console -v -s $TARGET_BUILD_DIR/$FULL_PRODUCT_NAME/ -d $OUTPUT_DIR -a $APP_ID --nowrap";
+			shellScript = "echo \"Running prepare script\"\nAPP_ID=225140\nOUTPUT_DIR=$SRCROOT/../steamworks_sdk_126/tools/ContentBuilder/content/mac/\nrm -rf $OUTPUT_DIR/$FULL_PRODUCT_NAME\n$SRCROOT/../steamworks_sdk_126/tools/ContentPrep.app/Contents/MacOS/contentprep.py --console -v -s $TARGET_BUILD_DIR/$FULL_PRODUCT_NAME/ -d $OUTPUT_DIR -a $APP_ID --nowrap";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -761,7 +771,6 @@
 				77CF86AE169F1B69008D46F1 /* baselayer.c in Sources */,
 				77CF86AF169F1B69008D46F1 /* cache1d.c in Sources */,
 				77CF86B0169F1B69008D46F1 /* compat.c in Sources */,
-				77CF86B1169F1B69008D46F1 /* crc32.c in Sources */,
 				77CF86B2169F1B69008D46F1 /* defs.c in Sources */,
 				77CF86B3169F1B69008D46F1 /* engine.c in Sources */,
 				954A2A2B178F1EF800D283F5 /* driver_coreaudio.c in Sources */,
@@ -773,7 +782,6 @@
 				77CF86B9169F1B69008D46F1 /* lzwnew.c in Sources */,
 				77CF86BA169F1B69008D46F1 /* md4.c in Sources */,
 				77CF86BB169F1B69008D46F1 /* mdsprite.c in Sources */,
-				77CF86BC169F1B69008D46F1 /* mmulti.c in Sources */,
 				77CF86BD169F1B69008D46F1 /* osd.c in Sources */,
 				77CF86BE169F1B69008D46F1 /* polymost.c in Sources */,
 				77CF86BF169F1B69008D46F1 /* polymosttex.c in Sources */,
@@ -784,7 +792,6 @@
 				77CF86C4169F1B69008D46F1 /* smalltextfont.c in Sources */,
 				77CF86C5169F1B69008D46F1 /* textfont.c in Sources */,
 				77CF86C6169F1B69008D46F1 /* actors.c in Sources */,
-				77CF86C7169F1B69008D46F1 /* build_icon.c in Sources */,
 				77CF86C8169F1B69008D46F1 /* config.c in Sources */,
 				77CF86C9169F1B69008D46F1 /* game.c in Sources */,
 				77CF86CA169F1B69008D46F1 /* gamedef.c in Sources */,
@@ -813,9 +820,14 @@
 				77F3883E16A73625008B73A6 /* dnAPI.cpp in Sources */,
 				7777065816ADE4CE00D532FF /* mactools.m in Sources */,
 				954A2A29178F044F00D283F5 /* cd.c in Sources */,
+				9524262217A9085F003C6CFF /* mmulti_steam.c in Sources */,
+				95455CE217D889B000A72955 /* base64.c in Sources */,
 				7785C66D17AFEDDC00B0A611 /* common_build.c in Sources */,
 				7785C66E17AFEDDC00B0A611 /* lz4.c in Sources */,
 				7765666117BCDAFC006DA778 /* playvpx.cpp in Sources */,
+				952D11E617F96B0400E0464C /* crc32.c in Sources */,
+				955A18131869B76F008E6C2B /* dnSnapshot.cpp in Sources */,
+				950BFBCA188AB6E4003DCED7 /* dnMulti.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -831,6 +843,7 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CONFIGURATION_TEMP_DIR = "$(PROJECT_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				COPY_PHASE_STRIP = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -847,6 +860,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CFLAGS = "";
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -860,6 +874,7 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CONFIGURATION_TEMP_DIR = "$(PROJECT_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -869,6 +884,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				OTHER_CFLAGS = "";
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -877,9 +893,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_ANALYZER_SECURITY_INSECUREAPI_VFORK = NO;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../steamworks_sdk_122/redistributable_bin/Frameworks\"",
+					"\"$(SRCROOT)/../steamworks_sdk_126/redistributable_bin/Frameworks\"",
 					"\"$(SRCROOT)/../thirdparty/frameworks\"",
 				);
 				GCC_CHAR_IS_UNSIGNED_CHAR = YES;
@@ -900,17 +918,16 @@
 					"WIDESCREEN_HACK=1",
 					"CLASSIC_MENU=0",
 					"FONT_HACK=1",
-					"NOSTEAM=1",
 				);
 				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../steamworks_sdk_122/public/steam",
+					"$(PROJECT_DIR)/../steamworks_sdk_126/public/steam",
 					"$(PROJECT_DIR)/../thirdparty/include",
 				);
 				INFOPLIST_FILE = "duke3d-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../steamworks_sdk_122/redistributable_bin/osx32\"",
+					"\"$(SRCROOT)/../steamworks_sdk_126/redistributable_bin/osx32\"",
 					"\"$(SRCROOT)/../thirdparty/bin-osx32\"",
 					"\"$(SRCROOT)/../thirdparty/sources/support/lib\"",
 				);
@@ -926,9 +943,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_ANALYZER_SECURITY_INSECUREAPI_VFORK = NO;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../steamworks_sdk_122/redistributable_bin/Frameworks\"",
+					"\"$(SRCROOT)/../steamworks_sdk_126/redistributable_bin/Frameworks\"",
 					"\"$(SRCROOT)/../thirdparty/frameworks\"",
 				);
 				GCC_CHAR_IS_UNSIGNED_CHAR = YES;
@@ -951,13 +970,13 @@
 				);
 				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../steamworks_sdk_122/public/steam",
+					"$(PROJECT_DIR)/../steamworks_sdk_126/public/steam",
 					"$(PROJECT_DIR)/../thirdparty/include",
 				);
 				INFOPLIST_FILE = "duke3d-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../steamworks_sdk_122/redistributable_bin/osx32\"",
+					"\"$(SRCROOT)/../steamworks_sdk_126/redistributable_bin/osx32\"",
 					"\"$(SRCROOT)/../thirdparty/bin-osx32\"",
 					"\"$(SRCROOT)/../thirdparty/sources/support/lib\"",
 				);

@@ -38,11 +38,10 @@ Modifications for JonoF's port by Jonathon Fowler(jf@jonof.id.au)
 #include "fx_man.h"
 #include "sounds.h"
 #include "config.h"
-#include <smpeg/smpeg.h>
 
 #include "osd.h"
 #include "osdcmds.h"
-//#include "crc32.h"
+#include "crc32.h"
 
 #include "duke3d.h"
 
@@ -52,10 +51,12 @@ Modifications for JonoF's port by Jonathon Fowler(jf@jonof.id.au)
 #include "gui.h"
 #include "dnAchievement.h"
 #include "dnAPI.h"
+#include "dnMulti.h"
+#include "dnSnapshot.h"
 
 #include "_control.h"
 
-#define VERSION "1.0.4"
+#define VERSION "1.3.2 STABLE"
 
 #define HEAD   "Duke Nukem 3D Unregistered Shareware "VERSION
 
@@ -104,26 +105,33 @@ char *confilename = defaultconfilename, *duke3dgrp = defaultduke3dgrp;
 int megatondef = 0;
 
 char boardfilename[BMAX_PATH] = {0};
+long workshopmap_group_handler = 0;
 char waterpal[768], slimepal[768], titlepal[768], drealms[768], endingpal[768];
 char firstdemofile[80] = { '\0' };
 
 static int netparamcount = 0;
 static char **netparam = NULL;
 
+int noanim = 0;
+int delete_saves = 0;
+
 int addon = 0;
 typedef struct  {
     char *name;
     char *grpfile;
+    char *folder;
     int episode;
     char *musicdir;
 }addon_stuct;
 
 addon_stuct official_addons[4] = {
-    {NULL, NULL, 0, "music"}, //default atomic edition
-    {"Duke It Out In D.C "VERSION, "dukedc.grp", 2, "music"},
-    {"Duke: Nuclear Winter "VERSION, "nwinter.grp", 1, "music/nwinter"},
-    {"Duke Caribbean: Life's A Beach "VERSION, "vacation.grp", 2, "music/vacation"},
+    {NULL, NULL, NULL, 0,  "music"}, //default atomic edition
+    {"Duke It Out In D.C "VERSION, "dukedc.grp", "addons/dc", 2, "music"},
+    {"Duke: Nuclear Winter "VERSION, "nwinter.grp", "addons/nw", 1, "music/nwinter"},
+    {"Duke Caribbean: Life's A Beach "VERSION, "vacation.grp", "addons/vacation", 2, "music/vacation"},
 };
+
+int AccurateLighting = 1;
 
 const char*
 dnGetGRPName() {
@@ -163,8 +171,12 @@ void patchstatusbar(long x1, long y1, long x2, long y2)
 	long clx1,cly1,clx2,cly2,clofx,clofy;
     int tile = BOTTOMSTATUSBAR;
 	scl = sbarsc(65536);
-    if (megatondef)
-        tile = BOTTOMSTATUSBAR_MEGATON;
+    if (megatondef) {
+        if (ud.multimode > 1 && ud.coop != 1 )
+            tile = BOTTOMSTATUSBAR_MP_MEGATON;
+        else
+            tile = BOTTOMSTATUSBAR_MEGATON;
+    }
     tx = sbarx((320-tilesizx[tile])/2);
     ty = sbary(200-tilesizy[BOTTOMSTATUSBAR]);
 	clx1 = scale(scale(x1,xdim,320),ud.statusbarscale,100);
@@ -458,14 +470,15 @@ void allowtimetocorrecterrorswhenquitting(void)
           oldtotalclock = totalclock;
 
 		 while (totalclock < oldtotalclock+TICSPERFRAME) {
-			 handleevents();
-              getpackets();
+			handleevents();
+			resettimeout();
+			getpackets();
 		 }
 
           if(KB_KeyPressed(sc_Escape)) return;
 
           packbuf[0] = 127;
-          for(i=connecthead;i>=0;i=connectpoint2[i])
+          dnIterPlayers(i)
 			 {
 					 if (i != myconnectindex) sendpacket(i,packbuf,1);
 					 if ((!networkmode) && (myconnectindex != connecthead)) break; //slaves in M/S mode only send to master
@@ -494,35 +507,157 @@ void adduserquote(char *daquote)
     pub = NUMPAGES;
 }
 
+void clearuserquote()
+{
+	int k;
+	for (k = 0; k < MAXUSERQUOTES; k++)
+	{
+		user_quote_time[k] = 0;
+	}
+}
+#if 0
+
+void loadsnapshot( const snapshot_t *snapshot ) {
+	
+	Sys_DPrintf( "loadsnapshot: Restoring snapshot...\n" );
+	
+	DNME_RestoreSnapshot( snapshot );
+
+	resetinterpolations();
+	show_shareware = 0;
+	everyothertime = 0;
+	resetmys();
+//	resettimevars();
+	ready2send = 1;
+//	flushpackets();
+//	clearfifo();
+	Sys_DPrintf( "loadsnapshot: waitforeverybody...\n" );
+	waitforeverybody();
+	resettimevars();
+}
+
+static snapshot_t snapshot = { 0 };
+
+int forcesync( void ) {
+	int i, pktsize;
+	double start, wait;
+	char allready;
+	unsigned long crc32;
+	
+	compressedSnapshot_t *cs;
+	
+	
+	if ( myconnectindex == connecthead && numplayers > 1 ) {
+		memset( playersync, 0, sizeof( playersync ) );
+		
+		DNME_TakeSnapshot( &snapshot );
+		cs = DNME_CompressSnapshot( &snapshot );
+
+		cs->header.oobtag = 0xFFFF;
+		cs->header.tag = 253;
+		
+		crc32 = crc32once( (unsigned char*)&snapshot, sizeof( snapshot ) );
+		
+		Sys_DPrintf( "forcesync: snapshot size: %d bytes, crc32=%x\n", sizeof( snapshot ), crc32 );
+		
+		crc32 = crc32once( (unsigned char*)&cs->data[0], cs->header.size );
+		
+		Sys_DPrintf( "forcesync: compressed size: %d bytes, crc32=%x\n", cs->header.size, crc32 );
+		
+		dnIterClients( i ) {
+			sendpacket( i, (char*)cs, sizeof( cs->header ) + cs->header.size );
+		}
+		
+		free( cs );
+		start = Sys_GetTicks();
+		wait = 8000.0;
+		
+		Sys_DPrintf( "forcesync: waiting for players\n" );
+		
+			do {
+			handleevents();
+			resettimeout();
+			getpackets();
+			allready = 1;
+			dnIterClients( i ) {
+				if ( playersync[i] == 0 ) {
+					allready = 0;
+					break;
+				}
+			}
+		} while ( start + wait > Sys_GetTicks() && !allready );
+
+		loadsnapshot( &snapshot );
+
+		if ( allready ) {
+			Sys_DPrintf( "[DUKEMP] forcesync succeeded\n");
+		} else {
+			Sys_DPrintf( "[DUKEMP] forcesync failed\n" );
+			
+
+			dnIterClients( i ) {
+				if ( playersync[i] == 0 ) {
+					kickplayer( i );
+				}
+			}
+		}
+
+	}
+	return 0;
+}
+
+void processsnapshot( compressedSnapshot_t *cs ) {
+	unsigned long crc32;
+	
+	crc32 = crc32once( (unsigned char*)cs->data, cs->header.size );
+	Sys_DPrintf( "processsnapshot: received %d bytes of compressed data, crc32=%x\n", cs->header.size, crc32 );
+	
+	DNME_DecompressSnapshot( cs, &snapshot );
+	
+	crc32 = crc32once( (unsigned char*)&snapshot, sizeof( snapshot ) );
+	
+	Sys_DPrintf( "processsnapshot: snapshot size: %d bytes, crc32=%x\n", sizeof( snapshot ), crc32 );
+	
+	loadsnapshot( &snapshot );
+	
+}
+
+#endif
 
 void getpackets(void)
 {
     long i, j, k, l;
-    FILE *fp;
     long other, packbufleng;
     input *osyn, *nsyn;
 
 	sampletimer();
-
+	
     // only dispatch commands here when not in a game
-    if( !(ps[myconnectindex].gm&MODE_GAME) ) { OSD_DispatchQueued(); }
-
+    if( !(ps[myconnectindex].gm&MODE_GAME) ) {
+		OSD_DispatchQueued();
+	}
+    
     if(qe == 0 && KB_KeyPressed(sc_LeftControl) && KB_KeyPressed(sc_LeftAlt) && KB_KeyPressed(sc_Delete))
     {
         qe = 1;
         gameexit("Quick Exit.");
     }
 
-    if (numplayers < 2) return;
+	checktimeout();
+	
     while ((packbufleng = getpacket(&other,packbuf)) > 0)
     {
+		if ( other < 0 || other >= MAXPLAYERS ) {
+			Sys_DPrintf( "[DUKEMP] Warning: gave packet from unknown user index: %d\n", other );
+			continue;
+		}
         switch(packbuf[0])
         {
             case 126:
 						 //Slaves in M/S mode only send to master
 						 //Master re-transmits message to all others
 					 if ((!networkmode) && (myconnectindex == connecthead))
-						 for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
+						 dnIterClients( i )
 							 if (i != other) sendpacket(i,packbuf,packbufleng);
 
                 multiflag = 2;
@@ -536,7 +671,7 @@ void getpackets(void)
                 j = 1;
 
                 if ((movefifoend[other]&(TIMERUPDATESIZ-1)) == 0)
-                    for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
+                    dnIterClients(i)
                     {
                         if (playerquitflag[i] == 0) continue;
                         if (i == myconnectindex)
@@ -548,9 +683,9 @@ void getpackets(void)
                 nsyn = (input *)&inputfifo[(movefifoend[connecthead])&(MOVEFIFOSIZ-1)][0];
 
                 k = j;
-                for(i=connecthead;i>=0;i=connectpoint2[i])
+                dnIterPlayers(i)
                     j += playerquitflag[i];
-                for(i=connecthead;i>=0;i=connectpoint2[i])
+                dnIterPlayers(i)
                 {
                     if (playerquitflag[i] == 0) continue;
 
@@ -568,13 +703,15 @@ void getpackets(void)
                     if (l&64)  nsyn[i].bits = ((nsyn[i].bits&0x00ffffff)|((long)packbuf[j++])<<24);
                     if (l&128) nsyn[i].horz = (signed char)packbuf[j++];
 
-                    if (nsyn[i].bits&(1<<26)) playerquitflag[i] = 0;
+                    if (nsyn[i].bits&(1<<26)) {
+						playerquitflag[i] = 0;
+					}
                     movefifoend[i]++;
                 }
 
-                while (j != packbufleng)
+                while (j < packbufleng)
                 {
-                    for(i=connecthead;i>=0;i=connectpoint2[i])
+                    dnIterPlayers(i)
                         if(i != myconnectindex)
                     {
                         syncval[i][syncvalhead[i]&(MOVEFIFOSIZ-1)] = packbuf[j];
@@ -583,7 +720,7 @@ void getpackets(void)
                     j++;
                 }
 
-                for(i=connecthead;i>=0;i=connectpoint2[i])
+                dnIterPlayers(i)
                     if (i != myconnectindex)
                         for(j=1;j<movesperpacket;j++)
                         {
@@ -592,7 +729,7 @@ void getpackets(void)
                         }
 
                  movefifosendplc += movesperpacket;
-
+                
                 break;
             case 1:  //[1] (receive slave sync buffer)
                 j = 2; k = packbuf[1];
@@ -611,7 +748,7 @@ void getpackets(void)
                 if (k&128) nsyn[other].horz = (signed char)packbuf[j++];
                 movefifoend[other]++;
 
-                while (j != packbufleng)
+                while (j < packbufleng)
                 {
                     syncval[other][syncvalhead[other]&(MOVEFIFOSIZ-1)] = packbuf[j++];
                     syncvalhead[other]++;
@@ -621,6 +758,10 @@ void getpackets(void)
                 {
                     copybufbyte(&nsyn[other],&inputfifo[movefifoend[other]&(MOVEFIFOSIZ-1)][other],sizeof(input));
                     movefifoend[other]++;
+                }
+                
+                if (nsyn[other].bits & (1<<26)) {
+                    Sys_DPrintf("[DUKEMP] Player quit\n");
                 }
 
                 break;
@@ -632,7 +773,7 @@ void getpackets(void)
                    if (packbuf[1] == 255)
                    {
                          //Master re-transmits message to all others
-                      for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
+                      dnIterClients(i)
                          if (i != other)
                             sendpacket(i,packbuf,packbufleng);
                    }
@@ -659,7 +800,7 @@ void getpackets(void)
 						 //Slaves in M/S mode only send to master
 						 //Master re-transmits message to all others
 					 if ((!networkmode) && (myconnectindex == connecthead))
-						 for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
+						 dnIterClients(i)
 							 if (i != other) sendpacket(i,packbuf,packbufleng);
 
                 ud.m_level_number = ud.level_number = packbuf[1];
@@ -673,7 +814,7 @@ void getpackets(void)
                 ud.m_marker = ud.marker = packbuf[9];
                 ud.m_ffire = ud.ffire = packbuf[10];
 
-                for(i=connecthead;i>=0;i=connectpoint2[i])
+                dnIterPlayers(i)
                 {
                     resetweapons(i);
                     resetinventory(i);
@@ -689,13 +830,15 @@ void getpackets(void)
 					//slaves in M/S mode only send to master
 					//Master re-transmits message to all others
 				if ((!networkmode) && (myconnectindex == connecthead))
-					for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
+					dnIterClients(i)
 						if (i != other) sendpacket(i,packbuf,packbufleng);
 
 				if (packbuf[2] != BYTEVERSION)
 					gameexit("\nYou cannot play Duke with different versions.");
 
 				other = packbuf[1];
+				
+				memset( &ud.user_name[other][0], 0, sizeof( ud.user_name[other] ) );
 
 				for (i=3;packbuf[i];i++)
 					ud.user_name[other][i-3] = packbuf[i];
@@ -714,7 +857,7 @@ void getpackets(void)
 						 //slaves in M/S mode only send to master
 						 //Master re-transmits message to all others
 					 if ((!networkmode) && (myconnectindex == connecthead))
-						 for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
+						 dnIterClients(i)
 							 if (i != other) sendpacket(i,packbuf,packbufleng);
 
                 if(numlumps == 0) break;
@@ -729,7 +872,7 @@ void getpackets(void)
 						 //Slaves in M/S mode only send to master
 						 //Master re-transmits message to all others
 					 if ((!networkmode) && (myconnectindex == connecthead))
-						 for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
+						 dnIterClients(i)
 							 if (i != other) sendpacket(i,packbuf,packbufleng);
 
                 ud.m_level_number = ud.level_number = packbuf[1];
@@ -746,7 +889,7 @@ void getpackets(void)
                 copybufbyte(packbuf+10,boardfilename,packbufleng-11);
                 boardfilename[packbufleng-11] = 0;
 
-                for(i=connecthead;i>=0;i=connectpoint2[i])
+                dnIterPlayers(i)
                 {
                     resetweapons(i);
                     resetinventory(i);
@@ -759,12 +902,13 @@ void getpackets(void)
             case 16:
                 movefifoend[other] = movefifoplc = movefifosendplc = fakemovefifoplc = 0;
                 syncvalhead[other] = syncvaltottail = 0L;
+				//break;
             case 17:
                 j = 1;
 
                 if ((movefifoend[other]&(TIMERUPDATESIZ-1)) == 0)
                     if (other == connecthead)
-                        for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
+                        dnIterClients(i)
                         {
                             if (i == myconnectindex)
                                 otherminlag = (long)((signed char)packbuf[j]);
@@ -808,11 +952,24 @@ void getpackets(void)
             case 250:
                 playerreadyflag[other]++;
                 break;
+				
+//			case 252: /* sync ack */
+//
+//				Sys_DPrintf( "[DUKEMP] sync ack (unrel) \n" );
+//				playersync[other] = 1;
+//				break;
+				
+            case 254:
+                //dnQuitToTitle("");
+                Sys_DPrintf( "[DUKEMP] Got termination packet with code %d (%s)\n", (int)packbuf[1], getstopmsg(packbuf[1]));
+                gameexit(getstopmsg(packbuf[1]));
+                break;
             case 255:
                 gameexit(" ");
                 break;
         }
     }
+	dnGetPackets();
 }
 
 extern void computergetinput(long snum, input *syn);
@@ -827,6 +984,7 @@ void faketimerhandler()
         qe = 1;
         gameexit("Quick Exit.");
     }
+	
 
 	sampletimer();
     if ((totalclock < ototalclock+TICSPERFRAME) || (ready2send == 0)) return;
@@ -834,7 +992,7 @@ void faketimerhandler()
 
     getpackets(); if (getoutputcirclesize() >= 16) return;
 
-    for(i=connecthead;i>=0;i=connectpoint2[i])
+    dnIterPlayers(i)
         if (i != myconnectindex)
             if (movefifoend[i] < movefifoend[myconnectindex]-200) return;
 
@@ -863,7 +1021,7 @@ void faketimerhandler()
 
      if (numplayers < 2)
      {
-          if (ud.multimode > 1) for(i=connecthead;i>=0;i=connectpoint2[i])
+          if (ud.multimode > 1) dnIterPlayers(i)
               if(i != myconnectindex)
               {
                   //clearbufbyte(&inputfifo[movefifoend[i]&(MOVEFIFOSIZ-1)][i],sizeof(input),0L);
@@ -874,7 +1032,7 @@ void faketimerhandler()
           return;
      }
 
-    for(i=connecthead;i>=0;i=connectpoint2[i])
+    dnIterPlayers(i)
         if (i != myconnectindex)
         {
             k = (movefifoend[myconnectindex]-1)-movefifoend[i];
@@ -910,10 +1068,10 @@ void faketimerhandler()
             }
 
             if (myconnectindex == connecthead)
-                for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
+                dnIterClients(i)
                     packbuf[j++] = min(max(myminlag[i],-128),127);
 
-            for(i=connecthead;i>=0;i=connectpoint2[i])
+            dnIterPlayers(i)
                 myminlag[i] = 0x7fffffff;
         }
 
@@ -956,7 +1114,7 @@ void faketimerhandler()
             syncvaltail++;
         }
 
-        for(i=connecthead;i>=0;i=connectpoint2[i])
+        dnIterPlayers(i)
             if (i != myconnectindex)
                 sendpacket(i,packbuf,j);
 
@@ -975,7 +1133,7 @@ void faketimerhandler()
             totalclock -= TICSPERFRAME*i;
             myminlag[connecthead] -= i; otherminlag += i;
 
-            for(i=connecthead;i>=0;i=connectpoint2[i])
+            dnIterPlayers(i)
                 myminlag[i] = 0x7fffffff;
         }
 
@@ -1022,18 +1180,18 @@ void faketimerhandler()
     }
 
 		  //This allows packet resends
-    for(i=connecthead;i>=0;i=connectpoint2[i])
+    dnIterPlayers(i)
         if (movefifoend[i] <= movefifosendplc)
         {
             packbuf[0] = 127;
-            for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
+            dnIterClients(i)
                sendpacket(i,packbuf,1);
             return;
         }
 
     while (1)  //Master
     {
-        for(i=connecthead;i>=0;i=connectpoint2[i])
+        dnIterPlayers(i)
             if (playerquitflag[i] && (movefifoend[i] <= movefifosendplc)) return;
 
         osyn = (input *)&inputfifo[(movefifosendplc-1)&(MOVEFIFOSIZ-1)][0];
@@ -1045,18 +1203,18 @@ void faketimerhandler()
             //Fix timers and buffer/jitter value
         if ((movefifosendplc&(TIMERUPDATESIZ-1)) == 0)
         {
-            for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
+            dnIterClients(i)
                if (playerquitflag[i])
                 packbuf[j++] = min(max(myminlag[i],-128),127);
 
-            for(i=connecthead;i>=0;i=connectpoint2[i])
+            dnIterPlayers(i)
                 myminlag[i] = 0x7fffffff;
         }
 
         k = j;
-        for(i=connecthead;i>=0;i=connectpoint2[i])
+        dnIterPlayers(i)
            j += playerquitflag[i];
-        for(i=connecthead;i>=0;i=connectpoint2[i])
+        dnIterPlayers(i)
         {
             if (playerquitflag[i] == 0) continue;
 
@@ -1096,12 +1254,13 @@ void faketimerhandler()
             syncvaltail++;
         }
 
-        for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
+        dnIterClients(i)
             if (playerquitflag[i])
             {
                  sendpacket(i,packbuf,j);
-                 if (nsyn[i].bits&(1<<26))
+				if (nsyn[i].bits&(1<<26)) {
                     playerquitflag[i] = 0;
+				}
             }
 
         movefifosendplc += movesperpacket;
@@ -1142,24 +1301,26 @@ void checksync(void)
 {
       long i, k;
 
-      for(i=connecthead;i>=0;i=connectpoint2[i])
+      dnIterPlayers(i)
             if (syncvalhead[i] == syncvaltottail) break;
       if (i < 0)
       {
              syncstat = 0;
              do
              {
-                     for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
+                     dnIterClients(i)
                             if (syncval[i][syncvaltottail&(MOVEFIFOSIZ-1)] !=
                                 syncval[connecthead][syncvaltottail&(MOVEFIFOSIZ-1)])
                                  syncstat = 1;
                      syncvaltottail++;
-                     for(i=connecthead;i>=0;i=connectpoint2[i])
+                     dnIterPlayers(i)
                             if (syncvalhead[i] == syncvaltottail) break;
              } while (i < 0);
       }
       if (connectpoint2[connecthead] < 0) syncstat = 0;
 
+#if 0
+	
       if (syncstat)
       {
           printext256(4L,130L,31,0,"Out Of Sync - Please restart game",0);
@@ -1170,6 +1331,17 @@ void checksync(void)
           printext256(4L,160L,31,0,"Missed Network packet!",0);
           printext256(4L,138L,31,0,"RUN DN3DHELP.EXE for information.",0);
       }
+	
+#else
+	
+	if ( syncstat || syncstate ) {
+		printext256( 4L, 130L, 31, 0, "Sync...", 0 );
+//		dnWaitForEverybody( BLOCK_SNAPSHOT );
+		dnNotifyPlayer( 0, NOTIFICATION_OUT_OF_SYNC );
+	}
+	
+#endif
+	
 }
 
 
@@ -1705,21 +1877,33 @@ void displayinventory(struct player_struct *p)
 void displayfragbar(void)
 {
     short i, j;
-
+    char nickname[1024];
     j = 0;
 
-    for(i=connecthead;i>=0;i=connectpoint2[i])
+    dnIterPlayers(i)
         if(i > j) j = i;
 
-    rotatesprite(0,0,65600L,0,FRAGBAR,0,0,2+8+16+64+128,0,0,xdim-1,ydim-1);
-    if(j >= 4) rotatesprite(319,(8)<<16,65600L,0,FRAGBAR,0,0,10+16+64+128,0,0,xdim-1,ydim-1);
-    if(j >= 8) rotatesprite(319,(16)<<16,65600L,0,FRAGBAR,0,0,10+16+64+128,0,0,xdim-1,ydim-1);
-    if(j >= 12) rotatesprite(319,(24)<<16,65600L,0,FRAGBAR,0,0,10+16+64+128,0,0,xdim-1,ydim-1);
+    if (megatondef) {
+        rotatesprite((320 - tilesizx[FRAGBAR_MEGATON]) << 15,0,65536L,0,FRAGBAR_MEGATON,0,0,10+16+128,0,0,xdim-1,ydim-1);
+        if(j >= 4) rotatesprite((320 - tilesizx[FRAGBAR_MEGATON]) << 15, (8)<<16,65536L,0,FRAGBAR_MEGATON,0,0,10+16+128,0,0,xdim-1,ydim-1);
+        if(j >= 8) rotatesprite((320 - tilesizx[FRAGBAR_MEGATON]) << 15, (16)<<16,65536L,0,FRAGBAR_MEGATON,0,0,10+16+128,0,0,xdim-1,ydim-1);
+        if(j >= 12) rotatesprite((320 - tilesizx[FRAGBAR_MEGATON]) << 15, (24)<<16,65536L,0,FRAGBAR_MEGATON,0,0,10+16+128,0,0,xdim-1,ydim-1);
 
-    for(i=connecthead;i>=0;i=connectpoint2[i])
+    } else {
+        rotatesprite(319, 0,65600L,0,FRAGBAR_MEGATON,0,0,10+16+64+128,0,0,xdim-1,ydim-1);
+        if(j >= 4) rotatesprite(319,(8)<<16,65600L,0,FRAGBAR,0,0,10+16+64+128,0,0,xdim-1,ydim-1);
+        if(j >= 8) rotatesprite(319,(16)<<16,65600L,0,FRAGBAR,0,0,10+16+64+128,0,0,xdim-1,ydim-1);
+        if(j >= 12) rotatesprite(319,(24)<<16,65600L,0,FRAGBAR,0,0,10+16+64+128,0,0,xdim-1,ydim-1);
+    }
+
+    dnIterPlayers(i)
     {
-        minitext(21+(73*(i&3)),2+((i&28)<<1),&ud.user_name[i][0],sprite[ps[i].i].pal,2+8+16+128);
-        sprintf(tempbuf,"%d",ps[i].frag-ps[i].fraggedself);
+        strcpy(nickname, &ud.user_name[i][0]);
+        if (strlen(&nickname[0]) > 10) {
+            nickname[10] = '\0';
+        }
+        minitext(21+(73*(i&3)),2+((i&28)<<1),&nickname[0],sprite[ps[i].i].pal,2+8+16+128);
+        sprintf(tempbuf,"%2d",ps[i].frag-ps[i].fraggedself);
         minitext(17+50+(73*(i&3)),2+((i&28)<<1),tempbuf,sprite[ps[i].i].pal,2+8+16+128);
     }
 }
@@ -1749,10 +1933,10 @@ void coolgaugetext(short snum)
 				{ displayfragbar(); }
 		  else
 		  {
-				for(i=connecthead;i>=0;i=connectpoint2[i])
+				dnIterPlayers(i)
 					 if (ps[i].frag != sbar.frag[i]) { displayfragbar(); break; }
 		  }
-		  for(i=connecthead;i>=0;i=connectpoint2[i])
+		  dnIterPlayers(i)
 				if (i != myconnectindex)
 					 sbar.frag[i] = ps[i].frag;
 	 }
@@ -1859,8 +2043,8 @@ void coolgaugetext(short snum)
 	 if (u == -1)
 	 {
 		  patchstatusbar(0,0,320,200);
-		  if (ud.multimode > 1 && ud.coop != 1)
-				rotatesprite(sbarx(277+1),sbary(SBY+7-1),sbarsc(65536L),0,KILLSICON,0,0,10+16+128,0,0,xdim-1,ydim-1);
+                if (ud.multimode > 1 && ud.coop != 1 && !megatondef)
+                    rotatesprite(sbarx(277+1),sbary(SBY+7-1),sbarsc(65536L),0,KILLSICON,0,0,10+16+128,0,0,xdim-1,ydim-1);
 	 }
 	 if (ud.multimode > 1 && ud.coop != 1)
 	 {
@@ -2043,7 +2227,7 @@ void operatefta(void)
      if (ud.coop != 1 && ud.screen_size > 0 && ud.multimode > 1)
      {
          j = 0; k = 8;
-         for(i=connecthead;i>=0;i=connectpoint2[i])
+         dnIterPlayers(i)
              if (i > j) j = i;
 
          if (j >= 4 && j <= 8) k += 8;
@@ -2065,7 +2249,11 @@ void operatefta(void)
 
      j = ps[screenpeek].fta;
     if (j > 4) {
-        if (ps[screenpeek].ftq == 13) gametext(320>>1,k, "PRESS USE/OPEN KEY TO RESTART LEVEL",0,2+8+16);
+        if (ps[screenpeek].ftq == 13) {
+			gametext(320>>1,k,
+					 numplayers > 1 ? "PRESS USE/OPEN KEY TO RESPAWN" : "PRESS USE/OPEN KEY TO RESTART LEVEL",
+					 0,2+8+16);
+		}
         else gametext(320>>1,k,fta_quotes[ps[screenpeek].ftq],0,2+8+16);
     } else
 		 if (NAM && ps[screenpeek].ftq == 99) gametext(320>>1,k,"Matt Saettler.  matts@saettler.com",0,2+8+16+1);
@@ -2118,51 +2306,80 @@ void showtwoscreens(void)
 	}
 }
 
-void gameexit(char *t)
-{
-    short i;
+int exittotitle = 0;
 
-    if(*t != 0) ps[myconnectindex].palette = (char *) &palette[0];
+void gameexit(char *t) {
 
-    if(numplayers > 1)
+	static int inside_gameexit = 0;
+	
+	if ( inside_gameexit ) {
+		return;
+	}
+	
+	inside_gameexit = 1;
+	
+    if (myconnectindex == connecthead && numplayers > 1) {
+//        sendstop(SC_QUIT);
+    }
+    
+    if (exittotitle) {
+        dnQuitToTitle(t);
+		inside_gameexit = 0;
+        return;
+    }
+    
+	if ( dnIsHost() )
     {
         allowtimetocorrecterrorswhenquitting();
         uninitmultiplayers();
     }
+    
 
-    if(ud.recstat == 1) closedemowrite();
-    else if(ud.recstat == 2) { if (frecfilep) fclose(frecfilep); }	// JBF: fixes crash on demo playback
-
-    if(qe || cp)
-        goto GOTOHERE;
-
-    if(playerswhenstarted > 1 && ud.coop != 1 && *t == ' ')
-    {
-        dobonus(1);
-        setgamemode(ScreenMode,ScreenWidth,ScreenHeight,ScreenBPP,0);
-    }
-
-    if( *t != 0 && *(t+1) != 'V' && *(t+1) != 'Y')
-        showtwoscreens();
-
-    GOTOHERE:
-
-    Shutdown();
-
-    if(*t != 0)
-    {
-		if (!(t[0] == ' ' && t[1] == 0)) {
-			wm_msgbox("Duke Nukem 3D", t);
-		}
+    if (*t != 0) {
+        ps[myconnectindex].palette = (char *) &palette[0];
     }
     
+    if (ud.recstat == 1) {
+        closedemowrite();
+    } else if (ud.recstat == 2) {
+        if (frecfilep) {
+            fclose(frecfilep);
+        }
+    }	// JBF: fixes crash on demo playback
+    
+    if (qe || cp) {
+        goto GOTOHERE;
+    }
+    
+    // commented by termit
+    /*    if(playerswhenstarted > 1 && ud.coop != 1 && *t == ' ')
+     {
+     dobonus(1);
+     setgamemode(ScreenMode,ScreenWidth,ScreenHeight,ScreenBPP,0);
+     }
+     */
+    
+    if( *t != 0 && *(t+1) != 'V' && *(t+1) != 'Y') {
+        showtwoscreens();
+    }
+    
+GOTOHERE:
+    
+    Shutdown();
+    
+//    if (*t != 0) {
+//		if (!(t[0] == ' ' && t[1] == 0)) {
+//			wm_msgbox("Duke Nukem 3D", t);
+//		}
+//    }
+    
     uninitgroupfile();
-
+    
     //unlink("duke3d.tmp");
-
+    
     exit(0);
+	inside_gameexit = 0;
 }
-
 
 
 
@@ -2247,7 +2464,7 @@ void typemode(void)
                 if(sendmessagecommand >= ud.multimode || movesperpacket == 4)
                 {
                      tempbuf[1] = 255;
-                     for(ch=connecthead;ch >= 0;ch=connectpoint2[ch])
+                     dnIterPlayers(ch)
                      {
                           if (ch != myconnectindex) sendpacket(ch,tempbuf,j+2);
                           if ((!networkmode) && (myconnectindex != connecthead)) break; //slaves in M/S mode only send to master
@@ -2266,12 +2483,13 @@ void typemode(void)
 
                 sendmessagecommand = -1;
                 ps[myconnectindex].gm &= ~(MODE_TYPE|MODE_SENDTOWHOM);
+                KB_ClearKeysDown();
           }
           else if(sendmessagecommand == -1)
           {
                 j = 50;
                 gametext(320>>1,j,"SEND MESSAGE TO...",0,2+8+16); j += 8;
-                for(i=connecthead;i>=0;i=connectpoint2[i])
+                dnIterPlayers(i)
                 {
                      if (i == myconnectindex)
                      {
@@ -2376,6 +2594,11 @@ void displayrest(long smoothratio)
     float ky = ydim/(float)240;
     float kx = xdim/(float)320;
     float n = kx/ky;
+    
+    minitext_x = minitext_x / (xdim/320.0);
+    minitext_y = minitext_y / (ydim/240.0);
+    minitext_x -= (320 * n - 320)/2;
+
 
     pp = &ps[screenpeek];
 
@@ -2529,8 +2752,8 @@ void displayrest(long smoothratio)
                     if(ud.screen_size > 0) a = 147;
                     else a = 182;
 
-                    minitext(1,a+6,volume_names[ud.volume_number],0,2+8+16);
-                    minitext(1,a+12,level_names[ud.volume_number*11 + ud.level_number],0,2+8+16);
+                    minitext(minitext_x,a+6,volume_names[ud.volume_number],0,2+8+16);
+                    minitext(minitext_x,a+12,level_names[ud.volume_number*11 + ud.level_number],0,2+8+16);
                 }
         }
     }
@@ -2600,9 +2823,18 @@ void displayrest(long smoothratio)
 #endif
             i = (ud.screen_size <= 4)?0:scale(tilesizy[BOTTOMSTATUSBAR],ud.statusbarscale,100);
             
-            minitext_x = minitext_x / (xdim/320.0);
-            minitext_y = minitext_y / (ydim/240.0);
-            minitext_x -= (320 * n - 320)/2;
+            //TODO: fix this
+            if (ud.multimode > 1 && ud.coop != 1  && ud.screen_size >=4) {
+                dnIterPlayers(i)
+                    if(i > j) j = i;
+                minitext_y += 8;
+                
+                if (j >= 4) minitext_y += 8;
+                if (j >= 8) minitext_y += 8;
+                if (j >= 12) minitext_y += 8;
+            }
+            
+
             
             sprintf(tempbuf, "FPS: %d", dnFPS);
             minitext(minitext_x,minitext_y+6+6+6,tempbuf,0,26);
@@ -3261,8 +3493,11 @@ short EGS(short whatsect,long s_x,long s_y,long s_z,short s_pn,signed char s_s,s
 
     i = insertsprite(whatsect,s_ss);
 
-    if( i < 0 )
-        gameexit(" Too many sprites spawned.");
+    if( i < 0 ) {
+        Sys_DPrintf("Too many sprites spawned\n");
+        //gameexit(" Too many sprites spawned.");
+    }
+    
 
     hittype[i].bposx = s_x;
     hittype[i].bposy = s_y;
@@ -3431,9 +3666,9 @@ short spawn( short j, short pn )
             if(SS == 127) return i;
             if( wallswitchcheck(i) == 1 && (CS&16) )
             {
-                if( PN != ACCESSSWITCH && PN != ACCESSSWITCH2 && sprite[i].pal)
+                if( PN != ACCESSSWITCH && PN != ACCESSSWITCH2 && sprite[i].pal > 0)
                 {
-                    if( (ud.multimode < 2) || (ud.multimode > 1 && ud.coop==1) )
+                    if( (ud.multimode < 2) || (ud.multimode > 1 && ud.coop==1 && sprite[i].pal == 1) || (ud.multimode > 1 && ud.coop==0 && sprite[i].pal == 2))
                     {
                         sprite[i].xrepeat = sprite[i].yrepeat = 0;
                         sprite[i].cstat = SLT = SHT = 0;
@@ -5545,7 +5780,7 @@ void animatesprites(long x,long y,short a,long smoothratio)
                         t->sectnum = mycursectnum;
                     }
                 }
-
+                
                 if( ( display_mirror == 1 || screenpeek != p || s->owner == -1 ) && ud.multimode > 1 && ud.showweapons && sprite[ps[p].i].extra > 0 && ps[p].curr_weapon > 0 )
                 {
                     memcpy((spritetype *)&tsprite[spritesortcnt],(spritetype *)t,sizeof(spritetype));
@@ -5587,6 +5822,7 @@ void animatesprites(long x,long y,short a,long smoothratio)
                         tsprite[spritesortcnt].yrepeat = 16;
                     }
                     tsprite[spritesortcnt].pal = 0;
+                    
                     spritesortcnt++;
                 }
 
@@ -5710,18 +5946,18 @@ void animatesprites(long x,long y,short a,long smoothratio)
 
         if( actorscrptr[s->picnum] )
         {
-            if(t4)
+            if(t4 >10000)
             {
-                l = *(long *)(t4+8);
-
-				if (bpp > 8 && usemodels && md_tilehasmodel(s->picnum) >= 0) {
-					k = 0;
-					t->cstat &= ~4;
-				} else switch( l ) {
+                l = *(int *)(t4+8);
+                
+                if (bpp > 8 && usemodels && md_tilehasmodel(s->picnum) >= 0) {
+                    k = 0;
+                    t->cstat &= ~4;
+                } else switch( l ) {
                     case 2:
                         k = (((s->ang+3072+128-a)&2047)>>8)&1;
                         break;
-
+                        
                     case 3:
                     case 4:
                         k = (((s->ang+3072+128-a)&2047)>>7)&7;
@@ -5732,7 +5968,7 @@ void animatesprites(long x,long y,short a,long smoothratio)
                         }
                         else t->cstat &= ~4;
                         break;
-
+                        
                     case 5:
                         k = getangle(s->x-x,s->y-y);
                         k = (((s->ang+3072+128-k)&2047)>>8)&7;
@@ -5761,12 +5997,12 @@ void animatesprites(long x,long y,short a,long smoothratio)
                         k = 0;
                         break;
                 }
-
+                
                 t->picnum += k + ( *(long *)t4 ) + l * t3;
-
+                
                 if(l > 0) while(tilesizx[t->picnum] == 0 && t->picnum > 0 )
                     t->picnum -= l;       //Hack, for actors
-
+                
                 if( hittype[i].dispicnum >= 0)
                     hittype[i].dispicnum = t->picnum;
             }
@@ -5943,7 +6179,12 @@ void animatesprites(long x,long y,short a,long smoothratio)
                 t->picnum = s->picnum+k;
                 break;
         }
-
+        
+        //hack to avoid missplaced texture in NW when player jump
+        if (t->picnum >= 1470 && t->picnum <= 1474 && dnGetAddonId() == 2) {
+            t->picnum -= 5;
+        }
+        
         hittype[i].dispicnum = t->picnum;
         if(sector[t->sectnum].floorpicnum == MIRROR)
             t->xrepeat = t->yrepeat = 0;
@@ -6281,7 +6522,7 @@ if (VOLUMEONE) {
                             tempbuf[9] = ud.m_marker;
                             tempbuf[10] = ud.m_ffire;
 
-                            for(i=connecthead;i>=0;i=connectpoint2[i])
+                            dnIterPlayers(i)
                                 sendpacket(i,tempbuf,11);
                         }
                         else ps[myconnectindex].gm |= MODE_RESTART;
@@ -6457,84 +6698,87 @@ if (VOLUMEONE) {
 
 
 void fn_gamefuncs(void){
-    if (BUTTON(gamefunc_Help_Menu)) {
-        BUTTONCLEAR(gamefunc_Help_Menu);
-        GUI_ShowHelpMenu();
-    }
-    
-    if (BUTTON(gamefunc_Save_Menu)) {
-        BUTTONCLEAR(gamefunc_Save_Menu);
-        GUI_ShowSaveMenu();
-    }
-    
-    if (BUTTON(gamefunc_Load_Menu)) {
-        BUTTONCLEAR(gamefunc_Load_Menu);
-        GUI_ShowLoadMenu();
-    }
-    
-    if (BUTTON(gamefunc_Sound_Menu)) {
-        BUTTONCLEAR(gamefunc_Sound_Menu);
-        GUI_ShowSoundMenu();
-    }
-    
-    if (BUTTON(gamefunc_Next_Track)) {
-        music_select++;
-        if (VOLUMEALL) {
-            if(music_select == 44) music_select = 0;
-        } else {
-            if(music_select == 6) music_select = 0;
+    if(!ALT_IS_PRESSED && !SHIFTS_IS_PRESSED) {
+        
+        if (BUTTON(gamefunc_Help_Menu)) {
+            BUTTONCLEAR(gamefunc_Help_Menu);
+            GUI_ShowHelpMenu();
         }
-        strcpy(&tempbuf[0],"PLAYING ");
-        strcat(&tempbuf[0],&music_fn[0][music_select][0]);
-        playmusic(&music_fn[0][music_select][0]);
-        strcpy(&fta_quotes[26][0],&tempbuf[0]);
-        FTA(26,&ps[myconnectindex]);
-        BUTTONCLEAR(gamefunc_Next_Track);
-    }
-    
-    if (BUTTON(gamefunc_Quick_Save)) {
-        BUTTONCLEAR(gamefunc_Quick_Save);
-        if(lastsavedpos != -1) {
-            dnSaveGame(lastsavedpos);
-        } else {
+        
+        if (BUTTON(gamefunc_Save_Menu) && ud.multimode < 2) {
+            BUTTONCLEAR(gamefunc_Save_Menu);
             GUI_ShowSaveMenu();
         }
-    }
-    
-    if (BUTTON(gamefunc_View_Mode)) {
         
-        if( ps[myconnectindex].over_shoulder_on ) {
-            ps[myconnectindex].over_shoulder_on = 0;
-        } else {
-            ps[myconnectindex].over_shoulder_on = 1;
-            cameradist = 0;
-            cameraclock = totalclock;
+        if (BUTTON(gamefunc_Load_Menu)  && ud.multimode < 2) {
+            BUTTONCLEAR(gamefunc_Load_Menu);
+            GUI_ShowLoadMenu();
         }
-        FTA(109+ps[myconnectindex].over_shoulder_on,&ps[myconnectindex]);
-        BUTTONCLEAR(gamefunc_View_Mode);
+        
+        if (BUTTON(gamefunc_Sound_Menu)) {
+            BUTTONCLEAR(gamefunc_Sound_Menu);
+            GUI_ShowSoundMenu();
+        }
+        
+        if (BUTTON(gamefunc_Next_Track)) {
+            music_select++;
+            if (VOLUMEALL) {
+                if(music_select == 44) music_select = 0;
+            } else {
+                if(music_select == 6) music_select = 0;
+            }
+            strcpy(&tempbuf[0],"PLAYING ");
+            strcat(&tempbuf[0],&music_fn[0][music_select][0]);
+            playmusic(&music_fn[0][music_select][0]);
+            strcpy(&fta_quotes[26][0],&tempbuf[0]);
+            FTA(26,&ps[myconnectindex]);
+            BUTTONCLEAR(gamefunc_Next_Track);
+        }
+                
+        if (BUTTON(gamefunc_Quick_Save) && ud.multimode < 2 && sprite[ps[myconnectindex].i].extra > 0) {
+            BUTTONCLEAR(gamefunc_Quick_Save);
+            if(lastsavedpos != -1) {
+                dnSaveGame(lastsavedpos);
+            } else {
+                GUI_ShowSaveMenu();
+            }
+        }
+        
+        if (BUTTON(gamefunc_View_Mode)) {
+            
+            if( ps[myconnectindex].over_shoulder_on ) {
+                ps[myconnectindex].over_shoulder_on = 0;
+            } else {
+                ps[myconnectindex].over_shoulder_on = 1;
+                cameradist = 0;
+                cameraclock = totalclock;
+            }
+            FTA(109+ps[myconnectindex].over_shoulder_on,&ps[myconnectindex]);
+            BUTTONCLEAR(gamefunc_View_Mode);
+        }
+        
+        if (BUTTON(gamefunc_Game_Menu)) {
+            BUTTONCLEAR(gamefunc_Game_Menu);
+            GUI_ShowGameOptionsMenu();
+        }
+        
+        if(BUTTON(gamefunc_Quick_Load) && ud.multimode < 2) {
+            if (lastsavedpos != -1)
+                dnLoadGame(lastsavedpos);
+            BUTTONCLEAR(gamefunc_Quick_Load);
+        }
+        
+        if (BUTTON(gamefunc_Quit_Game)) {
+            BUTTONCLEAR(gamefunc_Quit_Game);
+            GUI_ShowQuitConfirmation();
+        }
+        
+        if (BUTTON(gamefunc_Video_Menu)) {
+            BUTTONCLEAR(gamefunc_Video_Menu);
+            GUI_ShowVideoSettingsMenu();
+        }
     }
     
-    if (BUTTON(gamefunc_Game_Menu)) {
-        BUTTONCLEAR(gamefunc_Game_Menu);
-        GUI_ShowGameOptionsMenu();
-    }
-    
-    if(BUTTON(gamefunc_Quick_Load)) {
-        if (lastsavedpos != -1)
-            dnLoadGame(lastsavedpos);
-        BUTTONCLEAR(gamefunc_Quick_Load);
-    }
-    
-    if (BUTTON(gamefunc_Quit_Game)) {
-        BUTTONCLEAR(gamefunc_Quit_Game);
-        GUI_ShowQuitConfirmation();
-    }
-    
-    if (BUTTON(gamefunc_Video_Menu)) {
-        BUTTONCLEAR(gamefunc_Video_Menu);
-        GUI_ShowVideoSettingsMenu();
-    }
-
 }
     
 long nonsharedtimer;
@@ -6587,7 +6831,7 @@ void nonsharedkeys(void)
     if( BUTTON(gamefunc_See_Coop_View) && ( ud.coop == 1 || ud.recstat == 2) )
     {
         CONTROL_ClearButton( gamefunc_See_Coop_View );
-        screenpeek = connectpoint2[screenpeek];
+        screenpeek = dnGetNextPlayer(screenpeek);
         if(screenpeek == -1) screenpeek = connecthead;
         restorepalette = 1;
     }
@@ -6619,8 +6863,7 @@ void nonsharedkeys(void)
         }
         FTA(83+ud.scrollmode,&ps[myconnectindex]);
     }
-    #if CLASSIC_MENU
-
+    
     if( SHIFTS_IS_PRESSED || ALT_IS_PRESSED )
     {
         i = 0;
@@ -6667,7 +6910,7 @@ if (VOLUMEALL) {
                 i = 2+strlen(ud.ridecule[i-1]);
 
                 if(ud.multimode > 1)
-				for(ch=connecthead;ch>=0;ch=connectpoint2[ch])
+				dnIterPlayers(ch)
 				{
 					if (ch != myconnectindex) sendpacket(ch,tempbuf,i);
 					if ((!networkmode) && (myconnectindex != connecthead)) break; //slaves in M/S mode only send to master
@@ -6693,7 +6936,7 @@ if (VOLUMEALL) {
                     tempbuf[0] = 7;
                     tempbuf[1] = i;
 
-                    for(ch=connecthead;ch>=0;ch=connectpoint2[ch])
+                    dnIterPlayers(ch)
 						  {
 								if(ch != myconnectindex) sendpacket(ch,tempbuf,2);
 								if ((!networkmode) && (myconnectindex != connecthead)) break; //slaves in M/S mode only send to master
@@ -6707,12 +6950,11 @@ if (VOLUMEALL) {
             }
         }
     }
-#endif
 
     if(!ALT_IS_PRESSED && !SHIFTS_IS_PRESSED)
     {
-#if CLASSIC_MENU
-        if( ud.multimode > 1 && BUTTON(gamefunc_SendMessage) )
+
+        if( ud.multimode >  1 && BUTTON(gamefunc_SendMessage) )
         {
             KB_FlushKeyboardQueue();
             CONTROL_ClearButton( gamefunc_SendMessage );
@@ -6720,7 +6962,7 @@ if (VOLUMEALL) {
             typebuf[0] = 0;
             inputloc = 0;
         }
-
+#if CLASSIC_MENU
         if(KB_KeyPressed(sc_F1) || ( ud.show_help && ( KB_KeyPressed(sc_Space) || KB_KeyPressed(sc_Enter) || KB_KeyPressed(sc_kpad_Enter) ) ) )
         {
             KB_ClearKeyDown(sc_F1);
@@ -7058,6 +7300,8 @@ void set_addon(int selected_addon) {
     }
     addon = selected_addon;
     
+    addsearchpath(official_addons[addon].folder);
+    
     // load grp
     s = (struct strllist *)calloc(1,sizeof(struct strllist));
     s->str = strdup(official_addons[addon].grpfile);
@@ -7164,14 +7408,27 @@ void checkcommandline(int argc,char **argv)
 				}
                 if (!Bstrcasecmp(c+1,"addon")) {
 					if (argc > i+1) {
-						printf("addon id is: %d", atoi(argv[i+1]));
+						Sys_DPrintf("addon id is: %d", atoi(argv[i+1]));
                         set_addon(atoi(argv[i+1]));
 						i++;
 					}
 					i++;
 					continue;
 				}
-
+                
+                if (!Bstrcasecmp(c+1,"noanim")) {
+					initprintf("no animation\n");
+                    noanim = 1;
+					i++;
+					continue;
+				}
+                
+                if (!Bstrcasecmp(c+1,"delete-saves")) {
+					initprintf("delete all saves from cloud and locally\n");
+                    delete_saves = 1;
+					i++;
+					continue;
+				}
             }
 
 			if (firstnet > 0) {
@@ -7342,11 +7599,13 @@ void checkcommandline(int argc,char **argv)
                         ud.m_respawn_inventory = ud.respawn_inventory = 1;
 
                         break;
+#if 0
                     case 'r':
                     case 'R':
                         ud.m_recstat = 1;
                         initprintf("Demo record mode on.\n");
                         break;
+#endif
                     case 't':
                     case 'T':
                         c++;
@@ -7606,6 +7865,7 @@ if (PLUTOPAK) {	// JBF 20030804
 }
 
 		handleevents();
+		resettimeout();
         getpackets();
         nextpage();
     }
@@ -7625,7 +7885,8 @@ if (PLUTOPAK) {	// JBF 20030804
     }
 
 stop:
-    waitforeverybody();
+    //commented by termit
+    //waitforeverybody();
 
     flushperms();
     clearview(0L);
@@ -7803,8 +8064,7 @@ void Startup(void)
 	tilesizx[MIRROR] = tilesizy[MIRROR] = 0;
 
 	for(i=0;i<MAXPLAYERS;i++) playerreadyflag[i] = 0;
-
-	//initmultiplayers(netparamcount,netparam, 0,0,0);
+    
 	if (initmultiplayersparms(netparamcount,netparam)) {
 		initprintf("Waiting for players...\n");
 		while (initmultiplayerscycle()) {
@@ -7814,7 +8074,11 @@ void Startup(void)
 				return;
 			}
 		}
-	}
+	} else {
+        numplayers = 1;
+        myconnectindex = 0;
+    }
+    
 	if (netparam) free(netparam);
 	netparam = NULL; netparamcount = 0;
 
@@ -7842,11 +8106,17 @@ void getnames(void)
 {
 	 int i,l;
 
+    Bstrcpy(&myname[0], dnFilterUsername(CSTEAM_GetUsername()));
+    
      for(l=0;myname[l];l++)
           ud.user_name[myconnectindex][l] = Btoupper(myname[l]);
-
-     if(numplayers > 1)
+    
+     memset(&buf[0], 0, sizeof(buf));
+    
+     if( dnIsInMultiMode() )
      {
+		 Sys_DPrintf( "[DUKEMP] getnames()\n" );
+		 
           buf[0] = 6;
 		  buf[1] = myconnectindex;
           buf[2] = BYTEVERSION;
@@ -7866,19 +8136,21 @@ void getnames(void)
 		  buf[l++] = ps[myconnectindex].auto_aim = AutoAim;
 		  buf[l++] = ps[myconnectindex].weaponswitch = ud.weaponswitch;
 
-          for(i=connecthead;i>=0;i=connectpoint2[i])
+          dnIterPlayers(i)
 		  {
 				if (i != myconnectindex) sendpacket(i,&buf[0],l);
 				if ((!networkmode) && (myconnectindex != connecthead)) break; //slaves in M/S mode only send to master
 		  }
 
-        getpackets();
+        //getpackets();
 
-        waitforeverybody();
+        //waitforeverybody();
     }
 
+#if 0
     if(cp == 1 && numplayers < 2)
         gameexit("Please put the Duke Nukem 3D Atomic Edition CD in the CD-ROM drive.");
+#endif
 }
 
 void writestring(long a1,long a2,long a3,short a4,long vx,long vy,long vz)
@@ -7939,6 +8211,7 @@ extern struct grpfile grpfiles[numgrpfiles];
 void app_main(int argc,char **argv)
 {
     long i, j, k, l;
+    int show_video = 1;
 
 #ifdef RENDERTYPEWIN
 	if (win_checkinstance()) {
@@ -7958,13 +8231,14 @@ void app_main(int argc,char **argv)
 //    printf("working dir: %s\n",data);
 #endif
 	
-	dnPullCloudFiles();
 
     addsearchpath("./music");
     addsearchpath("./addons");
 
 	checkcommandline(argc,argv);
-
+    
+	dnPullCloudFiles();
+    
 	{
 		struct strllist *s;
 		while (CommandPaths) {
@@ -8170,7 +8444,7 @@ if (!NAM && VOLUMEALL) {
         ud.m_volume_number = 0;
         ud.warp_on = 1;
     }
-
+    
     if(ud.multimode > 1)
     {
         playerswhenstarted = ud.multimode;
@@ -8209,9 +8483,17 @@ if (!NAM && VOLUMEALL) {
     MusicStartup();
     loadtmb();
 
-    play_vpx_video("video/3drLogo.ivf", NULL);
-    //void play_nuke_sounds(int frame);
-    play_vpx_video("video/nuke.ivf", play_nuke_sounds);
+
+    for (i = 1; i < _buildargc-1; i++) {
+        if (!strcmp(_buildargv[i], "+connect_lobby")) {
+            show_video = 0;
+        }
+    }
+
+    if (show_video) {
+        play_vpx_video("video/3drLogo.ivf", NULL);
+        play_vpx_video("video/nuke.ivf", play_nuke_sounds);
+    }
     
 if (VOLUMEONE) {
         if(numplayers > 4 || ud.multimode > 4)
@@ -8501,7 +8783,7 @@ void record(void)
 {
     short i;
 
-    for(i=connecthead;i>=0;i=connectpoint2[i])
+    dnIterPlayers(i)
          {
          copybufbyte(&sync[i],&recsync[ud.reccnt],sizeof(input));
                  ud.reccnt++;
@@ -8611,7 +8893,7 @@ long playback(void)
 				}
 			}
 
-            for(j=connecthead;j>=0;j=connectpoint2[j])
+            dnIterPlayers(j)
             {
                copybufbyte(&recsync[i],&inputfifo[movefifoend[j]&(MOVEFIFOSIZ-1)][j],sizeof(input));
                movefifoend[j]++;
@@ -8685,6 +8967,7 @@ if (VOLUMEONE) {
             rotatesprite((320-50)<<16,9<<16,65536L,0,BETAVERSION,0,0,2+8+16+128,0,0,xdim-1,ydim-1);
 }
 		handleevents();
+		resettimeout();
         getpackets();
         nextpage();
 
@@ -8715,6 +8998,97 @@ if (VOLUMEONE) {
     return 1;
 }
 
+void incrementEndLevelsVars() {
+    struct player_struct *p;
+    int i;
+    
+    dnIterPlayers(i) {
+        
+        p = &ps[i];
+        
+        if(p->fist_incs)
+        {
+            p->fist_incs++;
+            if(p->fist_incs == 28)
+            {
+                if(ud.recstat == 1) closedemowrite();
+                sound(PIPEBOMB_EXPLODE);
+                p->pals[0] = 64;
+                p->pals[1] = 64;
+                p->pals[2] = 64;
+                p->pals_time = 48;
+            }
+            if(p->fist_incs > 42)
+            {
+                if(p->buttonpalette && ud.from_bonus == 0)
+                {
+                    ud.from_bonus = ud.level_number+1;
+                    if(ud.secretlevel > 0 && ud.secretlevel < 12) ud.level_number = ud.secretlevel-1;
+                    ud.m_level_number = ud.level_number;
+                }
+                else
+                {
+                    if(ud.from_bonus)
+                    {
+                        ud.level_number = ud.from_bonus;
+                        ud.m_level_number = ud.level_number;
+                        ud.from_bonus = 0;
+                    }
+                    else
+                    {
+                        if(ud.level_number == ud.secretlevel && ud.from_bonus > 0 )
+                            ud.level_number = ud.from_bonus;
+                        else ud.level_number++;
+                        
+                        if(ud.level_number > 10) ud.level_number = 0;
+                        ud.m_level_number = ud.level_number;
+                        
+                    }
+                }
+                dnIterPlayers(i)
+                    ps[i].gm = MODE_EOL;
+                p->fist_incs = 0;
+                
+                return;
+            }
+        }
+        
+        if(p->timebeforeexit > 1 && p->last_extra > 0)
+        {
+            p->timebeforeexit--;
+            if(p->timebeforeexit == 26*5)
+            {
+                FX_StopAllSounds();
+                clearsoundlocks();
+                if(p->customexitsound >= 0)
+                {
+                    sound(p->customexitsound);
+                    FTA(102,p);
+                }
+            }
+            else if(p->timebeforeexit == 1)
+            {
+                dnIterPlayers(i)
+                    ps[i].gm = MODE_EOL;
+                if(ud.from_bonus)
+                {
+                    ud.level_number = ud.from_bonus;
+                    ud.m_level_number = ud.level_number;
+                    ud.from_bonus = 0;
+                }
+                else
+                {
+                    ud.level_number++;
+                    ud.m_level_number = ud.level_number;
+                }
+                return;
+            }
+        }
+    }
+}
+    
+    
+    
 char moveloop()
 {
     long i;
@@ -8725,15 +9099,20 @@ char moveloop()
     getpackets();
 
     if (numplayers < 2) bufferjitter = 0;
+    
+    
+    
     while (movefifoend[myconnectindex]-movefifoplc > bufferjitter)
     {
-        for(i=connecthead;i>=0;i=connectpoint2[i])
-            if (movefifoplc == movefifoend[i]) break;
+        dnIterPlayers(i)
+            if (movefifoplc == movefifoend[i] && playerquitflag[i]) break;
+        incrementEndLevelsVars();
         if (i >= 0) break;
         if( domovethings() ) return 1;
     }
     return 0;
 }
+    
 
 void fakedomovethingscorrect(void)
 {
@@ -9210,10 +9589,19 @@ char domovethings(void)
 {
     short i, j;
     char ch;
+    
+    int quitgame;
+    
+    quitgame = 0;
 
-    for(i=connecthead;i>=0;i=connectpoint2[i])
+	
+	dnResyncIfNeeded();
+	
+#if 0 // network save/load isnt supported in megaton
+    dnIterPlayers(i)
         if( sync[i].bits&(1<<17) )
     {
+		break;
         multiflag = 2;
         multiwhat = (sync[i].bits>>18)&1;
         multipos = (unsigned) (sync[i].bits>>19)&15;
@@ -9262,6 +9650,7 @@ char domovethings(void)
             }
         }
     }
+#endif
 
     ud.camerasprite = -1;
     lockclock += TICSPERFRAME;
@@ -9292,14 +9681,15 @@ char domovethings(void)
 
     everyothertime++;
 
-    for(i=connecthead;i>=0;i=connectpoint2[i])
+    dnIterPlayers(i) {
         copybufbyte(&inputfifo[movefifoplc&(MOVEFIFOSIZ-1)][i],&sync[i],sizeof(input));
+	}
     movefifoplc++;
 
     updateinterpolations();
 
     j = -1;
-    for(i=connecthead;i>=0;i=connectpoint2[i])
+    dnIterPlayers(i)
      {
           if ((sync[i].bits&(1<<26)) == 0) { j = i; continue; }
 
@@ -9308,11 +9698,19 @@ char domovethings(void)
           if (i == myconnectindex) gameexit(" ");
           if (screenpeek == i)
           {
-                screenpeek = connectpoint2[i];
+                screenpeek = dnGetNextPlayer(i);
                 if (screenpeek < 0) screenpeek = connecthead;
           }
 
-          if (i == connecthead) connecthead = connectpoint2[connecthead];
+         if (i == connecthead) {
+             
+             if (i == connecthead && numplayers > 1) {
+                 Sys_DPrintf("[DUKEMP] Server quit\n");
+                 quitgame = 1;
+             }
+             
+             connecthead = connectpoint2[connecthead];
+         }
           else connectpoint2[j] = connectpoint2[i];
 
           numplayers--;
@@ -9327,19 +9725,24 @@ char domovethings(void)
 
           sprintf(buf,"%s is history!",ud.user_name[i]);
 
+          dnRemovePlayer( i );
           quickkill(&ps[i]);
           deletesprite(ps[i].i);
 
           adduserquote(buf);
 
-          if(j < 0 && networkmode == 0 )
-              gameexit( " \nThe 'MASTER/First player' just quit the game.  All\nplayers are returned from the game. This only happens in 5-8\nplayer mode as a different network scheme is used.");
+         if(j < 0 && networkmode == 0 ) {
+//              gameexit( " \nThe 'MASTER/First player' just quit the game.  All\nplayers are returned from the game. This only happens in 5-8\nplayer mode as a different network scheme is used.");
+             ud.multimode = numplayers = 999; /* needed to trigger some code within gameexit */
+             gameexit(" ");
+         }
+         
       }
 
       if ((numplayers >= 2) && ((movefifoplc&7) == 7))
       {
             ch = (char)(randomseed&255);
-            for(i=connecthead;i>=0;i=connectpoint2[i])
+            dnIterPlayers(i)
                  ch += ((ps[i].posx+ps[i].posy+ps[i].posz+ps[i].ang+ps[i].horiz)&255);
             syncval[myconnectindex][syncvalhead[myconnectindex]&(MOVEFIFOSIZ-1)] = ch;
             syncvalhead[myconnectindex]++;
@@ -9353,7 +9756,7 @@ char domovethings(void)
         movedummyplayers();//ST 13
     }
 
-    for(i=connecthead;i>=0;i=connectpoint2[i])
+    dnIterPlayers(i)
     {
         cheatkeys(i);
 
@@ -9389,6 +9792,16 @@ char domovethings(void)
         animatewalls();
         movecyclers();
         pan3dsound();
+    }
+	
+	if ( ud.timelimit != 0 ) {
+		if ( ps[myconnectindex].player_par/26.0*1000.0 > ud.timelimit ) {
+			gameexit( " " );
+		}
+	}
+    
+    if (quitgame) {
+        gameexit("Server quit"); /* mp game is over */
     }
 
 
@@ -9438,6 +9851,7 @@ void dobonus(char bonusonly)
 	char *lastmapname;
 	int32 playerbest = -1;
 	char *yourtime = "Your Time:", *besttime = "Your Best Time:";
+    char nickname[1024];
 
     
     long breathe[] =
@@ -9722,19 +10136,21 @@ void dobonus(char bonusonly)
     FX_StopAllSounds();
     clearsoundlocks();
 
-    if(playerswhenstarted > 1 && ud.coop != 1 )
+    if( dnIsInMultiMode() && ud.coop != 1 )
     {
         if(!(MusicToggle == 0 || MusicDevice < 0))
             sound(BONUSMUSIC);
-
-        rotatesprite(0,0,65536L,0,MENUSCREEN,16,0,2+8+16+64,0,0,xdim-1,ydim-1);
+        if (!megatondef)
+            rotatesprite(0,0,65536L,0,MENUSCREEN,16,0,2+8+16+64,0,0,xdim-1,ydim-1);
+        else
+            rotatesprite(320<<15,200<<15,65536L,0,MENUSCREEN_MEGATON,0,0,2+8+64,0,0,xdim-1,ydim-1);
         rotatesprite(160<<16,34<<16,65536L,0,INGAMEDUKETHREEDEE,0,0,10,0,0,xdim-1,ydim-1);
 	if (PLUTOPAK)	// JBF 20030804
         rotatesprite((260)<<16,36<<16,65536L,0,PLUTOPAKSPRITE+2,0,0,2+8,0,0,xdim-1,ydim-1);
         gametext(160,58+2,"MULTIPLAYER TOTALS",0,2+8+16);
         gametext(160,58+10,level_names[(ud.volume_number*11)+ud.last_level-1],0,2+8+16);
 
-        gametext(160,165,"PRESS ANY KEY TO CONTINUE",0,2+8+16);
+        gametext(160,165,"PRESS ENTER TO CONTINUE",0,2+8+16);
 
 
         t = 0;
@@ -9749,9 +10165,15 @@ void dobonus(char bonusonly)
         {
             xfragtotal = 0;
             sprintf(tempbuf,"%ld",i+1);
+            
+            strcpy(nickname, &ud.user_name[i][0]);
+            if (strlen(&nickname[0]) > 10) {
+                nickname[10] = '\0';
+            }
+
 
             minitext(30,90+t,tempbuf,0,2+8+16+128);
-            minitext(38,90+t,ud.user_name[i],ps[i].palookup,2+8+16+128);
+            minitext(38,90+t,&nickname[0],ps[i].palookup,2+8+16+128);
 
             for(y=0;y<playerswhenstarted;y++)
             {
@@ -9800,7 +10222,12 @@ void dobonus(char bonusonly)
 	fadepal(0,0,0, 63,0,-7);
 
         KB_FlushKeyboardQueue();
-        while(KB_KeyWaiting()==0) { handleevents(); getpackets(); }
+		
+        while ( !KB_KeyPressed( sc_Return ) && !KB_KeyPressed( sc_Escape ) && !KB_KeyPressed( sc_F12 ) ) {
+			handleevents();
+			getpackets();
+		}
+		
     #if CLASSIC_MENU
         if( KB_KeyPressed( sc_F12 ) )
         {
