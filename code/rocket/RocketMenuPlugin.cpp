@@ -858,6 +858,11 @@ void RocketMenuPlugin::DoItemAction(ItemAction action, Rocket::Core::Element *e)
                 RefreshMenuItem(e);
                 break;
             }
+            case ItemActionReset: {
+                ResetMenuItem(e);
+                break;
+            }
+
 
 		}
 	}
@@ -1194,5 +1199,11 @@ void RocketMenuPlugin::ClearMenuItem(Rocket::Core::Element *menu_item) {
 void RocketMenuPlugin::RefreshMenuItem(Rocket::Core::Element *menu_item) {
     if (m_delegate != NULL) {
         m_delegate->DidRefreshItem(menu_item);
+    }
+}
+
+void RocketMenuPlugin::ResetMenuItem(Rocket::Core::Element *menu_item) {
+    if (m_delegate != NULL) {
+        m_delegate->DidResetItem(menu_item);
     }
 }

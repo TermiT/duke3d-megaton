@@ -62,6 +62,9 @@ private:
     int m_num_failed_attempts;
     SDL_TimerID m_ping_timer_id;
 
+    int m_setBrightness;
+    double m_lastBrightnessUpdate;
+
     steam_id_t m_lobby_id, m_invited_lobby;
     bool m_join_on_launch;
     
@@ -98,7 +101,8 @@ private:
     void ShowErrorMessage(const char *page_id, const char *message);
     
     void NewNetworkGame(lobby_info_t *lobby_info);
-	    
+	   
+	void ProcessKeyDown( dnKey key );
 public:
 	GUI(int width, int height);
 	~GUI();
@@ -125,6 +129,7 @@ public:
     virtual void DidClearKeyChooserValue(Rocket::Core::Element *menu_item, int slot);
     virtual void DidClearItem(Rocket::Core::Element *menu_item);
     virtual void DidRefreshItem(Rocket::Core::Element *menu_item);
+    virtual void DidResetItem(Rocket::Core::Element *menu_item);
 
     void InitKeysSetupPage(Rocket::Core::ElementDocument *page);
 
@@ -141,6 +146,8 @@ public:
     void AssignFunctionKey(Rocket::Core::String const & function_name, Rocket::Core::String const & key_id, int slot);
 
     void InitMouseSetupPage(Rocket::Core::ElementDocument *menu_page);
+    
+    void InitGamepadSetupPage(Rocket::Core::ElementDocument *menu_page);
 
     void InitLoadPage(Rocket::Core::ElementDocument *menu_page);
     
@@ -185,6 +192,7 @@ public:
     void OnLobbyDataUpdate(lobby_info_t *lobby_info, int success);
     void OnLobbyJoinInvite(steam_id_t lobby_id);
 	void OnWorkshopSubscribe(workshop_item_t *item, int status);
+    void OnBigPictureTextUpdate(const char* data, int status);
     void CancelLobbyJoinIntention();
     
 };

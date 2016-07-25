@@ -10,6 +10,10 @@
 //#define SUPERBUILD
 #define ENGINE
 
+#ifdef RENDERTYPESDL
+# include "SDL.h"
+#endif
+
 #include "compat.h"
 #include "build.h"
 #include "pragmas.h"
@@ -75,7 +79,7 @@ long dommxoverlay = 1, beforedrawrooms = 1;
 
 static long oxdimen = -1, oviewingrange = -1, oxyaspect = -1;
 
-long curbrightness = 0, gammabrightness = 0;
+long curbrightness = -1, gammabrightness = 0;
 
 	//Textured Map variables
 static char globalpolytype;
@@ -9243,15 +9247,21 @@ void setvgapalette(void)
 // setbrightness
 //
 static unsigned long lastpalettesum = 0;
+int forcepal = 0;
 void setbrightness(char dabrightness, char *dapal, char noapply)
 {
 	long i, k, j;
 	float f;
 	unsigned long newpalettesum, lastbright;
+    char newbrightness;
 
 	lastbright = curbrightness;
+    newbrightness = min(max((long)dabrightness,0),15);
+    if (curbrightness == newbrightness && !forcepal) // serge: should prevent crashes in some cases
+        return;
+	forcepal = 0;
 	if (!(noapply&4))
-		curbrightness = min(max((long)dabrightness,0),15);
+		curbrightness = newbrightness;
 
 	f = 1.0 + ((float)curbrightness / 10.0);
 	if (setgamma(f,f,f)) j = curbrightness; else j = 0;
@@ -9280,7 +9290,7 @@ void setbrightness(char dabrightness, char *dapal, char noapply)
 		// only reset the textures if the preserve flag (bit 1 of noapply) is clear and
 		// either (a) the new palette is different to the last, or (b) the brightness
 		// changed and we couldn't set it using hardware gamma
-		if (!(noapply&2) && (newpalettesum != lastpalettesum))
+		if (!(noapply&2)) // && (newpalettesum != lastpalettesum))
 			polymost_texinvalidateall();
 
 		lastpalettesum = newpalettesum;

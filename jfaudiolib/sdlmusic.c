@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //-------------------------------------------------------------------------
 
 /*
- * A reimplementation of Jim Dose's FX_MAN routines, using  SDL_mixer 1.2.
+ * A reimplementation of Jim Dose's FX_MAN routines, using SDL_mixer.
  *   Whee. FX_MAN is also known as the "Apogee Sound System", or "ASS" for
  *   short. How strangely appropriate that seems.
  */
@@ -410,7 +410,11 @@ int32_t MUSIC_PlaySong(char *song, int32_t loopflag)
     }
     else {
         SDL_RWops *rw = SDL_RWFromMem((char *) song, g_musicSize);
-        music_musicchunk = Mix_LoadMUS_RW(rw);
+        music_musicchunk = Mix_LoadMUS_RW(rw
+#if (SDL_MAJOR_VERSION > 1)
+            , SDL_FALSE
+#endif
+            );
     }
 
     if (music_musicchunk != NULL) {

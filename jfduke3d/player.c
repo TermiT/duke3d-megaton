@@ -2007,7 +2007,6 @@ void getinput(short snum)
        j = 5;
     if (BUTTON(gamefunc_Weapon_6))
        j = 6;
-
     if (BUTTON(gamefunc_Previous_Weapon))
         j = 11;
     if (BUTTON(gamefunc_Next_Weapon))
@@ -2139,6 +2138,8 @@ if (!VOLUMEONE) {
 
     if ( BUTTON(gamefunc_Move_Backward) )
         vel += -keymove;
+    
+    dnOverrideInputGamepadMove(&vel, &svel);
 
     if(vel < -MAXVEL) vel = -MAXVEL;
     if(vel > MAXVEL) vel = MAXVEL;
@@ -2149,6 +2150,7 @@ if (!VOLUMEONE) {
     if(horiz < -MAXHORIZ) horiz = -MAXHORIZ;
     if(horiz > MAXHORIZ) horiz = MAXHORIZ;
 
+    
     if(ud.scrollmode && ud.overhead_on)
     {
         ud.folfvel = vel;
@@ -2163,7 +2165,7 @@ if (!VOLUMEONE) {
     if( numplayers > 1 )
         daang = myang;
     else daang = p->ang;
-
+    
     momx = mulscale9(vel,sintable[(daang+2560)&2047]);
     momy = mulscale9(vel,sintable[(daang+2048)&2047]);
 
@@ -2537,7 +2539,25 @@ void processinput(short snum)
 		s->extra = 0;
 		p->shield_amount = 0;
 	}
-	
+    
+    // Vibration from Xbox360
+    
+	if ((snum == myconnectindex) && !(ps[myconnectindex].gm & (MODE_MENU | MODE_DEMO)))
+	{
+		if (s->extra < p->last_extra)
+		{
+	 		int damage = p->last_extra - s->extra;
+	 		if (s->extra <= 0)
+	 			dnVibrateGamepad(0.75f, 1500);
+	 		else if (damage > 25)
+	 			dnVibrateGamepad(0.5f, 1000);
+	 		else
+	 			dnVibrateGamepad(0.3f, 500);
+		}
+		if (p->jetpack_on > 0)
+	 		dnVibrateGamepad(0.2f, 500);
+	}
+    
 	p->last_extra = s->extra;
 	
 	if(p->loogcnt > 0) p->loogcnt--;

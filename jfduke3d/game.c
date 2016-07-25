@@ -56,7 +56,7 @@ Modifications for JonoF's port by Jonathon Fowler(jf@jonof.id.au)
 
 #include "_control.h"
 
-#define VERSION "1.3.2 STABLE"
+#define VERSION "1.4.9 STABLE"
 
 #define HEAD   "Duke Nukem 3D Unregistered Shareware "VERSION
 
@@ -113,7 +113,9 @@ static int netparamcount = 0;
 static char **netparam = NULL;
 
 int noanim = 0;
+int nogamepad = 0;
 int delete_saves = 0;
+int norawmouse = 0;
 
 int addon = 0;
 typedef struct  {
@@ -210,6 +212,7 @@ static char * megaton_def = "duke3d-megaton.def";
 //task *TimerPtr=NULL;
 
 extern long lastvisinc;
+extern int forcepal;
 
 void setgamepalette(struct player_struct *player, char *pal, int set)
 {
@@ -218,12 +221,14 @@ void setgamepalette(struct player_struct *player, char *pal, int set)
 		player->palette = pal;
 		return;
 	}
+	forcepal = 1;
 
 	if (getrendermode() < 3) {
 		// 8-bit mode
 		player->palette = pal;
 		setbrightness(ud.brightness>>2, pal, set);
 		//pub = pus = NUMPAGES;
+		forcepal = 0;
 		return;
 	}
 
@@ -236,6 +241,7 @@ void setgamepalette(struct player_struct *player, char *pal, int set)
 		setbrightness(ud.brightness>>2, pal, set);
 	}
 	player->palette = pal;
+	forcepal = 0;
 }
 
 int gametext(int x,int y,char *t,char s,short dabits)
@@ -2250,16 +2256,32 @@ void operatefta(void)
      j = ps[screenpeek].fta;
     if (j > 4) {
         if (ps[screenpeek].ftq == 13) {
+            if (!dnGamepadConnected()) {
 			gametext(320>>1,k,
 					 numplayers > 1 ? "PRESS USE/OPEN KEY TO RESPAWN" : "PRESS USE/OPEN KEY TO RESTART LEVEL",
 					 0,2+8+16);
-		}
-        else gametext(320>>1,k,fta_quotes[ps[screenpeek].ftq],0,2+8+16);
+            } else {
+                gametext(320>>1,k,
+                         numplayers > 1 ? "PRESS USE/OPEN BUTTON TO RESPAWN" : "PRESS USE/OPEN BUTTON TO RESTART LEVEL",
+                         0,2+8+16);
+            }
+		} else if (ps[screenpeek].ftq == 45) {
+            gametext(320>>1,k,"VERTICAL AIMING ON",0,2+8+16);
+        } else if (ps[screenpeek].ftq == 44) {
+            gametext(320>>1,k,"VERTICAL AIMING OFF",0,2+8+16);
+        } else gametext(320>>1,k,fta_quotes[ps[screenpeek].ftq],0,2+8+16);
     } else
 		 if (NAM && ps[screenpeek].ftq == 99) gametext(320>>1,k,"Matt Saettler.  matts@saettler.com",0,2+8+16+1);
      else
-		 if (j > 2) gametext(320>>1,k,fta_quotes[ps[screenpeek].ftq],0,2+8+16+1);
-     else
+		 if (j > 2) {
+             if (ps[screenpeek].ftq == 45) {
+                 gametext(320>>1,k,"VERTICAL AIMING ON",0,2+8+16+1);
+             } else if (ps[screenpeek].ftq == 44) {
+                 gametext(320>>1,k,"VERTICAL AIMING OFF",0,2+8+16+1);
+             } else {
+                  gametext(320>>1,k,fta_quotes[ps[screenpeek].ftq],0,2+8+16+1);
+            }
+         } else
          gametext(320>>1,k,fta_quotes[ps[screenpeek].ftq],0,2+8+16+1+32);
 }
 
@@ -7429,6 +7451,20 @@ void checkcommandline(int argc,char **argv)
 					i++;
 					continue;
 				}
+                
+                if (!Bstrcasecmp(c+1,"nogamepad")) {
+					initprintf("Ignore gamepad\n");
+                    nogamepad = 1;
+					i++;
+					continue;
+				}
+
+                if ( !Bstrcasecmp( c + 1, "norawmouse" ) ) {
+                    initprintf( "Disable raw input\n" );
+                    norawmouse = 1;
+                    i++;
+                    continue;
+                }
             }
 
 			if (firstnet > 0) {
@@ -9852,6 +9888,7 @@ void dobonus(char bonusonly)
 	int32 playerbest = -1;
 	char *yourtime = "Your Time:", *besttime = "Your Best Time:";
     char nickname[1024];
+    extern int gamepadButtonPressed;
 
     
     long breathe[] =
@@ -9899,7 +9936,7 @@ void dobonus(char bonusonly)
         case 0:
             if(ud.lockout == 0)
             {
-		setgamepalette(&ps[myconnectindex], endingpal, 3);	// JBF 20040308
+				setgamepalette(&ps[myconnectindex], endingpal, 3);	// JBF 20040308
                 clearview(0L);
                 rotatesprite(0,50<<16,65536L,0,VICTORY1,0,0,2+8+16+64+128,0,0,xdim-1,ydim-1);
                 nextpage();
@@ -10150,7 +10187,11 @@ void dobonus(char bonusonly)
         gametext(160,58+2,"MULTIPLAYER TOTALS",0,2+8+16);
         gametext(160,58+10,level_names[(ud.volume_number*11)+ud.last_level-1],0,2+8+16);
 
-        gametext(160,165,"PRESS ENTER TO CONTINUE",0,2+8+16);
+        if(dnGamepadConnected()) {
+            gametext(160,165,"PRESS ANY BUTTON TO CONTINUE",0,2+8+16);
+        } else {
+            gametext(160,165,"PRESS ENTER TO CONTINUE",0,2+8+16);
+        }
 
 
         t = 0;
@@ -10223,7 +10264,7 @@ void dobonus(char bonusonly)
 
         KB_FlushKeyboardQueue();
 		
-        while ( !KB_KeyPressed( sc_Return ) && !KB_KeyPressed( sc_Escape ) && !KB_KeyPressed( sc_F12 ) ) {
+        while ( !KB_KeyPressed( sc_Return ) && !KB_KeyPressed( sc_Escape ) && !KB_KeyPressed( sc_F12 ) && !gamepadButtonPressed) {
 			handleevents();
 			getpackets();
 		}
@@ -10264,7 +10305,11 @@ void dobonus(char bonusonly)
 	menutext(160,20-6,0,0,lastmapname);
     menutext(160,36-6,0,0,"COMPLETED");
 
-    gametext(160,192,"PRESS ANY KEY TO CONTINUE",16,2+8+16);
+    if (!dnGamepadConnected()) {
+        gametext(160,192,"PRESS ANY KEY TO CONTINUE",16,2+8+16);
+    } else {
+        gametext(160,192,"PRESS ANY BUTTON TO CONTINUE",16,2+8+16);
+    }
 
     if(!(MusicToggle == 0 || MusicDevice < 0))
         sound(BONUSMUSIC);
@@ -10365,7 +10410,11 @@ void dobonus(char bonusonly)
             menutext(160,20-6,0,0,lastmapname);
             menutext(160,36-6,0,0,"COMPLETED");
 
-            gametext(160,192,"PRESS ANY KEY TO CONTINUE",16,2+8+16);
+            if (!dnGamepadConnected()) {
+                gametext(160,192,"PRESS ANY KEY TO CONTINUE",16,2+8+16);
+            } else {
+                gametext(160,192,"PRESS ANY BUTTON TO CONTINUE",16,2+8+16);
+            }
 
             if( totalclock > (60*3) )
             {

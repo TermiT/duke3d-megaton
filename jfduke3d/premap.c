@@ -1051,11 +1051,9 @@ void newgame(char vn,char ln,char sk)
         nextpage();
 
         playanm("vol41a.anm",6);
-        clearview(0L);
-        nextpage();
-
         playanm("vol42a.anm",7);
         playanm("vol43a.anm",9);
+
         clearview(0L);
         nextpage();
 

@@ -956,6 +956,7 @@ void CONTROL_Shutdown(void)
 
 static uint32_t DN_ButtonState1 = 0;
 static uint32_t DN_ButtonState2 = 0;
+
 static uint32_t DN_AutoRelease1 = 0;
 static uint32_t DN_AutoRelease2 = 0;
 
@@ -983,159 +984,178 @@ static uint32_t DN_AutoRelease2 = 0;
 
 static int dnKeyMapping[DN_MAX_KEYS] = { -1 };
 static dnKey dnFuncBindings[64][2] = { 0 };
-static char *dnKeyNames[DN_MAX_KEYS] = { 0 };
+
+typedef struct dnKeyName {
+    const dnKey key;
+    const char *name;
+} dnKeyName;
+
+static dnKeyName dnKeyNames[] = {
+    { SDL_SCANCODE_UNKNOWN, "None" },
+	
+    { SDL_SCANCODE_A, "A" },
+    { SDL_SCANCODE_B, "B" },
+    { SDL_SCANCODE_C, "C" },
+    { SDL_SCANCODE_D, "D" },
+    { SDL_SCANCODE_E, "E" },
+    { SDL_SCANCODE_F, "F" },
+    { SDL_SCANCODE_G, "G" },
+    { SDL_SCANCODE_H, "H" },
+    { SDL_SCANCODE_I, "I" },
+    { SDL_SCANCODE_J, "J" },
+    { SDL_SCANCODE_K, "K" },
+    { SDL_SCANCODE_L, "L" },
+    { SDL_SCANCODE_M, "M" },
+    { SDL_SCANCODE_N, "N" },
+    { SDL_SCANCODE_O, "O" },
+    { SDL_SCANCODE_P, "P" },
+    { SDL_SCANCODE_Q, "Q" },
+    { SDL_SCANCODE_R, "R" },
+    { SDL_SCANCODE_S, "S" },
+    { SDL_SCANCODE_T, "T" },
+    { SDL_SCANCODE_U, "U" },
+    { SDL_SCANCODE_V, "V" },
+    { SDL_SCANCODE_W, "W" },
+    { SDL_SCANCODE_X, "X" },
+    { SDL_SCANCODE_Y, "Y" },
+    { SDL_SCANCODE_Z, "Z" },
+	
+    { SDL_SCANCODE_1, "1" },
+    { SDL_SCANCODE_2, "2" },
+    { SDL_SCANCODE_3, "3" },
+    { SDL_SCANCODE_4, "4" },
+    { SDL_SCANCODE_5, "5" },
+    { SDL_SCANCODE_6, "6" },
+    { SDL_SCANCODE_7, "7" },
+    { SDL_SCANCODE_8, "8" },
+    { SDL_SCANCODE_9, "9" },
+    { SDL_SCANCODE_0, "0" },
+	
+    { SDL_SCANCODE_RETURN, "Enter" },
+    { SDL_SCANCODE_ESCAPE, "Escape" },
+	{ SDL_SCANCODE_BACKSPACE, "Backspace" },
+    { SDL_SCANCODE_TAB, "Tab" },
+    { SDL_SCANCODE_SPACE, "Space" },
+	
+    { SDL_SCANCODE_MINUS, "-" },
+    { SDL_SCANCODE_EQUALS, "=" },
+    { SDL_SCANCODE_LEFTBRACKET, "[" },
+    { SDL_SCANCODE_RIGHTBRACKET, "]" },
+    { SDL_SCANCODE_BACKSLASH, "\\" },
+    { SDL_SCANCODE_SEMICOLON, ";" },
+    { SDL_SCANCODE_APOSTROPHE, "'" },
+    { SDL_SCANCODE_GRAVE, "~" },
+    { SDL_SCANCODE_COMMA, "," },
+    { SDL_SCANCODE_PERIOD, "." },
+    { SDL_SCANCODE_SLASH, "/" },
+	
+    { SDL_SCANCODE_CAPSLOCK, "CapsLock" },
+	
+    { SDL_SCANCODE_F1, "F1" },
+    { SDL_SCANCODE_F2, "F2" },
+    { SDL_SCANCODE_F3, "F3" },
+    { SDL_SCANCODE_F4, "F4" },
+    { SDL_SCANCODE_F5, "F5" },
+    { SDL_SCANCODE_F6, "F6" },
+    { SDL_SCANCODE_F7, "F7" },
+    { SDL_SCANCODE_F8, "F8" },
+    { SDL_SCANCODE_F9, "F9" },
+    { SDL_SCANCODE_F10, "F10" },
+    { SDL_SCANCODE_F11, "F11" },
+    { SDL_SCANCODE_F12, "F12" },
+	
+    { SDL_SCANCODE_PRINTSCREEN, "PrtScr" },
+    { SDL_SCANCODE_SCROLLLOCK, "ScrlLock" },
+    { SDL_SCANCODE_PAUSE, "Break" },
+	
+    { SDL_SCANCODE_INSERT, "Insert" },
+    { SDL_SCANCODE_HOME, "Home" },
+    { SDL_SCANCODE_PAGEUP, "PgUp" },
+    { SDL_SCANCODE_DELETE, "Delete" },
+    { SDL_SCANCODE_END, "End" },
+    { SDL_SCANCODE_PAGEDOWN, "PgDown" },
+    { SDL_SCANCODE_RIGHT, "Right" },
+    { SDL_SCANCODE_LEFT, "Left" },
+    { SDL_SCANCODE_DOWN, "Down" },
+    { SDL_SCANCODE_UP, "Up" },
+	
+    { SDL_SCANCODE_NUMLOCKCLEAR, "NumLock" },
+	
+    { SDL_SCANCODE_KP_DIVIDE, "KP /" },
+    { SDL_SCANCODE_KP_MULTIPLY, "KP *" },
+    { SDL_SCANCODE_KP_MINUS, "KP -" },
+    { SDL_SCANCODE_KP_PLUS, "KP +" },
+    { SDL_SCANCODE_KP_ENTER, "KP Enter" },
+    { SDL_SCANCODE_KP_1, "KPad 1" },
+    { SDL_SCANCODE_KP_2, "KPad 2" },
+    { SDL_SCANCODE_KP_3, "KPad 3" },
+    { SDL_SCANCODE_KP_4, "KPad 4" },
+    { SDL_SCANCODE_KP_5, "KPad 5" },
+    { SDL_SCANCODE_KP_6, "KPad 6" },
+    { SDL_SCANCODE_KP_7, "KPad 7" },
+    { SDL_SCANCODE_KP_8, "KPad 8" },
+    { SDL_SCANCODE_KP_9, "KPad 9" },
+    { SDL_SCANCODE_KP_0, "KPad 0" },
+    { SDL_SCANCODE_KP_PERIOD, "KP ." },
+	
+    { SDL_SCANCODE_KP_EQUALS, "KP =" },
+    { SDL_SCANCODE_KP_COMMA, "KP ," },
+	
+    { SDL_SCANCODE_LCTRL, "LCtrl" },
+    { SDL_SCANCODE_LSHIFT, "LShift" },
+    { SDL_SCANCODE_LALT, "LAlt" },
+	{ SDL_SCANCODE_LGUI, "LMeta" },
+    { SDL_SCANCODE_RCTRL, "RCtrl" },
+    { SDL_SCANCODE_RSHIFT, "RShift" },
+    { SDL_SCANCODE_RALT, "RAlt" },
+	{ SDL_SCANCODE_RGUI, "RMeta" },
+    { SDL_SCANCODE_MODE, "Mode" },
+	
+    { DNK_MOUSE0, "Mouse 1" },
+    { DNK_MOUSE1, "Mouse 2" },
+    { DNK_MOUSE2, "Mouse 3" },
+    { DNK_MOUSE3, "Mouse 4" },
+    { DNK_MOUSE4, "MOUSE 5" },
+    { DNK_MOUSE5, "Mouse 6" },
+    { DNK_MOUSE6, "Mouse 7" },
+    { DNK_MOUSE7, "Mouse 8" },
+    { DNK_MOUSE8, "Mouse 9" },
+    { DNK_MOUSE9, "Mouse 10" },
+    { DNK_MOUSE10, "Mouse 11" },
+    { DNK_MOUSE11, "Mouse 12" },
+    { DNK_MOUSE12, "Mouse 13" },
+    { DNK_MOUSE13, "Mouse 14" },
+    { DNK_MOUSE14, "Mouse 15" },
+    { DNK_MOUSE15, "Mouse 16" },
+    
+    { DNK_MOUSE_WHEELUP, "Wheel Up" },
+    { DNK_MOUSE_WHEELDOWN, "Wheel Dn" },
+    
+	{ DNK_GAMEPAD_LEFT, "GP Left" },
+	{ DNK_GAMEPAD_RIGHT, "GP Right" },
+	{ DNK_GAMEPAD_UP, "GP Up" },
+	{ DNK_GAMEPAD_DOWN, "GP Down" },
+	{ DNK_GAMEPAD_A, "GP A" },
+	{ DNK_GAMEPAD_B, "GP B" },
+	{ DNK_GAMEPAD_X, "GP X" },
+	{ DNK_GAMEPAD_Y, "GP Y" },
+//	{ DNK_GAMEPAD_START, "GP Start" },
+	{ DNK_GAMEPAD_BACK, "GP Back" },
+	{ DNK_GAMEPAD_LB, "GP LB" },
+	{ DNK_GAMEPAD_RB, "GP RB" },
+	{ DNK_GAMEPAD_LT, "GP LT" },
+	{ DNK_GAMEPAD_RT, "GP RT" },
+    { DNK_GAMEPAD_LSTICK, "GP LStick" },
+	{ DNK_GAMEPAD_RSTICK, "GP RStick" },
+//    { DNK_GAMEPAD_GUIDE, "GP Guide"},
+};
+
+int dnKeyCompare (const void * a, const void * b) {
+    return (int) ( ((dnKeyName*)a)->key - ((dnKeyName*)b)->key );
+}
 
 void dnInitKeyNames() {
-    dnKeyNames[SDLK_UNKNOWN] = "None";
-    dnKeyNames[SDLK_BACKSPACE] = "Backspace";
-    dnKeyNames[SDLK_TAB] = "Tab";
-    dnKeyNames[SDLK_RETURN] = "Enter";
-    dnKeyNames[SDLK_ESCAPE] = "Escape";
-    dnKeyNames[SDLK_SPACE] = "Space";
-    dnKeyNames[SDLK_EXCLAIM] = "!";
-    dnKeyNames[SDLK_QUOTEDBL] = "\"";
-    dnKeyNames[SDLK_HASH] = "#";
-    dnKeyNames[SDLK_DOLLAR] = "$";
-    dnKeyNames[SDLK_AMPERSAND] = "&";
-    dnKeyNames[SDLK_QUOTE] = "'";
-    dnKeyNames[SDLK_LEFTPAREN] = "(";
-    dnKeyNames[SDLK_RIGHTPAREN] = ")";
-    dnKeyNames[SDLK_ASTERISK] = "*";
-    dnKeyNames[SDLK_PLUS] = "+";
-    dnKeyNames[SDLK_COMMA] = ",";
-    dnKeyNames[SDLK_MINUS] = "-";
-    dnKeyNames[SDLK_PERIOD] = ".";
-    dnKeyNames[SDLK_SLASH] = "/";
-    dnKeyNames[SDLK_0] = "0";
-    dnKeyNames[SDLK_1] = "1";
-    dnKeyNames[SDLK_2] = "2";
-    dnKeyNames[SDLK_3] = "3";
-    dnKeyNames[SDLK_4] = "4";
-    dnKeyNames[SDLK_5] = "5";
-    dnKeyNames[SDLK_6] = "6";
-    dnKeyNames[SDLK_7] = "7";
-    dnKeyNames[SDLK_8] = "8";
-    dnKeyNames[SDLK_9] = "9";
-    dnKeyNames[SDLK_COLON] = ":";
-    dnKeyNames[SDLK_SEMICOLON] = ";";
-    dnKeyNames[SDLK_LESS] = "<";
-    dnKeyNames[SDLK_EQUALS] = "=";
-    dnKeyNames[SDLK_GREATER] = ">";
-    dnKeyNames[SDLK_QUESTION] = "?";
-    dnKeyNames[SDLK_AT] = "@";
-    dnKeyNames[SDLK_LEFTBRACKET] = "[";
-    dnKeyNames[SDLK_BACKSLASH] = "\\";
-    dnKeyNames[SDLK_RIGHTBRACKET] = "]";
-    //dnKeyNames[SDLK_CARET] = "SDLK_CARET";
-    dnKeyNames[SDLK_UNDERSCORE] = "_";
-    dnKeyNames[SDLK_BACKQUOTE] = "`";
-    dnKeyNames[SDLK_a] = "A";
-    dnKeyNames[SDLK_b] = "B";
-    dnKeyNames[SDLK_c] = "C";
-    dnKeyNames[SDLK_d] = "D";
-    dnKeyNames[SDLK_e] = "E";
-    dnKeyNames[SDLK_f] = "F";
-    dnKeyNames[SDLK_g] = "G";
-    dnKeyNames[SDLK_h] = "H";
-    dnKeyNames[SDLK_i] = "I";
-    dnKeyNames[SDLK_j] = "J";
-    dnKeyNames[SDLK_k] = "K";
-    dnKeyNames[SDLK_l] = "L";
-    dnKeyNames[SDLK_m] = "M";
-    dnKeyNames[SDLK_n] = "N";
-    dnKeyNames[SDLK_o] = "O";
-    dnKeyNames[SDLK_p] = "P";
-    dnKeyNames[SDLK_q] = "Q";
-    dnKeyNames[SDLK_r] = "R";
-    dnKeyNames[SDLK_s] = "S";
-    dnKeyNames[SDLK_t] = "T";
-    dnKeyNames[SDLK_u] = "U";
-    dnKeyNames[SDLK_v] = "V";
-    dnKeyNames[SDLK_w] = "W";
-    dnKeyNames[SDLK_x] = "X";
-    dnKeyNames[SDLK_y] = "Y";
-    dnKeyNames[SDLK_z] = "Z";
-    dnKeyNames[SDLK_DELETE] = "DEL";
-    dnKeyNames[SDLK_KP0] = "KPad 0";
-    dnKeyNames[SDLK_KP1] = "KPad 1";
-    dnKeyNames[SDLK_KP2] = "KPad 2";
-    dnKeyNames[SDLK_KP3] = "KPad 3";
-    dnKeyNames[SDLK_KP4] = "KPad 4";
-    dnKeyNames[SDLK_KP5] = "KPad 5";
-    dnKeyNames[SDLK_KP6] = "KPad 6";
-    dnKeyNames[SDLK_KP7] = "KPad 7";
-    dnKeyNames[SDLK_KP8] = "KPad 8";
-    dnKeyNames[SDLK_KP9] = "KPad 9";
-    dnKeyNames[SDLK_KP_PERIOD] = "KP .";
-    dnKeyNames[SDLK_KP_DIVIDE] = "KP /";
-    dnKeyNames[SDLK_KP_MULTIPLY] = "KP *";
-    dnKeyNames[SDLK_KP_MINUS] = "KP -";
-    dnKeyNames[SDLK_KP_PLUS] = "KP +";
-    dnKeyNames[SDLK_KP_ENTER] = "KP Enter";
-    dnKeyNames[SDLK_KP_EQUALS] = "KP =";
-    dnKeyNames[SDLK_UP] = "Up";
-    dnKeyNames[SDLK_DOWN] = "Down";
-    dnKeyNames[SDLK_RIGHT] = "Right";
-    dnKeyNames[SDLK_LEFT] = "Left";
-    dnKeyNames[SDLK_INSERT] = "Inser";
-    dnKeyNames[SDLK_HOME] = "Home";
-    dnKeyNames[SDLK_END] = "End";
-    dnKeyNames[SDLK_PAGEUP] = "PgUp";
-    dnKeyNames[SDLK_PAGEDOWN] = "PgDown";
-    dnKeyNames[SDLK_F1] = "F1";
-    dnKeyNames[SDLK_F2] = "F2";
-    dnKeyNames[SDLK_F3] = "F3";
-    dnKeyNames[SDLK_F4] = "F4";
-    dnKeyNames[SDLK_F5] = "F5";
-    dnKeyNames[SDLK_F6] = "F6";
-    dnKeyNames[SDLK_F7] = "F7";
-    dnKeyNames[SDLK_F8] = "F8";
-    dnKeyNames[SDLK_F9] = "F9";
-    dnKeyNames[SDLK_F10] = "F10";
-    dnKeyNames[SDLK_F11] = "F11";
-    dnKeyNames[SDLK_F12] = "F12";
-    dnKeyNames[SDLK_F13] = "F13";
-    dnKeyNames[SDLK_F14] = "F14";
-    dnKeyNames[SDLK_F15] = "F15";
-    dnKeyNames[SDLK_NUMLOCK] = "NumLock";
-    dnKeyNames[SDLK_CAPSLOCK] = "CapsLock";
-    dnKeyNames[SDLK_SCROLLOCK] = "ScrlLock";
-    dnKeyNames[SDLK_RSHIFT] = "RShift";
-    dnKeyNames[SDLK_LSHIFT] = "LShift";
-    dnKeyNames[SDLK_RCTRL] = "RCtrl";
-    dnKeyNames[SDLK_LCTRL] = "LCtrl";
-    dnKeyNames[SDLK_RALT] = "RAlt";
-    dnKeyNames[SDLK_LALT] = "LAlt";
-    dnKeyNames[SDLK_RMETA] = "LMeta";
-    dnKeyNames[SDLK_LMETA] = "RMeta";
-    dnKeyNames[SDLK_LSUPER] = "LSuper";
-    dnKeyNames[SDLK_RSUPER] = "RSuper";
-    dnKeyNames[SDLK_MODE] = "Mode";
-    dnKeyNames[SDLK_COMPOSE] = "Compose";
-    dnKeyNames[SDLK_HELP] = "Help";
-    dnKeyNames[SDLK_PRINT] = "Print";
-    dnKeyNames[SDLK_SYSREQ] = "SysRq";
-    dnKeyNames[SDLK_BREAK] = "Break";
-    dnKeyNames[SDLK_MENU] = "Menu";
-    dnKeyNames[SDLK_POWER] = "Power";
-    dnKeyNames[SDLK_EURO] = "Euro";
-    dnKeyNames[SDLK_UNDO] = "Undo";
-    dnKeyNames[DNK_MOUSE0] = "Mouse 1";
-    dnKeyNames[DNK_MOUSE1] = "Mouse 2";
-    dnKeyNames[DNK_MOUSE2] = "Mouse 3";
-    dnKeyNames[DNK_MOUSE3] = "Wheel Up";
-    dnKeyNames[DNK_MOUSE4] = "Wheel Dn";
-    dnKeyNames[DNK_MOUSE5] = "Mouse 6";
-    dnKeyNames[DNK_MOUSE6] = "Mouse 7";
-    dnKeyNames[DNK_MOUSE7] = "Mouse 8";
-    dnKeyNames[DNK_MOUSE8] = "Mouse 9";
-    dnKeyNames[DNK_MOUSE9] = "Mouse 10";
-    dnKeyNames[DNK_MOUSE10] = "Mouse 11";
-    dnKeyNames[DNK_MOUSE11] = "Mouse 12";
-    dnKeyNames[DNK_MOUSE12] = "Mouse 13";
-    dnKeyNames[DNK_MOUSE13] = "Mouse 14";
-    dnKeyNames[DNK_MOUSE14] = "Mouse 15";
-    dnKeyNames[DNK_MOUSE15] = "Mouse 16";
+    qsort((void *)dnKeyNames, sizeof(dnKeyNames)/sizeof(dnKeyNames[0]), sizeof(dnKeyName), &dnKeyCompare);
 }
 
 void dnAssignKey(dnKey key, int action) {
@@ -1147,28 +1167,28 @@ int  dnGetKeyAction(dnKey key) {
 }
 
 const char* dnGetKeyName(dnKey key) {
-    const char *name = dnKeyNames[key];
-    if (name == NULL) {
-        return "Undef";
-    }
-    return name;
+    dnKeyName keyCompare = { key, NULL };
+    dnKeyName *keyName = bsearch((void *)&keyCompare, (void *)dnKeyNames, sizeof(dnKeyNames)/sizeof(dnKeyNames[0]), sizeof(dnKeyName), &dnKeyCompare);
+
+    if (keyName != NULL)
+        return keyName->name;
+
+    return "Undef";
 }
 
 dnKey dnGetKeyByName(const char *keyName) {
 	int i;
-    for (i = 0; i < DN_MAX_KEYS; i++) {
-        const char *name = dnKeyNames[i];
-        if (name != NULL && SDL_strcasecmp(keyName, name) == 0) {
-            return i;
-        }
-    }
-    return SDLK_UNKNOWN;
+    for (i = 0; i < sizeof(dnKeyNames)/sizeof(dnKeyNames[0]); i++)
+        if (SDL_strcasecmp(keyName, dnKeyNames[i].name) == 0)
+            return dnKeyNames[i].key;
+
+    return SDL_SCANCODE_UNKNOWN;
 }
 
 static int dnIsAutoReleaseKey(dnKey key, int function) {
     switch (key) {
-        case DNK_MOUSE3:
-        case DNK_MOUSE4:
+        case DNK_MOUSE_WHEELUP:
+        case DNK_MOUSE_WHEELDOWN:
             return 1;
     }
     switch (function) {
@@ -1229,75 +1249,78 @@ void dnGetInput() {
 
 void dnResetBindings() {
     dnClearFunctionBindings();
-    dnBindFunction(gamefunc_Move_Forward, 0, SDLK_w);
-    dnBindFunction(gamefunc_Move_Forward, 1, SDLK_UP);
-    dnBindFunction(gamefunc_Move_Backward, 0, SDLK_s);
-    dnBindFunction(gamefunc_Move_Backward, 1, SDLK_DOWN);
-    dnBindFunction(gamefunc_Turn_Left, 1, SDLK_LEFT);
-    dnBindFunction(gamefunc_Turn_Right, 1, SDLK_RIGHT);
-    dnBindFunction(gamefunc_Strafe, 0, SDLK_LALT);
-    dnBindFunction(gamefunc_Strafe, 1, SDLK_RALT);
+    dnBindFunction(gamefunc_Move_Forward, 0, SDL_SCANCODE_W);
+    dnBindFunction(gamefunc_Move_Backward, 0, SDL_SCANCODE_S);
+    dnBindFunction(gamefunc_Strafe, 0, SDL_SCANCODE_LALT);
     dnBindFunction(gamefunc_Fire, 0, DNK_MOUSE0);
-    dnBindFunction(gamefunc_Crouch, 0, SDLK_LCTRL);
-    dnBindFunction(gamefunc_Jump, 0, SDLK_SPACE);
-    dnBindFunction(gamefunc_Open, 0, SDLK_e);
-    dnBindFunction(gamefunc_Open, 1, DNK_MOUSE2);
-    dnBindFunction(gamefunc_Run, 0, SDLK_LSHIFT);
-    dnBindFunction(gamefunc_Run, 1, SDLK_RSHIFT);
-    dnBindFunction(gamefunc_AutoRun, 0, SDLK_CAPSLOCK);
-    dnBindFunction(gamefunc_Strafe_Left, 0, SDLK_a);
-    dnBindFunction(gamefunc_Strafe_Right, 0, SDLK_d);
-    dnBindFunction(gamefunc_Aim_Up, 0, SDLK_HOME);
-    dnBindFunction(gamefunc_Aim_Up, 1, SDLK_KP7);
-    dnBindFunction(gamefunc_Aim_Down, 0, SDLK_END);
-    dnBindFunction(gamefunc_Aim_Down, 1, SDLK_KP1);
-    dnBindFunction(gamefunc_Inventory, 0, SDLK_RETURN);
-    dnBindFunction(gamefunc_Inventory, 1, SDLK_KP_ENTER);
-    dnBindFunction(gamefunc_Inventory_Left, 0, SDLK_LEFTBRACKET);
-    dnBindFunction(gamefunc_Inventory_Right, 0, SDLK_RIGHTBRACKET);
-    dnBindFunction(gamefunc_Holo_Duke, 0, SDLK_h);
-    dnBindFunction(gamefunc_Jetpack, 0, SDLK_j);
-    dnBindFunction(gamefunc_NightVision, 0, SDLK_n);
-    dnBindFunction(gamefunc_MedKit, 0, SDLK_m);
-    dnBindFunction(gamefunc_Map, 0, SDLK_TAB);
-    dnBindFunction(gamefunc_Center_View, 0, SDLK_KP5);
-    dnBindFunction(gamefunc_Steroids, 0, SDLK_r);
-    dnBindFunction(gamefunc_Quick_Kick, 0, SDLK_COMMA);
-    dnBindFunction(gamefunc_Quick_Kick, 1, SDLK_BACKQUOTE);
-    dnBindFunction(gamefunc_Next_Weapon, 0, SDLK_QUOTE);
-    dnBindFunction(gamefunc_Next_Weapon, 1, DNK_MOUSE3);
-    dnBindFunction(gamefunc_Previous_Weapon, 0, SDLK_SEMICOLON);
-    dnBindFunction(gamefunc_Previous_Weapon, 1, DNK_MOUSE4);
+    dnBindFunction(gamefunc_Crouch, 0, SDL_SCANCODE_LCTRL);
+    dnBindFunction(gamefunc_Jump, 0, SDL_SCANCODE_SPACE);
+    dnBindFunction(gamefunc_Open, 0, SDL_SCANCODE_E);
+    dnBindFunction(gamefunc_Run, 0, SDL_SCANCODE_LSHIFT);
+    dnBindFunction(gamefunc_AutoRun, 0, SDL_SCANCODE_CAPSLOCK);
+    dnBindFunction(gamefunc_Strafe_Left, 0, SDL_SCANCODE_A);
+    dnBindFunction(gamefunc_Strafe_Right, 0, SDL_SCANCODE_D);
+    dnBindFunction(gamefunc_Aim_Up, 0, SDL_SCANCODE_HOME);
+    dnBindFunction(gamefunc_Aim_Down, 0, SDL_SCANCODE_END);
+    dnBindFunction(gamefunc_Inventory, 0, SDL_SCANCODE_RETURN);
+    dnBindFunction(gamefunc_Inventory_Left, 0, SDL_SCANCODE_LEFTBRACKET);
+    dnBindFunction(gamefunc_Inventory_Right, 0, SDL_SCANCODE_RIGHTBRACKET);
+    dnBindFunction(gamefunc_Holo_Duke, 0, SDL_SCANCODE_H);
+    dnBindFunction(gamefunc_Jetpack, 0, SDL_SCANCODE_J);
+    dnBindFunction(gamefunc_NightVision, 0, SDL_SCANCODE_N);
+    dnBindFunction(gamefunc_MedKit, 0, SDL_SCANCODE_M);
+    dnBindFunction(gamefunc_Map, 0, SDL_SCANCODE_TAB);
+    dnBindFunction(gamefunc_Center_View, 0, SDL_SCANCODE_KP_5);
+    dnBindFunction(gamefunc_Steroids, 0, SDL_SCANCODE_R);
+    dnBindFunction(gamefunc_Quick_Kick, 0, SDL_SCANCODE_COMMA);
+    dnBindFunction(gamefunc_Next_Weapon, 0, SDL_SCANCODE_APOSTROPHE);
+    dnBindFunction(gamefunc_Previous_Weapon, 0, SDL_SCANCODE_SEMICOLON);
     
-    dnBindFunction(gamefunc_Weapon_1, 0, SDLK_1);
-    dnBindFunction(gamefunc_Weapon_2, 0, SDLK_2);
-    dnBindFunction(gamefunc_Weapon_3, 0, SDLK_3);
-    dnBindFunction(gamefunc_Weapon_4, 0, SDLK_4);
-    dnBindFunction(gamefunc_Weapon_5, 0, SDLK_5);
-    dnBindFunction(gamefunc_Weapon_6, 0, SDLK_6);
-    dnBindFunction(gamefunc_Weapon_7, 0, SDLK_7);
-    dnBindFunction(gamefunc_Weapon_8, 0, SDLK_8);
-    dnBindFunction(gamefunc_Weapon_9, 0, SDLK_9);
-    dnBindFunction(gamefunc_Weapon_10, 0, SDLK_0);
+    dnBindFunction(gamefunc_Weapon_1, 0, SDL_SCANCODE_1);
+    dnBindFunction(gamefunc_Weapon_2, 0, SDL_SCANCODE_2);
+    dnBindFunction(gamefunc_Weapon_3, 0, SDL_SCANCODE_3);
+    dnBindFunction(gamefunc_Weapon_4, 0, SDL_SCANCODE_4);
+    dnBindFunction(gamefunc_Weapon_5, 0, SDL_SCANCODE_5);
+    dnBindFunction(gamefunc_Weapon_6, 0, SDL_SCANCODE_6);
+    dnBindFunction(gamefunc_Weapon_7, 0, SDL_SCANCODE_7);
+    dnBindFunction(gamefunc_Weapon_8, 0, SDL_SCANCODE_8);
+    dnBindFunction(gamefunc_Weapon_9, 0, SDL_SCANCODE_9);
+    dnBindFunction(gamefunc_Weapon_10, 0, SDL_SCANCODE_0);
     
-    dnBindFunction(gamefunc_Shrink_Screen, 0, SDLK_MINUS);
-    dnBindFunction(gamefunc_Enlarge_Screen, 0, SDLK_EQUALS);
-    dnBindFunction(gamefunc_Map_Follow_Mode, 0, SDLK_f);
+    dnBindFunction(gamefunc_Shrink_Screen, 0, SDL_SCANCODE_MINUS);
+    dnBindFunction(gamefunc_Enlarge_Screen, 0, SDL_SCANCODE_EQUALS);
+    dnBindFunction(gamefunc_Map_Follow_Mode, 0, SDL_SCANCODE_F);
     
-    dnBindFunction(gamefunc_Help_Menu, 0, SDLK_F1);
-    dnBindFunction(gamefunc_Save_Menu, 0, SDLK_F2);
-    dnBindFunction(gamefunc_Load_Menu, 0, SDLK_F3);
-    dnBindFunction(gamefunc_Sound_Menu, 0, SDLK_F4);
-    dnBindFunction(gamefunc_Next_Track, 0, SDLK_F5);
-    dnBindFunction(gamefunc_Quick_Save, 0, SDLK_F6);
-    dnBindFunction(gamefunc_View_Mode, 0, SDLK_F7);
-    dnBindFunction(gamefunc_Game_Menu, 0, SDLK_F8);
-    dnBindFunction(gamefunc_Quick_Load, 0, SDLK_F9);
-    dnBindFunction(gamefunc_Quit_Game, 0, SDLK_F10);
-    dnBindFunction(gamefunc_Video_Menu, 0, SDLK_F11);
+    dnBindFunction(gamefunc_Help_Menu, 0, SDL_SCANCODE_F1);
+    dnBindFunction(gamefunc_Save_Menu, 0, SDL_SCANCODE_F2);
+    dnBindFunction(gamefunc_Load_Menu, 0, SDL_SCANCODE_F3);
+    dnBindFunction(gamefunc_Sound_Menu, 0, SDL_SCANCODE_F4);
+    dnBindFunction(gamefunc_Next_Track, 0, SDL_SCANCODE_F5);
+    dnBindFunction(gamefunc_Quick_Save, 0, SDL_SCANCODE_F6);
+    dnBindFunction(gamefunc_View_Mode, 0, SDL_SCANCODE_F7);
+    dnBindFunction(gamefunc_Game_Menu, 0, SDL_SCANCODE_F8);
+    dnBindFunction(gamefunc_Quick_Load, 0, SDL_SCANCODE_F9);
+    dnBindFunction(gamefunc_Quit_Game, 0, SDL_SCANCODE_F10);
+    dnBindFunction(gamefunc_Video_Menu, 0, SDL_SCANCODE_F11);
     
-    dnBindFunction(gamefunc_Mouse_Aiming, 0, SDLK_u);
-    dnBindFunction(gamefunc_SendMessage, 0, SDLK_t);
+    dnBindFunction(gamefunc_Mouse_Aiming, 0, SDL_SCANCODE_U);
+    dnBindFunction(gamefunc_SendMessage, 0, SDL_SCANCODE_T);
+    
+    dnBindFunction(gamefunc_Quick_Kick, 1, DNK_GAMEPAD_LT);
+    dnBindFunction(gamefunc_Fire, 1, DNK_GAMEPAD_RT);
+    dnBindFunction(gamefunc_Previous_Weapon, 1, DNK_GAMEPAD_LB);
+    dnBindFunction(gamefunc_Next_Weapon, 1, DNK_GAMEPAD_RB);
+    dnBindFunction(gamefunc_Jump, 1, DNK_GAMEPAD_A);
+    dnBindFunction(gamefunc_Inventory, 1, DNK_GAMEPAD_B);
+    dnBindFunction(gamefunc_Open, 1, DNK_GAMEPAD_X);
+    dnBindFunction(gamefunc_Crouch, 1, DNK_GAMEPAD_Y);
+    dnBindFunction(gamefunc_Inventory_Left, 1, DNK_GAMEPAD_LEFT);
+    dnBindFunction(gamefunc_Inventory_Right, 1, DNK_GAMEPAD_RIGHT);
+    dnBindFunction(gamefunc_Jetpack, 1, DNK_GAMEPAD_UP);
+    dnBindFunction(gamefunc_MedKit, 1, DNK_GAMEPAD_DOWN);
+    dnBindFunction(gamefunc_Map, 1, DNK_GAMEPAD_BACK);
+    dnBindFunction(gamefunc_Mouse_Aiming, 1, DNK_GAMEPAD_RSTICK);
+    dnBindFunction(gamefunc_View_Mode, 1, DNK_GAMEPAD_LSTICK);
 }
 
 void dnBindFunction(int function, int slot, dnKey key) {
@@ -1305,17 +1328,17 @@ void dnBindFunction(int function, int slot, dnKey key) {
     if (function >= 0 && function < 64) {
         for (i = 0; i < 64; i++) {
             if (dnFuncBindings[i][0] == key) {
-                dnFuncBindings[i][0] = SDLK_UNKNOWN;
+                dnFuncBindings[i][0] = SDL_SCANCODE_UNKNOWN;
             }
             if (dnFuncBindings[i][1] == key) {
-                dnFuncBindings[i][1] = SDLK_UNKNOWN;
+                dnFuncBindings[i][1] = SDL_SCANCODE_UNKNOWN;
             }
         }
         dnFuncBindings[function][slot] = key;
     }
 }
 
-SDLKey dnGetFunctionBinding(int function, int slot) {
+dnKey dnGetFunctionBinding(int function, int slot) {
     return dnFuncBindings[function][slot];
 }
 

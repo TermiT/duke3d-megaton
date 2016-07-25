@@ -1,4 +1,5 @@
 #include "oggplayer.h"
+#include "crc32.h"
 
 OggPlayer::OggPlayer()
 {
@@ -44,6 +45,20 @@ static const char *loop_end_tags[] = { "LOOP_END", "LOOPEND" };
 
 #define ARRAYLEN(a) (sizeof(a)/sizeof(a[0]))
 
+void calcHash( FILE *f ) {
+	unsigned long var;
+	crc32init( &var );
+	while ( !feof( f ) ) {
+		unsigned char c;
+		fread( (void*)&c, 1, 1, f );
+		crc32block( &var, &c, 1 );
+	}
+	fseek( f, 0, 0 );
+	char s[30];
+	sprintf( s, "CRC32: %x", crc32finish( &var ) );
+	OutputDebugStringA( s );
+}
+
 bool OggPlayer::OpenOgg( const char *filename )
 {
     if (!bInitialized)
@@ -57,7 +72,7 @@ bool OggPlayer::OpenOgg( const char *filename )
     f = fopen(filename, "rb");
     if (!f) return false;
 
-    ov_open(f, &vf, NULL, 0);
+	ov_open(f, &vf, NULL, 0);
 
     // ok now the tricky part
 

@@ -3,16 +3,16 @@
 //
 
 #include "csteam.h"
-#include <steam_api.h>
+#include <steam/steam_api.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "steamclientpublic.h"
-#include "isteamfriends.h"
-#include "isteammatchmaking.h"
-#include "isteamutils.h"
-#include "isteamugc.h"
-#include "steam_gameserver.h"
+#include "steam/steamclientpublic.h"
+#include "steam/isteamfriends.h"
+#include "steam/isteammatchmaking.h"
+#include "steam/isteamutils.h"
+#include "steam/isteamugc.h"
+#include "steam/steam_gameserver.h"
 #include "base64.h"
 #include "helpers.h"
 #include <sys/stat.h>
@@ -116,6 +116,51 @@ bool operator != (const workshop_item_t& a, const workshop_item_t& b) {
 }
 
 const AppId_t app_id = 225140;
+
+/* OverlayManager */
+
+extern "C" {
+    void getgamepad(void);
+    void closegamepad(void);
+}
+
+struct OverlayManager {
+    CSTEAM_NotificationHandler_t handler;
+	void *context;
+
+    void setHandler(CSTEAM_NotificationHandler_t handler, void *context) {
+        this->handler = handler;
+        this->context = context;
+    }
+    
+    OverlayManager():overlay_update_callback(this, &OverlayManager::OnOverlayStateChanged),
+    bigpicture_text_update(this, &OverlayManager::OnBigPictureTextSubmited), handler(NULL), context(NULL){}
+    STEAM_CALLBACK(OverlayManager, OnOverlayStateChanged, GameOverlayActivated_t, overlay_update_callback) {
+        if (pParam->m_bActive) {
+            closegamepad();
+        } else {
+            getgamepad();
+        }
+    }
+    
+    STEAM_CALLBACK(OverlayManager, OnBigPictureTextSubmited, GamepadTextInputDismissed_t, bigpicture_text_update) {
+        char *text = NULL;
+        int textLength = 0;
+        if (handler) {
+            textLength = CSTEAM_GetEnteredGamepadTextLength();
+            if (pParam->m_bSubmitted && (textLength) > 0) {
+                text = (char *)malloc(sizeof(char)*textLength);
+                CSTEAM_GetEnteredGamepadTextInput(text, textLength+1);
+                text[textLength+1]='\0';
+                handler(N_BIGPICTURE_GAMEPAD_TEXT_UPDATE, 1, text, context);
+//                free(text);
+            }
+        }
+    }
+};
+
+static OverlayManager *overlayManager = 0;
+
 /* Workshop manager */
 struct WorkshopManager {
 	CSTEAM_NotificationHandler_t handler;
@@ -482,7 +527,6 @@ struct LobbyManager {
     
     
     void getLobbyInfo(steam_id_t lobby_id, lobby_info_t *lobby_info) {
-        char buffer[128];
         CSteamID lobbyId, ownerId;
         lobbyId.SetFromUint64(lobby_id);
 		
@@ -588,6 +632,378 @@ void dnAddCloudFileNames(void) {
     }
     strcpy(cloudFileNames[count], "duke3d.cfg");
 }
+
+
+
+#ifndef NOSTEAM
+extern "C"
+int CSTEAM_Init(void) {
+	int result = SteamAPI_Init();
+	if (result) {
+        lobbyManager = new LobbyManager();
+        workshopManager = new WorkshopManager();
+        overlayManager = new OverlayManager();
+        CSTEAM_UpdateWorkshopItems();
+        CSTEAM_AchievementsInit();
+        SteamUtils()->SetOverlayNotificationPosition(k_EPositionTopRight);
+        dnAddCloudFileNames();
+    }
+	return result;
+}
+
+extern "C"
+void CSTEAM_Shutdown(void) {
+	SteamAPI_Shutdown();
+}
+
+extern "C"
+void CSTEAM_ShowOverlay(const char *dialog) {
+    SteamFriends()->ActivateGameOverlay(dialog);
+}
+
+extern "C"
+int CSTEAM_Online() {
+	return (NULL != SteamUserStats() && NULL != SteamUser() && SteamUser()->BLoggedOn());
+}
+
+extern "C"
+void CSTEAM_AchievementsInit() {
+	if(!CSTEAM_Online())
+		return;
+#ifdef _DEBUG
+	SteamUserStats()->ResetAllStats(true);
+	SteamUserStats()->StoreStats();
+#endif
+	SteamUserStats()->RequestCurrentStats();
+}
+
+extern "C"
+const char * CSTEAM_GetUsername () {
+    if (CSTEAM_Online())
+        return SteamFriends()->GetPersonaName();
+    else return "Duke";
+}
+
+
+extern "C"
+int CSTEAM_GetStat(const char * statID) {
+	if(!CSTEAM_Online())
+		return -1;
+	int result = -1;
+	SteamUserStats()->GetStat(statID, &result);
+	return result;
+}
+
+extern "C"
+void CSTEAM_SetStat(const char* statID, int number) {
+	if(!CSTEAM_Online())
+		return;
+	SteamUserStats()->SetStat(statID, number);
+	SteamUserStats()->StoreStats();
+}
+
+extern "C"
+void CSTEAM_UnlockAchievement(const char * achievementID) {
+    SteamUserStats()->SetAchievement(achievementID);
+	SteamUserStats()->StoreStats();
+}
+
+extern "C"
+void CSTEAM_IndicateProgress(const char * achievementID, int currentNumber, int maxNumber) {
+	SteamUserStats()->IndicateAchievementProgress(achievementID, currentNumber, maxNumber);
+}
+
+extern "C"
+void CSTEAM_DownloadFile(const char * filename) {
+	if (!SteamRemoteStorage()->IsCloudEnabledForApp() || !SteamRemoteStorage()->IsCloudEnabledForAccount()) {
+		return;
+	}
+
+	if (!SteamRemoteStorage()->FileExists(filename)){
+		Sys_DPrintf("[CLOUD] file not found in cloud: %s\n", filename);
+		return;
+	}
+
+	void * buffer = NULL;
+	int cubFile = SteamRemoteStorage()->GetFileSize(filename);
+	if (cubFile != 0) {
+		buffer = malloc(cubFile);
+		int result = SteamRemoteStorage()->FileRead(filename, buffer, cubFile);
+		if (result) {
+			FILE *fp = fopen(filename, "wb+");
+			if (fp != NULL) {
+				fwrite(buffer, 1, cubFile, fp);
+				fclose(fp);
+			}
+		}
+		free(buffer);
+	}
+}
+
+extern "C"
+void CSTEAM_UploadFile(const char * filename) {
+	if (!SteamRemoteStorage()->IsCloudEnabledForApp() || !SteamRemoteStorage()->IsCloudEnabledForAccount()) {
+		return;
+	}
+	void * buffer = NULL;
+	long length;
+
+	FILE *fp = fopen(filename, "rb");
+//	perror(strerror(errno));
+	if (fp != NULL){
+		fseek(fp, 0, SEEK_END);
+		length = ftell(fp);
+		if (length < MAX_CLOUD_FILE_SIZE) {
+			fseek (fp, 0, SEEK_SET);
+			buffer = malloc(length);
+			if (buffer) {
+				fread (buffer, 1, length, fp);
+			}
+			SteamRemoteStorage()->FileWrite(filename, buffer, length);
+			free(buffer);
+		}
+		fclose(fp);
+	}
+}
+
+extern "C"
+void CSTEAM_OpenCummunityHub(void) {
+    SteamFriends()->ActivateGameOverlayToWebPage( "http://steamcommunity.com/app/225140" );
+}
+
+extern "C"
+void CSTEAM_DeleteCloudFile(const char * filename) {
+//    if (!SteamRemoteStorage()->IsCloudEnabledForApp() || !SteamRemoteStorage()->IsCloudEnabledForAccount()) {
+//        return;
+//	}
+    SteamRemoteStorage()->FileDelete(filename);
+}
+
+
+/** WORKSHOP STUFF **/
+extern "C"
+void CSTEAM_UpdateWorkshopItems(){
+    if (workshopManager) {
+        workshopManager->RefreshSubscribedItems();
+    }
+}
+
+extern "C"
+int32 CSTEAM_NumWorkshopItems() {
+    if (workshopManager){
+        return workshopManager->GetItemsNumber();
+    }
+    return 0;
+}
+
+extern "C"
+void CSTEAM_GetWorkshopItemByIndex(int index, workshop_item_t * item) {
+    if (workshopManager){
+        *item = workshopManager->GetItemByIndex(index);
+    }
+}
+
+extern "C"
+void CSTEAM_GetWorkshopItemByID(steam_id_t item_id, workshop_item_t * item) {
+    if (workshopManager){
+        *item = workshopManager->GetItemByID(item_id);
+    }
+}
+
+extern "C"
+void CSTEAM_SubscribeItem(steam_id_t item_id) {
+    if (workshopManager){
+        workshopManager->Subscribe(item_id);
+    }
+}
+
+extern "C"
+void CSTEAM_UnsubscribeItem(steam_id_t item_id) {
+    if (workshopManager){
+        workshopManager->Unsubscribe(item_id);
+    }
+}
+
+/** LOBBY STUFF **/
+
+extern "C"
+void CSTEAM_SetNotificationCallback(CSTEAM_NotificationHandler_t handler, void *context) {
+    if (lobbyManager) {
+        lobbyManager->setHandler(handler, context);
+    }
+	if (workshopManager) {
+		workshopManager->setHandler(handler, context);
+	}
+	if (overlayManager) {
+		overlayManager->setHandler(handler, context);
+	}
+}
+
+extern "C"
+void CSTEAM_CreateLobby(lobby_info_t *lobby_info) {
+    if (lobbyManager) {
+        lobbyManager->createLobby(lobby_info);
+    }
+}
+
+extern "C"
+void CSTEAM_UpdateLobbyList() {
+    if (lobbyManager) {
+        lobbyManager->updateLobbyList();
+    }
+}
+
+extern "C"
+int CSTEAM_NumLobbies() {
+    return lobbyManager ? lobbyManager->numLobbies() : 0;
+}
+
+extern "C"
+steam_id_t CSTEAM_GetLobbyId(int index) {
+    return SteamMatchmaking()->GetLobbyByIndex(index).ConvertToUint64();
+}
+
+extern "C"
+int CSTEAM_GetLobbyInfo(steam_id_t lobby_id, lobby_info_t *lobby_info) {
+    if (lobbyManager) {
+        lobbyManager->getLobbyInfo(lobby_id, lobby_info);
+    }
+    return SteamMatchmaking()->RequestLobbyData(lobby_id) ? 1 : 0;
+}
+
+extern "C"
+void CSTEAM_JoinLobby(steam_id_t lobby_id) {
+    if (lobbyManager) {
+        lobbyManager->joinLobby(lobby_id);
+    }
+    CSTEAM_DrainQueue();
+}
+
+extern "C"
+void CSTEAM_SendLobbyMessage(steam_id_t lobby_id, const char *message) {
+    SteamMatchmaking()->SendLobbyChatMsg(lobby_id, message, strlen(message));
+}
+
+extern "C"
+steam_id_t CSTEAM_GameServer() {
+    return lobbyManager ? 0 : lobbyManager->game_server.ConvertToUint64();
+}
+
+extern "C"
+steam_id_t CSTEAM_LobbyOwner(steam_id_t lobby_id) {
+    return SteamMatchmaking()->GetLobbyOwner(lobby_id).ConvertToUint64();
+}
+
+extern "C"
+steam_id_t CSTEAM_OwnLobbyId() {
+    return lobbyManager->own_lobby_id.ConvertToUint64();
+}
+
+extern "C"
+steam_id_t CSTEAM_MyID() {
+    return SteamUser()->GetSteamID().ConvertToUint64();
+}
+
+extern "C"
+void CSTEAM_StartLobby(steam_id_t lobby_id) {
+    if (lobbyManager) {
+        lobbyManager->startLobby(lobby_id);
+    }
+}
+
+extern "C"
+void CSTEAM_LeaveLobby(steam_id_t lobby_id) {
+    if (lobbyManager) {
+        lobbyManager->leaveLobby(lobby_id);
+    }
+}
+
+extern "C"
+void CSTEAM_InviteFriends(steam_id_t lobby_id) {
+    SteamFriends()->ActivateGameOverlayInviteDialog(lobby_id);
+}
+
+extern "C"
+void CSTEAM_RunFrame() {
+    SteamAPI_RunCallbacks();
+}
+
+extern "C"
+int  CSTEAM_SendPacket(steam_id_t peer_id, const void *buffer, unsigned int bufsize, int reliable, int channel) {
+	return SteamNetworking()->SendP2PPacket( peer_id, buffer, bufsize, reliable ? k_EP2PSendReliable : k_EP2PSendUnreliable, channel);
+}
+
+extern "C"
+int  CSTEAM_IsPacketAvailable(unsigned int *bufsize, int channel) {
+    return SteamNetworking()->IsP2PPacketAvailable(bufsize, channel) ? 1 : 0;
+}
+
+extern "C"
+int  CSTEAM_ReadPacket(void *buffer, unsigned int bufsize, unsigned int *msgsize, steam_id_t *remote, int channel) {
+    CSteamID remote_id;
+    int retval = SteamNetworking()->ReadP2PPacket(buffer, bufsize, msgsize, &remote_id, channel) ? 1 : 0;
+    *remote = remote_id.ConvertToUint64();
+    return retval;
+}
+
+extern "C"
+void CSTEAM_CloseP2P(steam_id_t remote) {
+    SteamNetworking()->CloseP2PSessionWithUser(remote);
+}
+
+extern "C"
+void CSTEAM_DrainQueue() {
+    uint32 msgsize;
+    static char buffer[1024];
+    CSteamID remote;
+    int c = 0;
+    
+    while (SteamNetworking()->IsP2PPacketAvailable(&msgsize)) {
+        SteamNetworking()->ReadP2PPacket(&buffer[0], 1024, &msgsize, &remote);
+        c++;
+        if (buffer[0] == 254) {
+            Sys_DPrintf("DrainQueue: drained '254'\n");
+        }
+    }
+    
+    Sys_DPrintf("DrainQueue: drained %d packets\n", c);
+}
+
+extern "C"
+const char* CSTEAM_FormatId(steam_id_t steam_id) {
+    static char buffer[50];
+    CSteamID steamId;
+    steamId.SetFromUint64(steam_id);
+    sprintf(buffer, "STEAM_0:%u:%u", (steamId.GetAccountID() % 2) ? 1 : 0, (unsigned int)steamId.GetAccountID()/2);
+    return buffer;
+}
+
+extern "C"
+int CSTEAM_ShowGamepadTextInput (const char * defaultText, int maxChars) {
+    if (SteamUtils()->ShowGamepadTextInput(k_EGamepadTextInputModeNormal, k_EGamepadTextInputLineModeSingleLine, "", maxChars, defaultText)) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+extern "C"
+int CSTEAM_GetEnteredGamepadTextLength () {
+    return SteamUtils()->GetEnteredGamepadTextLength();
+}
+
+extern "C"
+int CSTEAM_GetEnteredGamepadTextInput (char *pchText, int cchText) {
+    return SteamUtils()->GetEnteredGamepadTextInput(pchText, cchText);
+}
+
+extern "C"
+void CSTEAM_SetPlayedWith(steam_id_t playerid) {
+    SteamFriends()->SetPlayedWith(playerid);
+}
+
+
+#else
 
 extern "C"
 int CSTEAM_Init(void) {
@@ -810,3 +1226,10 @@ extern "C"
 const char* CSTEAM_FormatId(steam_id_t steam_id) {
     return 0;
 }
+
+extern "C"
+void CSTEAM_SetPlayedWith(steam_id_t playerid) {
+}
+
+
+#endif

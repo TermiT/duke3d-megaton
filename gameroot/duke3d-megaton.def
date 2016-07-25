@@ -1,0 +1,1300 @@
+// HUD Knuckle Crack
+tilefromtexture 2325 { file "tiles/duke3d/2325.png" xoffset 24 }
+tilefromtexture 2326 { file "tiles/duke3d/2326.png" xoffset 16 }
+
+// HUD Pistol
+tilefromtexture 2528 { file "tiles/duke3d/2528.png" xoffset -28 yoffset 2 }
+tilefromtexture 2529 { file "tiles/duke3d/2529.png" xoffset -70 yoffset 8 }
+
+// HUD RPG
+tilefromtexture 2544 { file "tiles/duke3d/2544.png" xoffset -115 yoffset -67 }
+
+// HUD Freezer
+tilefromtexture 2548 { file "tiles/duke3d/2548.png" xoffset -60 yoffset 15 }
+tilefromtexture 2550 { file "tiles/duke3d/2550.png" xoffset -13 yoffset 25 }
+
+// HUD Expander
+tilefromtexture 2554 { file "tiles/duke3d/2554.png" xoffset -4 }
+tilefromtexture 2555 { file "tiles/duke3d/2555.png" xoffset -4 }
+
+// HUD Shrinker
+tilefromtexture 2556 { file "tiles/duke3d/2556.png" xoffset -1 yoffset -2 }
+tilefromtexture 2557 { file "tiles/duke3d/2557.png" xoffset -1 yoffset -2 }
+
+// HUD Tripbomb Hand
+tilefromtexture 2563 { file "tiles/duke3d/2563.png" xoffset 90 }
+
+
+texture 0020 { pal 0 { file "hires/hud_select.png" } }
+texture 0030 { pal 0 { file "hires/health_frame.png" } }
+texture 0031 { pal 0 { file "hires/ammo_frame.png" } }
+texture 0033 { pal 0 { file "hires/inv_frame.png" } }
+texture 2460 { pal 0 { file "hires/firstaid_icon.png" } }
+texture 2461 { pal 0 { file "hires/nightvision_icon.png" } }
+texture 2463 { pal 0 { file "hires/boots_icon.png" } }
+texture 2467 { pal 0 { file "hires/jetpack_icon.png" } }
+texture 2468 { pal 0 { file "hires/airtank_icon.png" } }
+texture 2469 { pal 0 { file "hires/steroids_icon.png" } }
+texture 2470 { pal 0 { file "hires/holoduke_icon.png" } }
+texture 2471 {
+	pal 0 { file "hires/keyblue_icon.png" }
+	pal 21 { file "hires/keyred_icon.png" }
+	pal 23 { file "hires/keyyellow_icon.png" }
+}			   
+texture 2472 { pal 0 { file "hires/huddigit_0.png" } }
+texture 2473 { pal 0 { file "hires/huddigit_1.png" } }
+texture 2474 { pal 0 { file "hires/huddigit_2.png" } }
+texture 2475 { pal 0 { file "hires/huddigit_3.png" } }
+texture 2476 { pal 0 { file "hires/huddigit_4.png" } }
+texture 2477 { pal 0 { file "hires/huddigit_5.png" } }
+texture 2478 { pal 0 { file "hires/huddigit_6.png" } }
+texture 2479 { pal 0 { file "hires/huddigit_7.png" } }
+texture 2480 { pal 0 { file "hires/huddigit_8.png" } }
+texture 2481 { pal 0 { file "hires/huddigit_9.png" } }
+texture 2499 { pal 0 { file "hires/dukenukem3d.png" } }
+texture 2503 { pal 0 { file "hires/atomic.png" } }
+texture 2822 { pal 0 { file "hires/msgfnt_!.png" } }
+texture 2823 { pal 0 { file "hires/msgfnt_qm.png" } }
+texture 2824 { pal 0 { file "hires/msgfnt_#.png" } }
+texture 2825 { pal 0 { file "hires/msgfnt_$.png" } }
+texture 2826 { pal 0 { file "hires/msgfnt_%.png" } }
+texture 2827 { pal 0 { file "hires/msgfnt_@.png" } }
+texture 2828 { pal 0 { file "hires/msgfnt_ap.png" } }
+texture 2829 { pal 0 { file "hires/msgfnt_(.png" } }
+texture 2830 { pal 0 { file "hires/msgfnt_).png" } }
+texture 2831 { pal 0 { file "hires/msgfnt_st.png" } }
+texture 2832 { pal 0 { file "hires/msgfnt_+.png" } }
+texture 2833 { pal 0 { file "hires/msgfnt_,.png" } }
+texture 2834 { pal 0 { file "hires/msgfnt_-.png" } }
+texture 2835 { pal 0 { file "hires/msgfnt_..png" } }
+texture 2836 { pal 0 { file "hires/msgfnt_sl.png" } }
+texture 2837 { pal 0 { file "hires/msgfnt_0.png" } }
+texture 2838 { pal 0 { file "hires/msgfnt_1.png" } }
+texture 2839 { pal 0 { file "hires/msgfnt_2.png" } }
+texture 2840 { pal 0 { file "hires/msgfnt_3.png" } }
+texture 2841 { pal 0 { file "hires/msgfnt_4.png" } }
+texture 2842 { pal 0 { file "hires/msgfnt_5.png" } }
+texture 2843 { pal 0 { file "hires/msgfnt_6.png" } }
+texture 2844 { pal 0 { file "hires/msgfnt_7.png" } }
+texture 2845 { pal 0 { file "hires/msgfnt_8.png" } }
+texture 2846 { pal 0 { file "hires/msgfnt_9.png" } }
+texture 2847 { pal 0 { file "hires/msgfnt_dd.png" } }
+texture 2848 { pal 0 { file "hires/msgfnt_dc.png" } }
+texture 2849 { pal 0 { file "hires/msgfnt_trL.png" } }
+texture 2850 { pal 0 { file "hires/msgfnt_=.png" } }
+texture 2851 { pal 0 { file "hires/msgfnt_trR.png" } }
+texture 2852 { pal 0 { file "hires/msgfnt_qst.png" } }
+texture 2853 { pal 0 { file "hires/msgfnt_@.png" } }
+texture 2854 { pal 0 { file "hires/msgfnt_A.png" } }
+texture 2855 { pal 0 { file "hires/msgfnt_B.png" } }
+texture 2856 { pal 0 { file "hires/msgfnt_C.png" } }
+texture 2857 { pal 0 { file "hires/msgfnt_D.png" } }
+texture 2858 { pal 0 { file "hires/msgfnt_E.png" } }
+texture 2859 { pal 0 { file "hires/msgfnt_F.png" } }
+texture 2860 { pal 0 { file "hires/msgfnt_G.png" } }
+texture 2861 { pal 0 { file "hires/msgfnt_H.png" } }
+texture 2862 { pal 0 { file "hires/msgfnt_I.png" } }
+texture 2863 { pal 0 { file "hires/msgfnt_J.png" } }
+texture 2864 { pal 0 { file "hires/msgfnt_K.png" } }
+texture 2865 { pal 0 { file "hires/msgfnt_L.png" } }
+texture 2866 { pal 0 { file "hires/msgfnt_M.png" } }
+texture 2867 { pal 0 { file "hires/msgfnt_N.png" } }
+texture 2868 { pal 0 { file "hires/msgfnt_O.png" } }
+texture 2869 { pal 0 { file "hires/msgfnt_P.png" } }
+texture 2870 { pal 0 { file "hires/msgfnt_Q.png" } }
+texture 2871 { pal 0 { file "hires/msgfnt_R.png" } }
+texture 2872 { pal 0 { file "hires/msgfnt_S.png" } }
+texture 2873 { pal 0 { file "hires/msgfnt_T.png" } }
+texture 2874 { pal 0 { file "hires/msgfnt_U.png" } }
+texture 2875 { pal 0 { file "hires/msgfnt_V.png" } }
+texture 2876 { pal 0 { file "hires/msgfnt_W.png" } }
+texture 2877 { pal 0 { file "hires/msgfnt_X.png" } }
+texture 2878 { pal 0 { file "hires/msgfnt_Y.png" } }
+texture 2879 { pal 0 { file "hires/msgfnt_Z.png" } }
+texture 2880 { pal 0 { file "hires/msgfnt_[.png" } }
+texture 2881 { pal 0 { file "hires/msgfnt_bksl.png" } }
+texture 2882 { pal 0 { file "hires/msgfnt_].png" } }
+texture 2883 { pal 0 { file "hires/msgfnt_^.png" } }
+texture 2884 { pal 0 { file "hires/msgfnt__.png" } }
+texture 2885 { pal 0 { file "hires/msgfnt_..png" } }
+texture 2886 { pal 0 { file "hires/msgfnt_A.png" } }
+texture 2887 { pal 0 { file "hires/msgfnt_B.png" } }
+texture 2888 { pal 0 { file "hires/msgfnt_C.png" } }
+texture 2889 { pal 0 { file "hires/msgfnt_D.png" } }
+texture 2890 { pal 0 { file "hires/msgfnt_E.png" } }
+texture 2891 { pal 0 { file "hires/msgfnt_F.png" } }
+texture 2892 { pal 0 { file "hires/msgfnt_G.png" } }
+texture 2893 { pal 0 { file "hires/msgfnt_H.png" } }
+texture 2894 { pal 0 { file "hires/msgfnt_I.png" } }
+texture 2895 { pal 0 { file "hires/msgfnt_J.png" } }
+texture 2896 { pal 0 { file "hires/msgfnt_K.png" } }
+texture 2897 { pal 0 { file "hires/msgfnt_L.png" } }
+texture 2898 { pal 0 { file "hires/msgfnt_M.png" } }
+texture 2899 { pal 0 { file "hires/msgfnt_N.png" } }
+texture 2900 { pal 0 { file "hires/msgfnt_O.png" } }
+texture 2901 { pal 0 { file "hires/msgfnt_P.png" } }
+texture 2902 { pal 0 { file "hires/msgfnt_Q.png" } }
+texture 2903 { pal 0 { file "hires/msgfnt_R.png" } }
+texture 2904 { pal 0 { file "hires/msgfnt_S.png" } }
+texture 2905 { pal 0 { file "hires/msgfnt_T.png" } }
+texture 2906 { pal 0 { file "hires/msgfnt_U.png" } }
+texture 2907 { pal 0 { file "hires/msgfnt_V.png" } }
+texture 2908 { pal 0 { file "hires/msgfnt_W.png" } }
+texture 2909 { pal 0 { file "hires/msgfnt_X.png" } }
+texture 2910 { pal 0 { file "hires/msgfnt_Y.png" } }
+texture 2911 { pal 0 { file "hires/msgfnt_Z.png" } }
+texture 2912 { pal 0 { file "hires/msgfnt_{.png" } }
+texture 2913 { pal 0 { file "hires/msgfnt_dd.png" } }
+texture 2914 { pal 0 { file "hires/msgfnt_}.png" } }
+texture 2915 { pal 0 { file "hires/msgfnt_~.png" } }
+texture 3010 { pal 0 { file "hires/hudstatfont_0.png" } }
+texture 3011 { pal 0 { file "hires/hudstatfont_1.png" } } 
+texture 3012 { pal 0 { file "hires/hudstatfont_2.png" } }
+texture 3013 { pal 0 { file "hires/hudstatfont_3.png" } }
+texture 3014 { pal 0 { file "hires/hudstatfont_4.png" } }
+texture 3015 { pal 0 { file "hires/hudstatfont_5.png" } }
+texture 3016 { pal 0 { file "hires/hudstatfont_6.png" } }
+texture 3017 { pal 0 { file "hires/hudstatfont_7.png" } }
+texture 3018 { pal 0 { file "hires/hudstatfont_8.png" } }
+texture 3019 { pal 0 { file "hires/hudstatfont_9.png" } }
+texture 3020 { pal 0 { file "hires/hudstatfont_dd.png" } }
+texture 3021 { pal 0 { file "hires/hudstatfont_sl.png" } }
+texture 3072 {
+ pal 0 { file "hires/hudstatfont_!_0.png" }
+ pal 2 { file "hires/hudstatfont_!_2.png" }
+ pal 6 { file "hires/hudstatfont_!_6.png" }
+ pal 7 { file "hires/hudstatfont_!_7.png" }
+ pal 8 { file "hires/hudstatfont_!_8.png" }
+ pal 10 { file "hires/hudstatfont_!_10.png" }
+ pal 11 { file "hires/hudstatfont_!_11.png" }
+ pal 12 { file "hires/hudstatfont_!_12.png" }
+ pal 13 { file "hires/hudstatfont_!_13.png" }
+ pal 14 { file "hires/hudstatfont_!_14.png" }
+ pal 15 { file "hires/hudstatfont_!_15.png" }
+ pal 16 { file "hires/hudstatfont_!_16.png" }
+ pal 21 { file "hires/hudstatfont_!_21.png" }
+ pal 23 { file "hires/hudstatfont_!_23.png" }
+}
+texture 3073 {
+ pal 0 { file "hires/hudstatfont_qm_0.png" }
+ pal 2 { file "hires/hudstatfont_qm_2.png" }
+ pal 6 { file "hires/hudstatfont_qm_6.png" }
+ pal 7 { file "hires/hudstatfont_qm_7.png" }
+ pal 8 { file "hires/hudstatfont_qm_8.png" }
+ pal 10 { file "hires/hudstatfont_qm_10.png" }
+ pal 11 { file "hires/hudstatfont_qm_11.png" }
+ pal 12 { file "hires/hudstatfont_qm_12.png" }
+ pal 13 { file "hires/hudstatfont_qm_13.png" }
+ pal 14 { file "hires/hudstatfont_qm_14.png" }
+ pal 15 { file "hires/hudstatfont_qm_15.png" }
+ pal 16 { file "hires/hudstatfont_qm_16.png" }
+ pal 21 { file "hires/hudstatfont_qm_21.png" }
+ pal 23 { file "hires/hudstatfont_qm_23.png" }
+}
+texture 3074 {
+ pal 0 { file "hires/hudstatfont_#_0.png" }
+ pal 2 { file "hires/hudstatfont_#_2.png" }
+ pal 6 { file "hires/hudstatfont_#_6.png" }
+ pal 7 { file "hires/hudstatfont_#_7.png" }
+ pal 8 { file "hires/hudstatfont_#_8.png" }
+ pal 10 { file "hires/hudstatfont_#_10.png" }
+ pal 11 { file "hires/hudstatfont_#_11.png" }
+ pal 12 { file "hires/hudstatfont_#_12.png" }
+ pal 13 { file "hires/hudstatfont_#_13.png" }
+ pal 14 { file "hires/hudstatfont_#_14.png" }
+ pal 15 { file "hires/hudstatfont_#_15.png" }
+ pal 16 { file "hires/hudstatfont_#_16.png" }
+ pal 21 { file "hires/hudstatfont_#_21.png" }
+ pal 23 { file "hires/hudstatfont_#_23.png" }
+}
+texture 3075 {
+ pal 0 { file "hires/hudstatfont_$_0.png" }
+ pal 2 { file "hires/hudstatfont_$_2.png" }
+ pal 6 { file "hires/hudstatfont_$_6.png" }
+ pal 7 { file "hires/hudstatfont_$_7.png" }
+ pal 8 { file "hires/hudstatfont_$_8.png" }
+ pal 10 { file "hires/hudstatfont_$_10.png" }
+ pal 11 { file "hires/hudstatfont_$_11.png" }
+ pal 12 { file "hires/hudstatfont_$_12.png" }
+ pal 13 { file "hires/hudstatfont_$_13.png" }
+ pal 14 { file "hires/hudstatfont_$_14.png" }
+ pal 15 { file "hires/hudstatfont_$_15.png" }
+ pal 16 { file "hires/hudstatfont_$_16.png" }
+ pal 21 { file "hires/hudstatfont_$_21.png" }
+ pal 23 { file "hires/hudstatfont_$_23.png" }
+}
+texture 3076 {
+ pal 0 { file "hires/hudstatfont_%_0.png" }
+ pal 2 { file "hires/hudstatfont_%_2.png" }
+ pal 6 { file "hires/hudstatfont_%_6.png" }
+ pal 7 { file "hires/hudstatfont_%_7.png" }
+ pal 8 { file "hires/hudstatfont_%_8.png" }
+ pal 10 { file "hires/hudstatfont_%_10.png" }
+ pal 11 { file "hires/hudstatfont_%_11.png" }
+ pal 12 { file "hires/hudstatfont_%_12.png" }
+ pal 13 { file "hires/hudstatfont_%_13.png" }
+ pal 14 { file "hires/hudstatfont_%_14.png" }
+ pal 15 { file "hires/hudstatfont_%_15.png" }
+ pal 16 { file "hires/hudstatfont_%_16.png" }
+ pal 21 { file "hires/hudstatfont_%_21.png" }
+ pal 23 { file "hires/hudstatfont_%_23.png" }
+}
+texture 3077 {
+ pal 0 { file "hires/hudstatfont_$_0.png" }
+ pal 2 { file "hires/hudstatfont_$_2.png" }
+ pal 6 { file "hires/hudstatfont_$_6.png" }
+ pal 7 { file "hires/hudstatfont_$_7.png" }
+ pal 8 { file "hires/hudstatfont_$_8.png" }
+ pal 10 { file "hires/hudstatfont_$_10.png" }
+ pal 11 { file "hires/hudstatfont_$_11.png" }
+ pal 12 { file "hires/hudstatfont_$_12.png" }
+ pal 13 { file "hires/hudstatfont_$_13.png" }
+ pal 14 { file "hires/hudstatfont_$_14.png" }
+ pal 15 { file "hires/hudstatfont_$_15.png" }
+ pal 16 { file "hires/hudstatfont_$_16.png" }
+ pal 21 { file "hires/hudstatfont_$_21.png" }
+ pal 23 { file "hires/hudstatfont_$_23.png" }
+}
+texture 3078 {
+ pal 0 { file "hires/hudstatfont_ap_0.png" }
+ pal 2 { file "hires/hudstatfont_ap_2.png" }
+ pal 6 { file "hires/hudstatfont_ap_6.png" }
+ pal 7 { file "hires/hudstatfont_ap_7.png" }
+ pal 8 { file "hires/hudstatfont_ap_8.png" }
+ pal 10 { file "hires/hudstatfont_ap_10.png" }
+ pal 11 { file "hires/hudstatfont_ap_11.png" }
+ pal 12 { file "hires/hudstatfont_ap_12.png" }
+ pal 13 { file "hires/hudstatfont_ap_13.png" }
+ pal 14 { file "hires/hudstatfont_ap_14.png" }
+ pal 15 { file "hires/hudstatfont_ap_15.png" }
+ pal 16 { file "hires/hudstatfont_ap_16.png" }
+ pal 21 { file "hires/hudstatfont_ap_21.png" }
+ pal 23 { file "hires/hudstatfont_ap_23.png" }
+}
+texture 3079 {
+ pal 0 { file "hires/hudstatfont_(_0.png" }
+ pal 2 { file "hires/hudstatfont_(_2.png" }
+ pal 6 { file "hires/hudstatfont_(_6.png" }
+ pal 7 { file "hires/hudstatfont_(_7.png" }
+ pal 8 { file "hires/hudstatfont_(_8.png" }
+ pal 10 { file "hires/hudstatfont_(_10.png" }
+ pal 11 { file "hires/hudstatfont_(_11.png" }
+ pal 12 { file "hires/hudstatfont_(_12.png" }
+ pal 13 { file "hires/hudstatfont_(_13.png" }
+ pal 14 { file "hires/hudstatfont_(_14.png" }
+ pal 15 { file "hires/hudstatfont_(_15.png" }
+ pal 16 { file "hires/hudstatfont_(_16.png" }
+ pal 21 { file "hires/hudstatfont_(_21.png" }
+ pal 23 { file "hires/hudstatfont_(_23.png" }
+}
+texture 3080 {
+ pal 0 { file "hires/hudstatfont_)_0.png" }
+ pal 2 { file "hires/hudstatfont_)_2.png" }
+ pal 6 { file "hires/hudstatfont_)_6.png" }
+ pal 7 { file "hires/hudstatfont_)_7.png" }
+ pal 8 { file "hires/hudstatfont_)_8.png" }
+ pal 10 { file "hires/hudstatfont_)_10.png" }
+ pal 11 { file "hires/hudstatfont_)_11.png" }
+ pal 12 { file "hires/hudstatfont_)_12.png" }
+ pal 13 { file "hires/hudstatfont_)_13.png" }
+ pal 14 { file "hires/hudstatfont_)_14.png" }
+ pal 15 { file "hires/hudstatfont_)_15.png" }
+ pal 16 { file "hires/hudstatfont_)_16.png" }
+ pal 21 { file "hires/hudstatfont_)_21.png" }
+ pal 23 { file "hires/hudstatfont_)_23.png" }
+}
+texture 3081 {
+ pal 0 { file "hires/hudstatfont_st_0.png" }
+ pal 2 { file "hires/hudstatfont_st_2.png" }
+ pal 6 { file "hires/hudstatfont_st_6.png" }
+ pal 7 { file "hires/hudstatfont_st_7.png" }
+ pal 8 { file "hires/hudstatfont_st_8.png" }
+ pal 10 { file "hires/hudstatfont_st_10.png" }
+ pal 11 { file "hires/hudstatfont_st_11.png" }
+ pal 12 { file "hires/hudstatfont_st_12.png" }
+ pal 13 { file "hires/hudstatfont_st_13.png" }
+ pal 14 { file "hires/hudstatfont_st_14.png" }
+ pal 15 { file "hires/hudstatfont_st_15.png" }
+ pal 16 { file "hires/hudstatfont_st_16.png" }
+ pal 21 { file "hires/hudstatfont_st_21.png" }
+ pal 23 { file "hires/hudstatfont_st_23.png" }
+}
+texture 3082 {
+ pal 0 { file "hires/hudstatfont_+_0.png" }
+ pal 2 { file "hires/hudstatfont_+_2.png" }
+ pal 6 { file "hires/hudstatfont_+_6.png" }
+ pal 7 { file "hires/hudstatfont_+_7.png" }
+ pal 8 { file "hires/hudstatfont_+_8.png" }
+ pal 10 { file "hires/hudstatfont_+_10.png" }
+ pal 11 { file "hires/hudstatfont_+_11.png" }
+ pal 12 { file "hires/hudstatfont_+_12.png" }
+ pal 13 { file "hires/hudstatfont_+_13.png" }
+ pal 14 { file "hires/hudstatfont_+_14.png" }
+ pal 15 { file "hires/hudstatfont_+_15.png" }
+ pal 16 { file "hires/hudstatfont_+_16.png" }
+ pal 21 { file "hires/hudstatfont_+_21.png" }
+ pal 23 { file "hires/hudstatfont_+_23.png" }
+}
+texture 3083 {
+ pal 0 { file "hires/hudstatfont_,_0.png" }
+ pal 2 { file "hires/hudstatfont_,_2.png" }
+ pal 6 { file "hires/hudstatfont_,_6.png" }
+ pal 7 { file "hires/hudstatfont_,_7.png" }
+ pal 8 { file "hires/hudstatfont_,_8.png" }
+ pal 10 { file "hires/hudstatfont_,_10.png" }
+ pal 11 { file "hires/hudstatfont_,_11.png" }
+ pal 12 { file "hires/hudstatfont_,_12.png" }
+ pal 13 { file "hires/hudstatfont_,_13.png" }
+ pal 14 { file "hires/hudstatfont_,_14.png" }
+ pal 15 { file "hires/hudstatfont_,_15.png" }
+ pal 16 { file "hires/hudstatfont_,_16.png" }
+ pal 21 { file "hires/hudstatfont_,_21.png" }
+ pal 23 { file "hires/hudstatfont_,_23.png" }
+}
+texture 3084 {
+ pal 0 { file "hires/hudstatfont___0.png" }
+ pal 2 { file "hires/hudstatfont___2.png" }
+ pal 6 { file "hires/hudstatfont___6.png" }
+ pal 7 { file "hires/hudstatfont___7.png" }
+ pal 8 { file "hires/hudstatfont___8.png" }
+ pal 10 { file "hires/hudstatfont___10.png" }
+ pal 11 { file "hires/hudstatfont___11.png" }
+ pal 12 { file "hires/hudstatfont___12.png" }
+ pal 13 { file "hires/hudstatfont___13.png" }
+ pal 14 { file "hires/hudstatfont___14.png" }
+ pal 15 { file "hires/hudstatfont___15.png" }
+ pal 16 { file "hires/hudstatfont___16.png" }
+ pal 21 { file "hires/hudstatfont___21.png" }
+ pal 23 { file "hires/hudstatfont___23.png" }
+}
+texture 3085 {
+ pal 0 { file "hires/hudstatfont_._0.png" }
+ pal 2 { file "hires/hudstatfont_._2.png" }
+ pal 6 { file "hires/hudstatfont_._6.png" }
+ pal 7 { file "hires/hudstatfont_._7.png" }
+ pal 8 { file "hires/hudstatfont_._8.png" }
+ pal 10 { file "hires/hudstatfont_._10.png" }
+ pal 11 { file "hires/hudstatfont_._11.png" }
+ pal 12 { file "hires/hudstatfont_._12.png" }
+ pal 13 { file "hires/hudstatfont_._13.png" }
+ pal 14 { file "hires/hudstatfont_._14.png" }
+ pal 15 { file "hires/hudstatfont_._15.png" }
+ pal 16 { file "hires/hudstatfont_._16.png" }
+ pal 21 { file "hires/hudstatfont_._21.png" }
+ pal 23 { file "hires/hudstatfont_._23.png" }
+}
+texture 3086 {
+ pal 0 { file "hires/hudstatfont_sl_0.png" }
+ pal 2 { file "hires/hudstatfont_sl_2.png" }
+ pal 6 { file "hires/hudstatfont_sl_6.png" }
+ pal 7 { file "hires/hudstatfont_sl_7.png" }
+ pal 8 { file "hires/hudstatfont_sl_8.png" }
+ pal 10 { file "hires/hudstatfont_sl_10.png" }
+ pal 11 { file "hires/hudstatfont_sl_11.png" }
+ pal 12 { file "hires/hudstatfont_sl_12.png" }
+ pal 13 { file "hires/hudstatfont_sl_13.png" }
+ pal 14 { file "hires/hudstatfont_sl_14.png" }
+ pal 15 { file "hires/hudstatfont_sl_15.png" }
+ pal 16 { file "hires/hudstatfont_sl_16.png" }
+ pal 21 { file "hires/hudstatfont_sl_21.png" }
+ pal 23 { file "hires/hudstatfont_sl_23.png" }
+}
+texture 3087 {
+ pal 0 { file "hires/hudstatfont_0_0.png" }
+ pal 2 { file "hires/hudstatfont_0_2.png" }
+ pal 6 { file "hires/hudstatfont_0_6.png" }
+ pal 7 { file "hires/hudstatfont_0_7.png" }
+ pal 8 { file "hires/hudstatfont_0_8.png" }
+ pal 10 { file "hires/hudstatfont_0_10.png" }
+ pal 11 { file "hires/hudstatfont_0_11.png" }
+ pal 12 { file "hires/hudstatfont_0_12.png" }
+ pal 13 { file "hires/hudstatfont_0_13.png" }
+ pal 14 { file "hires/hudstatfont_0_14.png" }
+ pal 15 { file "hires/hudstatfont_0_15.png" }
+ pal 16 { file "hires/hudstatfont_0_16.png" }
+ pal 21 { file "hires/hudstatfont_0_21.png" }
+ pal 23 { file "hires/hudstatfont_0_23.png" }
+}
+texture 3088 {
+ pal 0 { file "hires/hudstatfont_1_0.png" }
+ pal 2 { file "hires/hudstatfont_1_2.png" }
+ pal 6 { file "hires/hudstatfont_1_6.png" }
+ pal 7 { file "hires/hudstatfont_1_7.png" }
+ pal 8 { file "hires/hudstatfont_1_8.png" }
+ pal 10 { file "hires/hudstatfont_1_10.png" }
+ pal 11 { file "hires/hudstatfont_1_11.png" }
+ pal 12 { file "hires/hudstatfont_1_12.png" }
+ pal 13 { file "hires/hudstatfont_1_13.png" }
+ pal 14 { file "hires/hudstatfont_1_14.png" }
+ pal 15 { file "hires/hudstatfont_1_15.png" }
+ pal 16 { file "hires/hudstatfont_1_16.png" }
+ pal 21 { file "hires/hudstatfont_1_21.png" }
+ pal 23 { file "hires/hudstatfont_1_23.png" }
+}
+texture 3089 {
+ pal 0 { file "hires/hudstatfont_2_0.png" }
+ pal 2 { file "hires/hudstatfont_2_2.png" }
+ pal 6 { file "hires/hudstatfont_2_6.png" }
+ pal 7 { file "hires/hudstatfont_2_7.png" }
+ pal 8 { file "hires/hudstatfont_2_8.png" }
+ pal 10 { file "hires/hudstatfont_2_10.png" }
+ pal 11 { file "hires/hudstatfont_2_11.png" }
+ pal 12 { file "hires/hudstatfont_2_12.png" }
+ pal 13 { file "hires/hudstatfont_2_13.png" }
+ pal 14 { file "hires/hudstatfont_2_14.png" }
+ pal 15 { file "hires/hudstatfont_2_15.png" }
+ pal 16 { file "hires/hudstatfont_2_16.png" }
+ pal 21 { file "hires/hudstatfont_2_21.png" }
+ pal 23 { file "hires/hudstatfont_2_23.png" }
+}
+texture 3090 {
+ pal 0 { file "hires/hudstatfont_3_0.png" }
+ pal 2 { file "hires/hudstatfont_3_2.png" }
+ pal 6 { file "hires/hudstatfont_3_6.png" }
+ pal 7 { file "hires/hudstatfont_3_7.png" }
+ pal 8 { file "hires/hudstatfont_3_8.png" }
+ pal 10 { file "hires/hudstatfont_3_10.png" }
+ pal 11 { file "hires/hudstatfont_3_11.png" }
+ pal 12 { file "hires/hudstatfont_3_12.png" }
+ pal 13 { file "hires/hudstatfont_3_13.png" }
+ pal 14 { file "hires/hudstatfont_3_14.png" }
+ pal 15 { file "hires/hudstatfont_3_15.png" }
+ pal 16 { file "hires/hudstatfont_3_16.png" }
+ pal 21 { file "hires/hudstatfont_3_21.png" }
+ pal 23 { file "hires/hudstatfont_3_23.png" }
+}
+texture 3091 {
+ pal 0 { file "hires/hudstatfont_4_0.png" }
+ pal 2 { file "hires/hudstatfont_4_2.png" }
+ pal 6 { file "hires/hudstatfont_4_6.png" }
+ pal 7 { file "hires/hudstatfont_4_7.png" }
+ pal 8 { file "hires/hudstatfont_4_8.png" }
+ pal 10 { file "hires/hudstatfont_4_10.png" }
+ pal 11 { file "hires/hudstatfont_4_11.png" }
+ pal 12 { file "hires/hudstatfont_4_12.png" }
+ pal 13 { file "hires/hudstatfont_4_13.png" }
+ pal 14 { file "hires/hudstatfont_4_14.png" }
+ pal 15 { file "hires/hudstatfont_4_15.png" }
+ pal 16 { file "hires/hudstatfont_4_16.png" }
+ pal 21 { file "hires/hudstatfont_4_21.png" }
+ pal 23 { file "hires/hudstatfont_4_23.png" }
+}
+texture 3092 {
+ pal 0 { file "hires/hudstatfont_5_0.png" }
+ pal 2 { file "hires/hudstatfont_5_2.png" }
+ pal 6 { file "hires/hudstatfont_5_6.png" }
+ pal 7 { file "hires/hudstatfont_5_7.png" }
+ pal 8 { file "hires/hudstatfont_5_8.png" }
+ pal 10 { file "hires/hudstatfont_5_10.png" }
+ pal 11 { file "hires/hudstatfont_5_11.png" }
+ pal 12 { file "hires/hudstatfont_5_12.png" }
+ pal 13 { file "hires/hudstatfont_5_13.png" }
+ pal 14 { file "hires/hudstatfont_5_14.png" }
+ pal 15 { file "hires/hudstatfont_5_15.png" }
+ pal 16 { file "hires/hudstatfont_5_16.png" }
+ pal 21 { file "hires/hudstatfont_5_21.png" }
+ pal 23 { file "hires/hudstatfont_5_23.png" }
+}
+texture 3093 {
+ pal 0 { file "hires/hudstatfont_6_0.png" }
+ pal 2 { file "hires/hudstatfont_6_2.png" }
+ pal 6 { file "hires/hudstatfont_6_6.png" }
+ pal 7 { file "hires/hudstatfont_6_7.png" }
+ pal 8 { file "hires/hudstatfont_6_8.png" }
+ pal 10 { file "hires/hudstatfont_6_10.png" }
+ pal 11 { file "hires/hudstatfont_6_11.png" }
+ pal 12 { file "hires/hudstatfont_6_12.png" }
+ pal 13 { file "hires/hudstatfont_6_13.png" }
+ pal 14 { file "hires/hudstatfont_6_14.png" }
+ pal 15 { file "hires/hudstatfont_6_15.png" }
+ pal 16 { file "hires/hudstatfont_6_16.png" }
+ pal 21 { file "hires/hudstatfont_6_21.png" }
+ pal 23 { file "hires/hudstatfont_6_23.png" }
+}
+texture 3094 {
+ pal 0 { file "hires/hudstatfont_7_0.png" }
+ pal 2 { file "hires/hudstatfont_7_2.png" }
+ pal 6 { file "hires/hudstatfont_7_6.png" }
+ pal 7 { file "hires/hudstatfont_7_7.png" }
+ pal 8 { file "hires/hudstatfont_7_8.png" }
+ pal 10 { file "hires/hudstatfont_7_10.png" }
+ pal 11 { file "hires/hudstatfont_7_11.png" }
+ pal 12 { file "hires/hudstatfont_7_12.png" }
+ pal 13 { file "hires/hudstatfont_7_13.png" }
+ pal 14 { file "hires/hudstatfont_7_14.png" }
+ pal 15 { file "hires/hudstatfont_7_15.png" }
+ pal 16 { file "hires/hudstatfont_7_16.png" }
+ pal 21 { file "hires/hudstatfont_7_21.png" }
+ pal 23 { file "hires/hudstatfont_7_23.png" }
+}
+texture 3095 {
+ pal 0 { file "hires/hudstatfont_8_0.png" }
+ pal 2 { file "hires/hudstatfont_8_2.png" }
+ pal 6 { file "hires/hudstatfont_8_6.png" }
+ pal 7 { file "hires/hudstatfont_8_7.png" }
+ pal 8 { file "hires/hudstatfont_8_8.png" }
+ pal 10 { file "hires/hudstatfont_8_10.png" }
+ pal 11 { file "hires/hudstatfont_8_11.png" }
+ pal 12 { file "hires/hudstatfont_8_12.png" }
+ pal 13 { file "hires/hudstatfont_8_13.png" }
+ pal 14 { file "hires/hudstatfont_8_14.png" }
+ pal 15 { file "hires/hudstatfont_8_15.png" }
+ pal 16 { file "hires/hudstatfont_8_16.png" }
+ pal 21 { file "hires/hudstatfont_8_21.png" }
+ pal 23 { file "hires/hudstatfont_8_23.png" }
+}
+texture 3096 {
+ pal 0 { file "hires/hudstatfont_9_0.png" }
+ pal 2 { file "hires/hudstatfont_9_2.png" }
+ pal 6 { file "hires/hudstatfont_9_6.png" }
+ pal 7 { file "hires/hudstatfont_9_7.png" }
+ pal 8 { file "hires/hudstatfont_9_8.png" }
+ pal 10 { file "hires/hudstatfont_9_10.png" }
+ pal 11 { file "hires/hudstatfont_9_11.png" }
+ pal 12 { file "hires/hudstatfont_9_12.png" }
+ pal 13 { file "hires/hudstatfont_9_13.png" }
+ pal 14 { file "hires/hudstatfont_9_14.png" }
+ pal 15 { file "hires/hudstatfont_9_15.png" }
+ pal 16 { file "hires/hudstatfont_9_16.png" }
+ pal 21 { file "hires/hudstatfont_9_21.png" }
+ pal 23 { file "hires/hudstatfont_9_23.png" }
+}
+texture 3097 {
+ pal 0 { file "hires/hudstatfont_dd_0.png" }
+ pal 2 { file "hires/hudstatfont_dd_2.png" }
+ pal 6 { file "hires/hudstatfont_dd_6.png" }
+ pal 7 { file "hires/hudstatfont_dd_7.png" }
+ pal 8 { file "hires/hudstatfont_dd_8.png" }
+ pal 10 { file "hires/hudstatfont_dd_10.png" }
+ pal 11 { file "hires/hudstatfont_dd_11.png" }
+ pal 12 { file "hires/hudstatfont_dd_12.png" }
+ pal 13 { file "hires/hudstatfont_dd_13.png" }
+ pal 14 { file "hires/hudstatfont_dd_14.png" }
+ pal 15 { file "hires/hudstatfont_dd_15.png" }
+ pal 16 { file "hires/hudstatfont_dd_16.png" }
+ pal 21 { file "hires/hudstatfont_dd_21.png" }
+ pal 23 { file "hires/hudstatfont_dd_23.png" }
+}
+texture 3098 {
+ pal 0 { file "hires/hudstatfont_dd_0.png" }
+ pal 2 { file "hires/hudstatfont_dd_2.png" }
+ pal 6 { file "hires/hudstatfont_dd_6.png" }
+ pal 7 { file "hires/hudstatfont_dd_7.png" }
+ pal 8 { file "hires/hudstatfont_dd_8.png" }
+ pal 10 { file "hires/hudstatfont_dd_10.png" }
+ pal 11 { file "hires/hudstatfont_dd_11.png" }
+ pal 12 { file "hires/hudstatfont_dd_12.png" }
+ pal 13 { file "hires/hudstatfont_dd_13.png" }
+ pal 14 { file "hires/hudstatfont_dd_14.png" }
+ pal 15 { file "hires/hudstatfont_dd_15.png" }
+ pal 16 { file "hires/hudstatfont_dd_16.png" }
+ pal 21 { file "hires/hudstatfont_dd_21.png" }
+ pal 23 { file "hires/hudstatfont_dd_23.png" }
+}
+texture 3099 {
+ pal 0 { file "hires/hudstatfont_trL_0.png" }
+ pal 2 { file "hires/hudstatfont_trL_2.png" }
+ pal 6 { file "hires/hudstatfont_trL_6.png" }
+ pal 7 { file "hires/hudstatfont_trL_7.png" }
+ pal 8 { file "hires/hudstatfont_trL_8.png" }
+ pal 10 { file "hires/hudstatfont_trL_10.png" }
+ pal 11 { file "hires/hudstatfont_trL_11.png" }
+ pal 12 { file "hires/hudstatfont_trL_12.png" }
+ pal 13 { file "hires/hudstatfont_trL_13.png" }
+ pal 14 { file "hires/hudstatfont_trL_14.png" }
+ pal 15 { file "hires/hudstatfont_trL_15.png" }
+ pal 16 { file "hires/hudstatfont_trL_16.png" }
+ pal 21 { file "hires/hudstatfont_trL_21.png" }
+ pal 23 { file "hires/hudstatfont_trL_23.png" }
+}
+texture 3100 {
+ pal 0 { file "hires/hudstatfont_=_0.png" }
+ pal 2 { file "hires/hudstatfont_=_2.png" }
+ pal 6 { file "hires/hudstatfont_=_6.png" }
+ pal 7 { file "hires/hudstatfont_=_7.png" }
+ pal 8 { file "hires/hudstatfont_=_8.png" }
+ pal 10 { file "hires/hudstatfont_=_10.png" }
+ pal 11 { file "hires/hudstatfont_=_11.png" }
+ pal 12 { file "hires/hudstatfont_=_12.png" }
+ pal 13 { file "hires/hudstatfont_=_13.png" }
+ pal 14 { file "hires/hudstatfont_=_14.png" }
+ pal 15 { file "hires/hudstatfont_=_15.png" }
+ pal 16 { file "hires/hudstatfont_=_16.png" }
+ pal 21 { file "hires/hudstatfont_=_21.png" }
+ pal 23 { file "hires/hudstatfont_=_23.png" }
+}
+texture 3101 {
+ pal 0 { file "hires/hudstatfont_trR_0.png" }
+ pal 2 { file "hires/hudstatfont_trR_2.png" }
+ pal 6 { file "hires/hudstatfont_trR_6.png" }
+ pal 7 { file "hires/hudstatfont_trR_7.png" }
+ pal 8 { file "hires/hudstatfont_trR_8.png" }
+ pal 10 { file "hires/hudstatfont_trR_10.png" }
+ pal 11 { file "hires/hudstatfont_trR_11.png" }
+ pal 12 { file "hires/hudstatfont_trR_12.png" }
+ pal 13 { file "hires/hudstatfont_trR_13.png" }
+ pal 14 { file "hires/hudstatfont_trR_14.png" }
+ pal 15 { file "hires/hudstatfont_trR_15.png" }
+ pal 16 { file "hires/hudstatfont_trR_16.png" }
+ pal 21 { file "hires/hudstatfont_trR_21.png" }
+ pal 23 { file "hires/hudstatfont_trR_23.png" }
+}
+texture 3102 {
+ pal 0 { file "hires/hudstatfont_qst_0.png" }
+ pal 2 { file "hires/hudstatfont_qst_2.png" }
+ pal 6 { file "hires/hudstatfont_qst_6.png" }
+ pal 7 { file "hires/hudstatfont_qst_7.png" }
+ pal 8 { file "hires/hudstatfont_qst_8.png" }
+ pal 10 { file "hires/hudstatfont_qst_10.png" }
+ pal 11 { file "hires/hudstatfont_qst_11.png" }
+ pal 12 { file "hires/hudstatfont_qst_12.png" }
+ pal 13 { file "hires/hudstatfont_qst_13.png" }
+ pal 14 { file "hires/hudstatfont_qst_14.png" }
+ pal 15 { file "hires/hudstatfont_qst_15.png" }
+ pal 16 { file "hires/hudstatfont_qst_16.png" }
+ pal 21 { file "hires/hudstatfont_qst_21.png" }
+ pal 23 { file "hires/hudstatfont_qst_23.png" }
+}
+texture 3103 {
+ pal 0 { file "hires/hudstatfont_&_0.png" }
+ pal 2 { file "hires/hudstatfont_&_2.png" }
+ pal 6 { file "hires/hudstatfont_&_6.png" }
+ pal 7 { file "hires/hudstatfont_&_7.png" }
+ pal 8 { file "hires/hudstatfont_&_8.png" }
+ pal 10 { file "hires/hudstatfont_&_10.png" }
+ pal 11 { file "hires/hudstatfont_&_11.png" }
+ pal 12 { file "hires/hudstatfont_&_12.png" }
+ pal 13 { file "hires/hudstatfont_&_13.png" }
+ pal 14 { file "hires/hudstatfont_&_14.png" }
+ pal 15 { file "hires/hudstatfont_&_15.png" }
+ pal 16 { file "hires/hudstatfont_&_16.png" }
+ pal 21 { file "hires/hudstatfont_&_21.png" }
+ pal 23 { file "hires/hudstatfont_&_23.png" }
+}
+texture 3104 {
+ pal 0 { file "hires/hudstatfont_A_0.png" }
+ pal 2 { file "hires/hudstatfont_A_2.png" }
+ pal 6 { file "hires/hudstatfont_A_6.png" }
+ pal 7 { file "hires/hudstatfont_A_7.png" }
+ pal 8 { file "hires/hudstatfont_A_8.png" }
+ pal 10 { file "hires/hudstatfont_A_10.png" }
+ pal 11 { file "hires/hudstatfont_A_11.png" }
+ pal 12 { file "hires/hudstatfont_A_12.png" }
+ pal 13 { file "hires/hudstatfont_A_13.png" }
+ pal 14 { file "hires/hudstatfont_A_14.png" }
+ pal 15 { file "hires/hudstatfont_A_15.png" }
+ pal 16 { file "hires/hudstatfont_A_16.png" }
+ pal 21 { file "hires/hudstatfont_A_21.png" }
+ pal 23 { file "hires/hudstatfont_A_23.png" }
+}
+texture 3105 {
+ pal 0 { file "hires/hudstatfont_B_0.png" }
+ pal 2 { file "hires/hudstatfont_B_2.png" }
+ pal 6 { file "hires/hudstatfont_B_6.png" }
+ pal 7 { file "hires/hudstatfont_B_7.png" }
+ pal 8 { file "hires/hudstatfont_B_8.png" }
+ pal 10 { file "hires/hudstatfont_B_10.png" }
+ pal 11 { file "hires/hudstatfont_B_11.png" }
+ pal 12 { file "hires/hudstatfont_B_12.png" }
+ pal 13 { file "hires/hudstatfont_B_13.png" }
+ pal 14 { file "hires/hudstatfont_B_14.png" }
+ pal 15 { file "hires/hudstatfont_B_15.png" }
+ pal 16 { file "hires/hudstatfont_B_16.png" }
+ pal 21 { file "hires/hudstatfont_B_21.png" }
+ pal 23 { file "hires/hudstatfont_B_23.png" }
+}
+texture 3106 {
+ pal 0 { file "hires/hudstatfont_C_0.png" }
+ pal 2 { file "hires/hudstatfont_C_2.png" }
+ pal 6 { file "hires/hudstatfont_C_6.png" }
+ pal 7 { file "hires/hudstatfont_C_7.png" }
+ pal 8 { file "hires/hudstatfont_C_8.png" }
+ pal 10 { file "hires/hudstatfont_C_10.png" }
+ pal 11 { file "hires/hudstatfont_C_11.png" }
+ pal 12 { file "hires/hudstatfont_C_12.png" }
+ pal 13 { file "hires/hudstatfont_C_13.png" }
+ pal 14 { file "hires/hudstatfont_C_14.png" }
+ pal 15 { file "hires/hudstatfont_C_15.png" }
+ pal 16 { file "hires/hudstatfont_C_16.png" }
+ pal 21 { file "hires/hudstatfont_C_21.png" }
+ pal 23 { file "hires/hudstatfont_C_23.png" }
+}
+texture 3107 {
+ pal 0 { file "hires/hudstatfont_D_0.png" }
+ pal 2 { file "hires/hudstatfont_D_2.png" }
+ pal 6 { file "hires/hudstatfont_D_6.png" }
+ pal 7 { file "hires/hudstatfont_D_7.png" }
+ pal 8 { file "hires/hudstatfont_D_8.png" }
+ pal 10 { file "hires/hudstatfont_D_10.png" }
+ pal 11 { file "hires/hudstatfont_D_11.png" }
+ pal 12 { file "hires/hudstatfont_D_12.png" }
+ pal 13 { file "hires/hudstatfont_D_13.png" }
+ pal 14 { file "hires/hudstatfont_D_14.png" }
+ pal 15 { file "hires/hudstatfont_D_15.png" }
+ pal 16 { file "hires/hudstatfont_D_16.png" }
+ pal 21 { file "hires/hudstatfont_D_21.png" }
+ pal 23 { file "hires/hudstatfont_D_23.png" }
+}
+texture 3108 {
+ pal 0 { file "hires/hudstatfont_E_0.png" }
+ pal 2 { file "hires/hudstatfont_E_2.png" }
+ pal 6 { file "hires/hudstatfont_E_6.png" }
+ pal 7 { file "hires/hudstatfont_E_7.png" }
+ pal 8 { file "hires/hudstatfont_E_8.png" }
+ pal 10 { file "hires/hudstatfont_E_10.png" }
+ pal 11 { file "hires/hudstatfont_E_11.png" }
+ pal 12 { file "hires/hudstatfont_E_12.png" }
+ pal 13 { file "hires/hudstatfont_E_13.png" }
+ pal 14 { file "hires/hudstatfont_E_14.png" }
+ pal 15 { file "hires/hudstatfont_E_15.png" }
+ pal 16 { file "hires/hudstatfont_E_16.png" }
+ pal 21 { file "hires/hudstatfont_E_21.png" }
+ pal 23 { file "hires/hudstatfont_E_23.png" }
+}
+texture 3109 {
+ pal 0 { file "hires/hudstatfont_F_0.png" }
+ pal 2 { file "hires/hudstatfont_F_2.png" }
+ pal 6 { file "hires/hudstatfont_F_6.png" }
+ pal 7 { file "hires/hudstatfont_F_7.png" }
+ pal 8 { file "hires/hudstatfont_F_8.png" }
+ pal 10 { file "hires/hudstatfont_F_10.png" }
+ pal 11 { file "hires/hudstatfont_F_11.png" }
+ pal 12 { file "hires/hudstatfont_F_12.png" }
+ pal 13 { file "hires/hudstatfont_F_13.png" }
+ pal 14 { file "hires/hudstatfont_F_14.png" }
+ pal 15 { file "hires/hudstatfont_F_15.png" }
+ pal 16 { file "hires/hudstatfont_F_16.png" }
+ pal 21 { file "hires/hudstatfont_F_21.png" }
+ pal 23 { file "hires/hudstatfont_F_23.png" }
+}
+texture 3110 {
+ pal 0 { file "hires/hudstatfont_G_0.png" }
+ pal 2 { file "hires/hudstatfont_G_2.png" }
+ pal 6 { file "hires/hudstatfont_G_6.png" }
+ pal 7 { file "hires/hudstatfont_G_7.png" }
+ pal 8 { file "hires/hudstatfont_G_8.png" }
+ pal 10 { file "hires/hudstatfont_G_10.png" }
+ pal 11 { file "hires/hudstatfont_G_11.png" }
+ pal 12 { file "hires/hudstatfont_G_12.png" }
+ pal 13 { file "hires/hudstatfont_G_13.png" }
+ pal 14 { file "hires/hudstatfont_G_14.png" }
+ pal 15 { file "hires/hudstatfont_G_15.png" }
+ pal 16 { file "hires/hudstatfont_G_16.png" }
+ pal 21 { file "hires/hudstatfont_G_21.png" }
+ pal 23 { file "hires/hudstatfont_G_23.png" }
+}
+texture 3111 {
+ pal 0 { file "hires/hudstatfont_H_0.png" }
+ pal 2 { file "hires/hudstatfont_H_2.png" }
+ pal 6 { file "hires/hudstatfont_H_6.png" }
+ pal 7 { file "hires/hudstatfont_H_7.png" }
+ pal 8 { file "hires/hudstatfont_H_8.png" }
+ pal 10 { file "hires/hudstatfont_H_10.png" }
+ pal 11 { file "hires/hudstatfont_H_11.png" }
+ pal 12 { file "hires/hudstatfont_H_12.png" }
+ pal 13 { file "hires/hudstatfont_H_13.png" }
+ pal 14 { file "hires/hudstatfont_H_14.png" }
+ pal 15 { file "hires/hudstatfont_H_15.png" }
+ pal 16 { file "hires/hudstatfont_H_16.png" }
+ pal 21 { file "hires/hudstatfont_H_21.png" }
+ pal 23 { file "hires/hudstatfont_H_23.png" }
+}
+texture 3112 {
+ pal 0 { file "hires/hudstatfont_I_0.png" }
+ pal 2 { file "hires/hudstatfont_I_2.png" }
+ pal 6 { file "hires/hudstatfont_I_6.png" }
+ pal 7 { file "hires/hudstatfont_I_7.png" }
+ pal 8 { file "hires/hudstatfont_I_8.png" }
+ pal 10 { file "hires/hudstatfont_I_10.png" }
+ pal 11 { file "hires/hudstatfont_I_11.png" }
+ pal 12 { file "hires/hudstatfont_I_12.png" }
+ pal 13 { file "hires/hudstatfont_I_13.png" }
+ pal 14 { file "hires/hudstatfont_I_14.png" }
+ pal 15 { file "hires/hudstatfont_I_15.png" }
+ pal 16 { file "hires/hudstatfont_I_16.png" }
+ pal 21 { file "hires/hudstatfont_I_21.png" }
+ pal 23 { file "hires/hudstatfont_I_23.png" }
+}
+texture 3113 {
+ pal 0 { file "hires/hudstatfont_J_0.png" }
+ pal 2 { file "hires/hudstatfont_J_2.png" }
+ pal 6 { file "hires/hudstatfont_J_6.png" }
+ pal 7 { file "hires/hudstatfont_J_7.png" }
+ pal 8 { file "hires/hudstatfont_J_8.png" }
+ pal 10 { file "hires/hudstatfont_J_10.png" }
+ pal 11 { file "hires/hudstatfont_J_11.png" }
+ pal 12 { file "hires/hudstatfont_J_12.png" }
+ pal 13 { file "hires/hudstatfont_J_13.png" }
+ pal 14 { file "hires/hudstatfont_J_14.png" }
+ pal 15 { file "hires/hudstatfont_J_15.png" }
+ pal 16 { file "hires/hudstatfont_J_16.png" }
+ pal 21 { file "hires/hudstatfont_J_21.png" }
+ pal 23 { file "hires/hudstatfont_J_23.png" }
+}
+texture 3114 {
+ pal 0 { file "hires/hudstatfont_K_0.png" }
+ pal 2 { file "hires/hudstatfont_K_2.png" }
+ pal 6 { file "hires/hudstatfont_K_6.png" }
+ pal 7 { file "hires/hudstatfont_K_7.png" }
+ pal 8 { file "hires/hudstatfont_K_8.png" }
+ pal 10 { file "hires/hudstatfont_K_10.png" }
+ pal 11 { file "hires/hudstatfont_K_11.png" }
+ pal 12 { file "hires/hudstatfont_K_12.png" }
+ pal 13 { file "hires/hudstatfont_K_13.png" }
+ pal 14 { file "hires/hudstatfont_K_14.png" }
+ pal 15 { file "hires/hudstatfont_K_15.png" }
+ pal 16 { file "hires/hudstatfont_K_16.png" }
+ pal 21 { file "hires/hudstatfont_K_21.png" }
+ pal 23 { file "hires/hudstatfont_K_23.png" }
+}
+texture 3115 {
+ pal 0 { file "hires/hudstatfont_L_0.png" }
+ pal 2 { file "hires/hudstatfont_L_2.png" }
+ pal 6 { file "hires/hudstatfont_L_6.png" }
+ pal 7 { file "hires/hudstatfont_L_7.png" }
+ pal 8 { file "hires/hudstatfont_L_8.png" }
+ pal 10 { file "hires/hudstatfont_L_10.png" }
+ pal 11 { file "hires/hudstatfont_L_11.png" }
+ pal 12 { file "hires/hudstatfont_L_12.png" }
+ pal 13 { file "hires/hudstatfont_L_13.png" }
+ pal 14 { file "hires/hudstatfont_L_14.png" }
+ pal 15 { file "hires/hudstatfont_L_15.png" }
+ pal 16 { file "hires/hudstatfont_L_16.png" }
+ pal 21 { file "hires/hudstatfont_L_21.png" }
+ pal 23 { file "hires/hudstatfont_L_23.png" }
+}
+texture 3116 {
+ pal 0 { file "hires/hudstatfont_M_0.png" }
+ pal 2 { file "hires/hudstatfont_M_2.png" }
+ pal 6 { file "hires/hudstatfont_M_6.png" }
+ pal 7 { file "hires/hudstatfont_M_7.png" }
+ pal 8 { file "hires/hudstatfont_M_8.png" }
+ pal 10 { file "hires/hudstatfont_M_10.png" }
+ pal 11 { file "hires/hudstatfont_M_11.png" }
+ pal 12 { file "hires/hudstatfont_M_12.png" }
+ pal 13 { file "hires/hudstatfont_M_13.png" }
+ pal 14 { file "hires/hudstatfont_M_14.png" }
+ pal 15 { file "hires/hudstatfont_M_15.png" }
+ pal 16 { file "hires/hudstatfont_M_16.png" }
+ pal 21 { file "hires/hudstatfont_M_21.png" }
+ pal 23 { file "hires/hudstatfont_M_23.png" }
+}
+texture 3117 {
+ pal 0 { file "hires/hudstatfont_N_0.png" }
+ pal 2 { file "hires/hudstatfont_N_2.png" }
+ pal 6 { file "hires/hudstatfont_N_6.png" }
+ pal 7 { file "hires/hudstatfont_N_7.png" }
+ pal 8 { file "hires/hudstatfont_N_8.png" }
+ pal 10 { file "hires/hudstatfont_N_10.png" }
+ pal 11 { file "hires/hudstatfont_N_11.png" }
+ pal 12 { file "hires/hudstatfont_N_12.png" }
+ pal 13 { file "hires/hudstatfont_N_13.png" }
+ pal 14 { file "hires/hudstatfont_N_14.png" }
+ pal 15 { file "hires/hudstatfont_N_15.png" }
+ pal 16 { file "hires/hudstatfont_N_16.png" }
+ pal 21 { file "hires/hudstatfont_N_21.png" }
+ pal 23 { file "hires/hudstatfont_N_23.png" }
+}
+texture 3118 {
+ pal 0 { file "hires/hudstatfont_O_0.png" }
+ pal 2 { file "hires/hudstatfont_O_2.png" }
+ pal 6 { file "hires/hudstatfont_O_6.png" }
+ pal 7 { file "hires/hudstatfont_O_7.png" }
+ pal 8 { file "hires/hudstatfont_O_8.png" }
+ pal 10 { file "hires/hudstatfont_O_10.png" }
+ pal 11 { file "hires/hudstatfont_O_11.png" }
+ pal 12 { file "hires/hudstatfont_O_12.png" }
+ pal 13 { file "hires/hudstatfont_O_13.png" }
+ pal 14 { file "hires/hudstatfont_O_14.png" }
+ pal 15 { file "hires/hudstatfont_O_15.png" }
+ pal 16 { file "hires/hudstatfont_O_16.png" }
+ pal 21 { file "hires/hudstatfont_O_21.png" }
+ pal 23 { file "hires/hudstatfont_O_23.png" }
+}
+texture 3119 {
+ pal 0 { file "hires/hudstatfont_P_0.png" }
+ pal 2 { file "hires/hudstatfont_P_2.png" }
+ pal 6 { file "hires/hudstatfont_P_6.png" }
+ pal 7 { file "hires/hudstatfont_P_7.png" }
+ pal 8 { file "hires/hudstatfont_P_8.png" }
+ pal 10 { file "hires/hudstatfont_P_10.png" }
+ pal 11 { file "hires/hudstatfont_P_11.png" }
+ pal 12 { file "hires/hudstatfont_P_12.png" }
+ pal 13 { file "hires/hudstatfont_P_13.png" }
+ pal 14 { file "hires/hudstatfont_P_14.png" }
+ pal 15 { file "hires/hudstatfont_P_15.png" }
+ pal 16 { file "hires/hudstatfont_P_16.png" }
+ pal 21 { file "hires/hudstatfont_P_21.png" }
+ pal 23 { file "hires/hudstatfont_P_23.png" }
+}
+texture 3120 {
+ pal 0 { file "hires/hudstatfont_Q_0.png" }
+ pal 2 { file "hires/hudstatfont_Q_2.png" }
+ pal 6 { file "hires/hudstatfont_Q_6.png" }
+ pal 7 { file "hires/hudstatfont_Q_7.png" }
+ pal 8 { file "hires/hudstatfont_Q_8.png" }
+ pal 10 { file "hires/hudstatfont_Q_10.png" }
+ pal 11 { file "hires/hudstatfont_Q_11.png" }
+ pal 12 { file "hires/hudstatfont_Q_12.png" }
+ pal 13 { file "hires/hudstatfont_Q_13.png" }
+ pal 14 { file "hires/hudstatfont_Q_14.png" }
+ pal 15 { file "hires/hudstatfont_Q_15.png" }
+ pal 16 { file "hires/hudstatfont_Q_16.png" }
+ pal 21 { file "hires/hudstatfont_Q_21.png" }
+ pal 23 { file "hires/hudstatfont_Q_23.png" }
+}
+texture 3121 {
+ pal 0 { file "hires/hudstatfont_R_0.png" }
+ pal 2 { file "hires/hudstatfont_R_2.png" }
+ pal 6 { file "hires/hudstatfont_R_6.png" }
+ pal 7 { file "hires/hudstatfont_R_7.png" }
+ pal 8 { file "hires/hudstatfont_R_8.png" }
+ pal 10 { file "hires/hudstatfont_R_10.png" }
+ pal 11 { file "hires/hudstatfont_R_11.png" }
+ pal 12 { file "hires/hudstatfont_R_12.png" }
+ pal 13 { file "hires/hudstatfont_R_13.png" }
+ pal 14 { file "hires/hudstatfont_R_14.png" }
+ pal 15 { file "hires/hudstatfont_R_15.png" }
+ pal 16 { file "hires/hudstatfont_R_16.png" }
+ pal 21 { file "hires/hudstatfont_R_21.png" }
+ pal 23 { file "hires/hudstatfont_R_23.png" }
+}
+texture 3122 {
+ pal 0 { file "hires/hudstatfont_S_0.png" }
+ pal 2 { file "hires/hudstatfont_S_2.png" }
+ pal 6 { file "hires/hudstatfont_S_6.png" }
+ pal 7 { file "hires/hudstatfont_S_7.png" }
+ pal 8 { file "hires/hudstatfont_S_8.png" }
+ pal 10 { file "hires/hudstatfont_S_10.png" }
+ pal 11 { file "hires/hudstatfont_S_11.png" }
+ pal 12 { file "hires/hudstatfont_S_12.png" }
+ pal 13 { file "hires/hudstatfont_S_13.png" }
+ pal 14 { file "hires/hudstatfont_S_14.png" }
+ pal 15 { file "hires/hudstatfont_S_15.png" }
+ pal 16 { file "hires/hudstatfont_S_16.png" }
+ pal 21 { file "hires/hudstatfont_S_21.png" }
+ pal 23 { file "hires/hudstatfont_S_23.png" }
+}
+texture 3123 {
+ pal 0 { file "hires/hudstatfont_T_0.png" }
+ pal 2 { file "hires/hudstatfont_T_2.png" }
+ pal 6 { file "hires/hudstatfont_T_6.png" }
+ pal 7 { file "hires/hudstatfont_T_7.png" }
+ pal 8 { file "hires/hudstatfont_T_8.png" }
+ pal 10 { file "hires/hudstatfont_T_10.png" }
+ pal 11 { file "hires/hudstatfont_T_11.png" }
+ pal 12 { file "hires/hudstatfont_T_12.png" }
+ pal 13 { file "hires/hudstatfont_T_13.png" }
+ pal 14 { file "hires/hudstatfont_T_14.png" }
+ pal 15 { file "hires/hudstatfont_T_15.png" }
+ pal 16 { file "hires/hudstatfont_T_16.png" }
+ pal 21 { file "hires/hudstatfont_T_21.png" }
+ pal 23 { file "hires/hudstatfont_T_23.png" }
+}
+texture 3124 {
+ pal 0 { file "hires/hudstatfont_U_0.png" }
+ pal 2 { file "hires/hudstatfont_U_2.png" }
+ pal 6 { file "hires/hudstatfont_U_6.png" }
+ pal 7 { file "hires/hudstatfont_U_7.png" }
+ pal 8 { file "hires/hudstatfont_U_8.png" }
+ pal 10 { file "hires/hudstatfont_U_10.png" }
+ pal 11 { file "hires/hudstatfont_U_11.png" }
+ pal 12 { file "hires/hudstatfont_U_12.png" }
+ pal 13 { file "hires/hudstatfont_U_13.png" }
+ pal 14 { file "hires/hudstatfont_U_14.png" }
+ pal 15 { file "hires/hudstatfont_U_15.png" }
+ pal 16 { file "hires/hudstatfont_U_16.png" }
+ pal 21 { file "hires/hudstatfont_U_21.png" }
+ pal 23 { file "hires/hudstatfont_U_23.png" }
+}
+texture 3125 {
+ pal 0 { file "hires/hudstatfont_V_0.png" }
+ pal 2 { file "hires/hudstatfont_V_2.png" }
+ pal 6 { file "hires/hudstatfont_V_6.png" }
+ pal 7 { file "hires/hudstatfont_V_7.png" }
+ pal 8 { file "hires/hudstatfont_V_8.png" }
+ pal 10 { file "hires/hudstatfont_V_10.png" }
+ pal 11 { file "hires/hudstatfont_V_11.png" }
+ pal 12 { file "hires/hudstatfont_V_12.png" }
+ pal 13 { file "hires/hudstatfont_V_13.png" }
+ pal 14 { file "hires/hudstatfont_V_14.png" }
+ pal 15 { file "hires/hudstatfont_V_15.png" }
+ pal 16 { file "hires/hudstatfont_V_16.png" }
+ pal 21 { file "hires/hudstatfont_V_21.png" }
+ pal 23 { file "hires/hudstatfont_V_23.png" }
+}
+texture 3126 {
+ pal 0 { file "hires/hudstatfont_W_0.png" }
+ pal 2 { file "hires/hudstatfont_W_2.png" }
+ pal 6 { file "hires/hudstatfont_W_6.png" }
+ pal 7 { file "hires/hudstatfont_W_7.png" }
+ pal 8 { file "hires/hudstatfont_W_8.png" }
+ pal 10 { file "hires/hudstatfont_W_10.png" }
+ pal 11 { file "hires/hudstatfont_W_11.png" }
+ pal 12 { file "hires/hudstatfont_W_12.png" }
+ pal 13 { file "hires/hudstatfont_W_13.png" }
+ pal 14 { file "hires/hudstatfont_W_14.png" }
+ pal 15 { file "hires/hudstatfont_W_15.png" }
+ pal 16 { file "hires/hudstatfont_W_16.png" }
+ pal 21 { file "hires/hudstatfont_W_21.png" }
+ pal 23 { file "hires/hudstatfont_W_23.png" }
+}
+texture 3127 {
+ pal 0 { file "hires/hudstatfont_X_0.png" }
+ pal 2 { file "hires/hudstatfont_X_2.png" }
+ pal 6 { file "hires/hudstatfont_X_6.png" }
+ pal 7 { file "hires/hudstatfont_X_7.png" }
+ pal 8 { file "hires/hudstatfont_X_8.png" }
+ pal 10 { file "hires/hudstatfont_X_10.png" }
+ pal 11 { file "hires/hudstatfont_X_11.png" }
+ pal 12 { file "hires/hudstatfont_X_12.png" }
+ pal 13 { file "hires/hudstatfont_X_13.png" }
+ pal 14 { file "hires/hudstatfont_X_14.png" }
+ pal 15 { file "hires/hudstatfont_X_15.png" }
+ pal 16 { file "hires/hudstatfont_X_16.png" }
+ pal 21 { file "hires/hudstatfont_X_21.png" }
+ pal 23 { file "hires/hudstatfont_X_23.png" }
+}
+texture 3128 {
+ pal 0 { file "hires/hudstatfont_Y_0.png" }
+ pal 2 { file "hires/hudstatfont_Y_2.png" }
+ pal 6 { file "hires/hudstatfont_Y_6.png" }
+ pal 7 { file "hires/hudstatfont_Y_7.png" }
+ pal 8 { file "hires/hudstatfont_Y_8.png" }
+ pal 10 { file "hires/hudstatfont_Y_10.png" }
+ pal 11 { file "hires/hudstatfont_Y_11.png" }
+ pal 12 { file "hires/hudstatfont_Y_12.png" }
+ pal 13 { file "hires/hudstatfont_Y_13.png" }
+ pal 14 { file "hires/hudstatfont_Y_14.png" }
+ pal 15 { file "hires/hudstatfont_Y_15.png" }
+ pal 16 { file "hires/hudstatfont_Y_16.png" }
+ pal 21 { file "hires/hudstatfont_Y_21.png" }
+ pal 23 { file "hires/hudstatfont_Y_23.png" }
+}
+texture 3129 {
+ pal 0 { file "hires/hudstatfont_Z_0.png" }
+ pal 2 { file "hires/hudstatfont_Z_2.png" }
+ pal 6 { file "hires/hudstatfont_Z_6.png" }
+ pal 7 { file "hires/hudstatfont_Z_7.png" }
+ pal 8 { file "hires/hudstatfont_Z_8.png" }
+ pal 10 { file "hires/hudstatfont_Z_10.png" }
+ pal 11 { file "hires/hudstatfont_Z_11.png" }
+ pal 12 { file "hires/hudstatfont_Z_12.png" }
+ pal 13 { file "hires/hudstatfont_Z_13.png" }
+ pal 14 { file "hires/hudstatfont_Z_14.png" }
+ pal 15 { file "hires/hudstatfont_Z_15.png" }
+ pal 16 { file "hires/hudstatfont_Z_16.png" }
+ pal 21 { file "hires/hudstatfont_Z_21.png" }
+ pal 23 { file "hires/hudstatfont_Z_23.png" }
+}
+texture 3130 {
+ pal 0 { file "hires/hudstatfont_[_0.png" }
+ pal 2 { file "hires/hudstatfont_[_2.png" }
+ pal 6 { file "hires/hudstatfont_[_6.png" }
+ pal 7 { file "hires/hudstatfont_[_7.png" }
+ pal 8 { file "hires/hudstatfont_[_8.png" }
+ pal 10 { file "hires/hudstatfont_[_10.png" }
+ pal 11 { file "hires/hudstatfont_[_11.png" }
+ pal 12 { file "hires/hudstatfont_[_12.png" }
+ pal 13 { file "hires/hudstatfont_[_13.png" }
+ pal 14 { file "hires/hudstatfont_[_14.png" }
+ pal 15 { file "hires/hudstatfont_[_15.png" }
+ pal 16 { file "hires/hudstatfont_[_16.png" }
+ pal 21 { file "hires/hudstatfont_[_21.png" }
+ pal 23 { file "hires/hudstatfont_[_23.png" }
+}
+texture 3131 {
+ pal 0 { file "hires/hudstatfont_bksl_0.png" }
+ pal 2 { file "hires/hudstatfont_bksl_2.png" }
+ pal 6 { file "hires/hudstatfont_bksl_6.png" }
+ pal 7 { file "hires/hudstatfont_bksl_7.png" }
+ pal 8 { file "hires/hudstatfont_bksl_8.png" }
+ pal 10 { file "hires/hudstatfont_bksl_10.png" }
+ pal 11 { file "hires/hudstatfont_bksl_11.png" }
+ pal 12 { file "hires/hudstatfont_bksl_12.png" }
+ pal 13 { file "hires/hudstatfont_bksl_13.png" }
+ pal 14 { file "hires/hudstatfont_bksl_14.png" }
+ pal 15 { file "hires/hudstatfont_bksl_15.png" }
+ pal 16 { file "hires/hudstatfont_bksl_16.png" }
+ pal 21 { file "hires/hudstatfont_bksl_21.png" }
+ pal 23 { file "hires/hudstatfont_bksl_23.png" }
+}
+texture 3132 {
+ pal 0 { file "hires/hudstatfont_]_0.png" }
+ pal 2 { file "hires/hudstatfont_]_2.png" }
+ pal 6 { file "hires/hudstatfont_]_6.png" }
+ pal 7 { file "hires/hudstatfont_]_7.png" }
+ pal 8 { file "hires/hudstatfont_]_8.png" }
+ pal 10 { file "hires/hudstatfont_]_10.png" }
+ pal 11 { file "hires/hudstatfont_]_11.png" }
+ pal 12 { file "hires/hudstatfont_]_12.png" }
+ pal 13 { file "hires/hudstatfont_]_13.png" }
+ pal 14 { file "hires/hudstatfont_]_14.png" }
+ pal 15 { file "hires/hudstatfont_]_15.png" }
+ pal 16 { file "hires/hudstatfont_]_16.png" }
+ pal 21 { file "hires/hudstatfont_]_21.png" }
+ pal 23 { file "hires/hudstatfont_]_23.png" }
+}
+texture 3133 {
+ pal 0 { file "hires/hudstatfont_^_0.png" }
+ pal 2 { file "hires/hudstatfont_^_2.png" }
+ pal 6 { file "hires/hudstatfont_^_6.png" }
+ pal 7 { file "hires/hudstatfont_^_7.png" }
+ pal 8 { file "hires/hudstatfont_^_8.png" }
+ pal 10 { file "hires/hudstatfont_^_10.png" }
+ pal 11 { file "hires/hudstatfont_^_11.png" }
+ pal 12 { file "hires/hudstatfont_^_12.png" }
+ pal 13 { file "hires/hudstatfont_^_13.png" }
+ pal 14 { file "hires/hudstatfont_^_14.png" }
+ pal 15 { file "hires/hudstatfont_^_15.png" }
+ pal 16 { file "hires/hudstatfont_^_16.png" }
+ pal 21 { file "hires/hudstatfont_^_21.png" }
+ pal 23 { file "hires/hudstatfont_^_23.png" }
+}
+texture 3134 {
+ pal 0 { file "hires/hudstatfont___0.png" }
+ pal 2 { file "hires/hudstatfont___2.png" }
+ pal 6 { file "hires/hudstatfont___6.png" }
+ pal 7 { file "hires/hudstatfont___7.png" }
+ pal 8 { file "hires/hudstatfont___8.png" }
+ pal 10 { file "hires/hudstatfont___10.png" }
+ pal 11 { file "hires/hudstatfont___11.png" }
+ pal 12 { file "hires/hudstatfont___12.png" }
+ pal 13 { file "hires/hudstatfont___13.png" }
+ pal 14 { file "hires/hudstatfont___14.png" }
+ pal 15 { file "hires/hudstatfont___15.png" }
+ pal 16 { file "hires/hudstatfont___16.png" }
+ pal 21 { file "hires/hudstatfont___21.png" }
+ pal 23 { file "hires/hudstatfont___23.png" }
+}
+texture 3135 {
+ pal 0 { file "hires/hudstatfont_._0.png" }
+ pal 2 { file "hires/hudstatfont_._2.png" }
+ pal 6 { file "hires/hudstatfont_._6.png" }
+ pal 7 { file "hires/hudstatfont_._7.png" }
+ pal 8 { file "hires/hudstatfont_._8.png" }
+ pal 10 { file "hires/hudstatfont_._10.png" }
+ pal 11 { file "hires/hudstatfont_._11.png" }
+ pal 12 { file "hires/hudstatfont_._12.png" }
+ pal 13 { file "hires/hudstatfont_._13.png" }
+ pal 14 { file "hires/hudstatfont_._14.png" }
+ pal 15 { file "hires/hudstatfont_._15.png" }
+ pal 16 { file "hires/hudstatfont_._16.png" }
+ pal 21 { file "hires/hudstatfont_._21.png" }
+ pal 23 { file "hires/hudstatfont_._23.png" }
+}
+texture 3162 {
+ pal 0 { file "hires/hudstatfont_{_0.png" }
+ pal 2 { file "hires/hudstatfont_{_2.png" }
+ pal 6 { file "hires/hudstatfont_{_6.png" }
+ pal 7 { file "hires/hudstatfont_{_7.png" }
+ pal 8 { file "hires/hudstatfont_{_8.png" }
+ pal 10 { file "hires/hudstatfont_{_10.png" }
+ pal 11 { file "hires/hudstatfont_{_11.png" }
+ pal 12 { file "hires/hudstatfont_{_12.png" }
+ pal 13 { file "hires/hudstatfont_{_13.png" }
+ pal 14 { file "hires/hudstatfont_{_14.png" }
+ pal 15 { file "hires/hudstatfont_{_15.png" }
+ pal 16 { file "hires/hudstatfont_{_16.png" }
+ pal 21 { file "hires/hudstatfont_{_21.png" }
+ pal 23 { file "hires/hudstatfont_{_23.png" }
+}
+texture 3163 {
+ pal 0 { file "hires/hudstatfont_vl_0.png" }
+ pal 2 { file "hires/hudstatfont_vl_2.png" }
+ pal 6 { file "hires/hudstatfont_vl_6.png" }
+ pal 7 { file "hires/hudstatfont_vl_7.png" }
+ pal 8 { file "hires/hudstatfont_vl_8.png" }
+ pal 10 { file "hires/hudstatfont_vl_10.png" }
+ pal 11 { file "hires/hudstatfont_vl_11.png" }
+ pal 12 { file "hires/hudstatfont_vl_12.png" }
+ pal 13 { file "hires/hudstatfont_vl_13.png" }
+ pal 14 { file "hires/hudstatfont_vl_14.png" }
+ pal 15 { file "hires/hudstatfont_vl_15.png" }
+ pal 16 { file "hires/hudstatfont_vl_16.png" }
+ pal 21 { file "hires/hudstatfont_vl_21.png" }
+ pal 23 { file "hires/hudstatfont_vl_23.png" }
+}
+texture 3164 {
+ pal 0 { file "hires/hudstatfont_}_0.png" }
+ pal 2 { file "hires/hudstatfont_}_2.png" }
+ pal 6 { file "hires/hudstatfont_}_6.png" }
+ pal 7 { file "hires/hudstatfont_}_7.png" }
+ pal 8 { file "hires/hudstatfont_}_8.png" }
+ pal 10 { file "hires/hudstatfont_}_10.png" }
+ pal 11 { file "hires/hudstatfont_}_11.png" }
+ pal 12 { file "hires/hudstatfont_}_12.png" }
+ pal 13 { file "hires/hudstatfont_}_13.png" }
+ pal 14 { file "hires/hudstatfont_}_14.png" }
+ pal 15 { file "hires/hudstatfont_}_15.png" }
+ pal 16 { file "hires/hudstatfont_}_16.png" }
+ pal 21 { file "hires/hudstatfont_}_21.png" }
+ pal 23 { file "hires/hudstatfont_}_23.png" }
+}
+texture 3165 {
+ pal 0 { file "hires/hudstatfont_^_0.png" }
+ pal 2 { file "hires/hudstatfont_^_2.png" }
+ pal 6 { file "hires/hudstatfont_^_6.png" }
+ pal 7 { file "hires/hudstatfont_^_7.png" }
+ pal 8 { file "hires/hudstatfont_^_8.png" }
+ pal 10 { file "hires/hudstatfont_^_10.png" }
+ pal 11 { file "hires/hudstatfont_^_11.png" }
+ pal 12 { file "hires/hudstatfont_^_12.png" }
+ pal 13 { file "hires/hudstatfont_^_13.png" }
+ pal 14 { file "hires/hudstatfont_^_14.png" }
+ pal 15 { file "hires/hudstatfont_^_15.png" }
+ pal 16 { file "hires/hudstatfont_^_16.png" }
+ pal 21 { file "hires/hudstatfont_^_21.png" }
+ pal 23 { file "hires/hudstatfont_^_23.png" }
+}
+texture 9400 { pal 0 { file "hires/loading.png" orig_sizex 428 orig_sizey 200 } }
+texture 9401 { pal 0 { file "hires/hudfin1920.png" orig_sizex 428 orig_sizey 34 } }
+texture 9402 { pal 0 { file "hires/bigfont_..png" orig_sizex 5 orig_sizey 15 } }
+texture 9403 { pal 0 { file "hires/bigfont_,.png" orig_sizex 5 orig_sizey 15  } }
+texture 9404 { pal 0 { file "hires/bigfont_!.png" orig_sizex 5 orig_sizey 15  } }
+texture 9405 { pal 0 { file "hires/bigfont_qst.png" orig_sizex 12 orig_sizey 15 } }
+texture 9406 { pal 0 { file "hires/bigfont_;.png" orig_sizex 5 orig_sizey 15 } }
+texture 9407 { pal 0 { file "hires/bigfont_dd.png" orig_sizex 5 orig_sizey 15 } }
+texture 9408 { pal 0 { file "hires/bigfont_sl.png" orig_sizex 15 orig_sizey 15 } }
+texture 9409 { pal 0 { file "hires/bigfont_%.png" orig_sizex 15 orig_sizey 15 } }
+texture 9410 { pal 0 { file "hires/hudfin1920_mp.png" orig_sizex 428 orig_sizey 34 } }
+texture 9411 { pal 0 { file "hires/mp_background.png" orig_sizex 428 orig_sizey 200 } }
+texture 9412 { pal 0 { file "hires/mp_bar.png" orig_sizex 428 orig_sizey 8 } }
+texture 9422 { pal 0 { file "hires/bigfont_'.png" orig_sizex 5 orig_sizey 15 } }
+texture 9429 { pal 0 { file "hires/bigfont_-.png" orig_sizex 12 orig_sizey 15 } }
+texture 9430 { pal 0 { file "hires/bigfont_0.png" orig_sizex 12 orig_sizey 15 } }
+texture 9431 { pal 0 { file "hires/bigfont_1.png" orig_sizex 6 orig_sizey 15 } }
+texture 9432 { pal 0 { file "hires/bigfont_2.png" orig_sizex 12 orig_sizey 15 } }
+texture 9433 { pal 0 { file "hires/bigfont_3.png" orig_sizex 12 orig_sizey 15 } }
+texture 9434 { pal 0 { file "hires/bigfont_4.png" orig_sizex 12 orig_sizey 15 } }
+texture 9435 { pal 0 { file "hires/bigfont_5.png" orig_sizex 12 orig_sizey 15 } }
+texture 9436 { pal 0 { file "hires/bigfont_6.png" orig_sizex 12 orig_sizey 15 } }
+texture 9437 { pal 0 { file "hires/bigfont_7.png" orig_sizex 12 orig_sizey 15 } }
+texture 9438 { pal 0 { file "hires/bigfont_8.png" orig_sizex 12 orig_sizey 15 } }
+texture 9439 { pal 0 { file "hires/bigfont_9.png" orig_sizex 13 orig_sizey 15 } }
+texture 9440 { pal 0 { file "hires/bigfont_A.png" orig_sizex 15 orig_sizey 15 } }
+texture 9441 { pal 0 { file "hires/bigfont_B.png" orig_sizex 15 orig_sizey 15 } }
+texture 9442 { pal 0 { file "hires/bigfont_C.png" orig_sizex 15 orig_sizey 15 } }
+texture 9443 { pal 0 { file "hires/bigfont_D.png" orig_sizex 15 orig_sizey 15 } }
+texture 9444 { pal 0 { file "hires/bigfont_E.png" orig_sizex 15 orig_sizey 15 } }
+texture 9445 { pal 0 { file "hires/bigfont_F.png" orig_sizex 15 orig_sizey 15 } }
+texture 9446 { pal 0 { file "hires/bigfont_G.png" orig_sizex 15 orig_sizey 15 } }
+texture 9447 { pal 0 { file "hires/bigfont_H.png" orig_sizex 15 orig_sizey 15 } }
+texture 9448 { pal 0 { file "hires/bigfont_I.png" orig_sizex 8 orig_sizey 15 } }
+texture 9449 { pal 0 { file "hires/bigfont_J.png" orig_sizex 15 orig_sizey 15 } }
+texture 9450 { pal 0 { file "hires/bigfont_K.png" orig_sizex 15 orig_sizey 15 } }
+texture 9451 { pal 0 { file "hires/bigfont_L.png" orig_sizex 15 orig_sizey 15 } }
+texture 9452 { pal 0 { file "hires/bigfont_M.png" orig_sizex 15 orig_sizey 15 } }
+texture 9453 { pal 0 { file "hires/bigfont_N.png" orig_sizex 15 orig_sizey 15 } }
+texture 9454 { pal 0 { file "hires/bigfont_O.png" orig_sizex 15 orig_sizey 15 } }
+texture 9455 { pal 0 { file "hires/bigfont_P.png" orig_sizex 15 orig_sizey 15 } }
+texture 9456 { pal 0 { file "hires/bigfont_Q.png" orig_sizex 15 orig_sizey 15 } }
+texture 9457 { pal 0 { file "hires/bigfont_R.png" orig_sizex 15 orig_sizey 15 } }
+texture 9458 { pal 0 { file "hires/bigfont_S.png" orig_sizex 15 orig_sizey 15 } }
+texture 9459 { pal 0 { file "hires/bigfont_T.png" orig_sizex 12 orig_sizey 15 } }
+texture 9460 { pal 0 { file "hires/bigfont_U.png" orig_sizex 15 orig_sizey 15 } }
+texture 9461 { pal 0 { file "hires/bigfont_V.png" orig_sizex 15 orig_sizey 15 } }
+texture 9462 { pal 0 { file "hires/bigfont_W.png" orig_sizex 15 orig_sizey 15 } }
+texture 9463 { pal 0 { file "hires/bigfont_X.png" orig_sizex 15 orig_sizey 15 } }
+texture 9464 { pal 0 { file "hires/bigfont_Y.png" orig_sizex 15 orig_sizey 15 } }
+texture 9465 { pal 0 { file "hires/bigfont_Z.png" orig_sizex 15 orig_sizey 15 } }

@@ -99,6 +99,10 @@ input recsync[RECSYNCBUFSIZ];
 long avgfvel, avgsvel, avgavel, avghorz, avgbits;
 
 int32 xmousescale = 10, ymousescale = 10;
+int32 xgamepadscale = 10, ygamepadscale = 10;
+
+int32 gamepadrumble = 1;
+int32 movestickleft = 1;
 
 input inputfifo[MOVEFIFOSIZ][MAXPLAYERS];
 

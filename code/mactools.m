@@ -130,6 +130,10 @@ void Sys_CenterWindow(int width, int height) {
     
 }
 
+void Sys_OutputDebugString (const char *string) {
+    puts( string );
+}
+
 void Sys_DPrintf(const char *format, ...) {
     va_list args;
     va_start(args, format);

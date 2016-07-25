@@ -255,6 +255,10 @@ extern long usemodels, usehightile;
 
 extern char *engineerrstr;
 
+#if SDL_MAJOR_VERSION==2
+EXTERN SDL_Window *sdl_window;
+#endif
+
 /*************************************************************************
 POSITION VARIABLES:
 

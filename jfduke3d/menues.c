@@ -5156,137 +5156,159 @@ void endanimvol43(long fr)
     }
 }
 
+static void upload_texture( GLuint texture_id, GLsizei width, GLsizei height, const GLvoid *pixels ) {
+    glBindTexture( GL_TEXTURE_2D, texture_id );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+}
 
-void playanm(char *fn, char t) {
-
-    {
-        uint8_t *animbuf, *palptr;
-        int32_t i,j,length=0, numframes=0;
-        int32_t handle = -1;
-        int32_t frametime = 0;
-        extern int noanim;
-        if (noanim) return;
-        
-        // t parameter:
-        //
-        // 1: cineov2
-        // 2: cineov3
-        // 3: RADLOGO
-        // 4: DUKETEAM
-        // 5: logo
-        // 6: vol41a
-        // 7: vol42a
-        // 8: vol4e1
-        // 9: vol43a
-        // 10: vol4e2
-        // 11: vol4e3
-        
-        if (t != 7 && t != 9 && t != 10 && t != 11)
-            KB_FlushKeyboardQueue();
-        
-        if( KB_KeyWaiting() )
-        {
-            FX_StopAllSounds();
-            goto end_anim;
-        }
-        
-        handle = kopen4load(fn, 0);
-        if (handle == -1)
-            return;
-        
-        length = kfilelength(handle);
-        if (length == 0)
-        {
-            OSD_Printf("Warning: skipping playback of empty ANM file \"%s\".\n", fn);
-            goto end_anim;
-        }
-        
-        walock[TILE_ANIM] = 219+t;
-        
-        allocache((intptr_t *)&animbuf, length+1, &walock[TILE_ANIM]);
-        
-        tilesizx[TILE_ANIM] = 200;
-        tilesizy[TILE_ANIM] = 320;
-        
-        kread(handle, animbuf, length);
-        kclose(handle);
-        
-        if (ANIM_LoadAnim(animbuf, length) < 0)
-        {
-            // XXX: ANM_LoadAnim() still checks less than the bare minimum,
-            // e.g. ANM file could still be too small and not contain any frames.
-            OSD_Printf("Error: malformed ANM file \"%s\".\n", fn);
-            goto end_anim;
-        }
-        
-        numframes = ANIM_NumFrames();
-        
-        palptr = ANIM_GetPalette();
-        for(i=0;i<256;i++)
-        {
-			j = i*3;
-            tempbuf[j+0] = (palptr[j+0]>>2);
-            tempbuf[j+1] = (palptr[j+1]>>2);
-            tempbuf[j+2] = (palptr[j+2]>>2);
-        }
-        
-		setgamepalette(&ps[myconnectindex],tempbuf,2);
-                
-        ototalclock = totalclock + 10;
-        
-        for (i=1; i<numframes; i++)
-        {
-            if (i > 4 && totalclock > frametime + 60)
-            {
-                OSD_Printf("WARNING: slowdown in %s, skipping playback\n", fn);
-                goto end_anim;
-            }
-            
-            frametime = totalclock;
-            
-            waloff[TILE_ANIM] = (intptr_t)ANIM_DrawFrame(i);
-            invalidatetile(TILE_ANIM, 0, 1<<4);  // JBF 20031228
-            
-            if( KB_KeyWaiting() )
-                goto end_anim;
-
-            while (totalclock < ototalclock)
-            {
-                handleevents(); getpackets();
-                
-                if (KB_KeyWaiting())
-                    goto end_anim;
-                
-                rotatesprite(0<<16,0<<16,65536L,512,TILE_ANIM,0,0,2+4+8+16+64,0,0,xdim-1,ydim-1);
-                nextpage();
-            }
-            
-            if (t == 10) ototalclock += 14;
-            else if (t == 9) ototalclock += 10;
-            else if (t == 7) ototalclock += 18;
-            else if (t == 6) ototalclock += 14;
-            else if (t == 5) ototalclock += 9;
-            else if (ud.volume_number == 3) ototalclock += 10;
-            else if (ud.volume_number == 2) ototalclock += 10;
-            else if (ud.volume_number == 1) ototalclock += 18;
-            else                           ototalclock += 10;
-            
-            if (t == 8) endanimvol41(i);
-            else if (t == 10) endanimvol42(i);
-            else if (t == 11) endanimvol43(i);
-            else if (t == 9) intro42animsounds(i);
-            else if (t == 7) intro4animsounds(i);
-            else if (t == 6) first4animsounds(i);
-            else if (t == 5) logoanimsounds(i);
-            else if (t < 4) endanimsounds(i);
-        }
-        
-    end_anim:
-        KB_FlushKeyboardQueue();
-        ANIM_FreeAnim();
-        walock[TILE_ANIM] = 1;
+static void pal_to_rgba( int n, unsigned char *src, unsigned char *pal, unsigned char *dst ) {
+    int i;
+    for ( i = 0; i != n; i++ ) {
+        dst[i*4 + 0] = pal[src[i]*3 + 0];
+        dst[i*4 + 1] = pal[src[i]*3 + 1];
+        dst[i*4 + 2] = pal[src[i]*3 + 2];
+        dst[i*4 + 3] = 255;
     }
+}
+
+void playanm( char *fn, char t ) {
+    uint8_t *animbuf = NULL, *palptr;
+    int32_t i, length = 0, numframes = 0;
+    int32_t handle = -1;
+    int32_t frametime = 0;
+    int32_t stop = 0;
+
+    static unsigned char tiledata[320 * 200 * 4];
+    GLuint tiletex = 0;
+    uint8_t *frameptr;
+
+    if ( t != 7 && t != 9 && t != 10 && t != 11 ) {
+        KB_FlushKeyboardQueue();
+    }
+
+    if( KB_KeyWaiting() ) {
+        FX_StopAllSounds();
+        goto end_anim;
+    }
+
+    handle = kopen4load( fn, 0 );
+    if ( handle == -1 ) {
+        return;
+    }
+
+    length = kfilelength( handle );
+    if ( length == 0 ) {
+        OSD_Printf( "Warning: skipping playback of empty ANM file \"%s\".\n", fn );
+        stop = 1;
+        goto end_anim;
+    }
+
+
+    walock[TILE_ANIM] = 219 + t;
+    animbuf = malloc( length + 1 );
+    tilesizx[TILE_ANIM] = 200;
+    tilesizy[TILE_ANIM] = 320;
+
+    kread( handle, animbuf, length );
+    kclose( handle );
+
+    if ( ANIM_LoadAnim( animbuf, length ) < 0 ) {
+        OSD_Printf( "Error: malformed ANM file \"%s\".\n", fn );
+        goto end_anim;
+    }
+
+    glPushAttrib( GL_ALL_ATTRIB_BITS );
     
+    dnInitVideoPlayback( DN_VIDEO_4_3 );
+    bglGenTextures( 1, &tiletex );
+
+    numframes = ANIM_NumFrames();
+
+    palptr = ANIM_GetPalette();
+    ototalclock = totalclock + 10;
+
+    for ( i = 1; i < numframes; i++ ) {
+        if ( i > 4 && totalclock > frametime + 60 ) {
+            OSD_Printf( "WARNING: slowdown in %s, skipping playback\n", fn );
+            break;
+        }
+
+        frametime = totalclock;
+        frameptr = ANIM_DrawFrame(i);
+
+        if ( KB_KeyWaiting() ) {
+            break;
+        }
+
+        while ( totalclock < ototalclock ) {
+            handleevents();
+            getpackets();
+
+            if ( KB_KeyWaiting() ) {
+                break;
+            }
+
+            bglClear( GL_COLOR_BUFFER_BIT );
+            pal_to_rgba( 320 * 200, frameptr, palptr, tiledata );
+            upload_texture( tiletex, 320, 200, tiledata );
+            dnDrawQuad( tiletex );
+            dnSwapBuffers();
+        }
+
+        if ( t == 10 ) {
+            ototalclock += 14;
+        } else if ( t == 9 ) {
+            ototalclock += 10;
+        } else if ( t == 7 ) { 
+            ototalclock += 18;
+        } else if ( t == 6 ) {
+            ototalclock += 14;
+        } else if ( t == 5 ) {
+            ototalclock += 9;
+        } else if ( ud.volume_number == 3 ) {
+            ototalclock += 10;
+        } else if ( ud.volume_number == 2 ) {
+            ototalclock += 10;
+        } else if ( ud.volume_number == 1 ) {
+            ototalclock += 18;
+        } else {
+            ototalclock += 10;
+        }
+
+        if ( t == 8 ) {
+            endanimvol41( i );
+        } else if ( t == 10 ) {
+            endanimvol42( i );
+        } else if ( t == 11 ) {
+            endanimvol43( i );
+        } else if ( t == 9 ) {
+            intro42animsounds( i );
+        } else if ( t == 7 ) {
+            intro4animsounds( i );
+        } else if ( t == 6 ) {
+            first4animsounds( i );
+        } else if ( t == 5 ) {
+            logoanimsounds( i );
+        } else if ( t < 4 ) {
+            endanimsounds( i );
+        }
+    }
+
+end_anim:
+    KB_FlushKeyboardQueue();
+    ANIM_FreeAnim();
+    walock[TILE_ANIM] = 1;
+    if ( animbuf != NULL ) {
+        free( animbuf );
+    }
+    if ( tiletex != 0 ) {
+        bglDeleteTextures( 1, &tiletex );
+    }
+    glPopAttrib();
 }
 
 #if 0
@@ -5296,7 +5318,7 @@ void playanm(char *fn,char t)
     long i, j, /*k,*/ length=0, numframes=0;
     int32 handle=-1;
 
-	printf("playanm: %s\n", fn);
+	OSD_Printf("playanm: %s\n", fn);
 //    return;
 
     if(t != 7 && t != 9 && t != 10 && t != 11)
@@ -5322,7 +5344,7 @@ void playanm(char *fn,char t)
         kread(handle,animbuf,length);
         kclose(handle);
 
-        ANIM_LoadAnim (animbuf);
+        ANIM_LoadAnim (animbuf,length);
         numframes = ANIM_NumFrames();
 
         palptr = ANIM_GetPalette();
@@ -5408,6 +5430,7 @@ void dnNewGame(GameDesc *gamedesc) {
         networkmode = 0;
         ud.multimode = gamedesc->numplayers;
         initmultiplayers_steam(gamedesc->own_id, gamedesc->numplayers, gamedesc->other_ids, networkmode);
+        ud.god = 0;
     } else {
         myconnectindex			= 0;
         numplayers				= 1;
@@ -5472,9 +5495,7 @@ void dnQuitGame() {
 	gameexit(" ");
 }
 
-extern int skip_next_motion;
 void dnHideMenu() {
-    skip_next_motion = 1;
 	if (ps[myconnectindex].gm & MODE_GAME) {
 		ps[myconnectindex].gm &= ~MODE_MENU;
         if(ud.multimode < 2 && ud.recstat != 2) {
@@ -5588,7 +5609,15 @@ int dnGetTile(int tile_no, int *width, int *height, void *data) {
     if (pth != NULL) {
         GLuint glpic = pth->pic[PTHPIC_BASE]->glpic;
         
+		if ( !glIsTexture( glpic ) ) {
+			OSD_Printf( "not a texture\n" );
+		}
+
         glBindTexture(GL_TEXTURE_2D, glpic);
+
+		if (glGetError() != GL_NO_ERROR){
+			OSD_Printf("bind texture error\n");
+		}
         
         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);

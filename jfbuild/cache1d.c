@@ -10,6 +10,7 @@
 #include "cache1d.h"
 #include "pragmas.h"
 #include "baselayer.h"
+#include "log.h"
 
 #include <sys/types.h> 
 #include <sys/stat.h>

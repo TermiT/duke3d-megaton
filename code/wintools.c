@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include "SDL.h"
 #include "SDL_syswm.h"
+#include "build.h"
 
 int Win32_ShowErrorMessage(const char *caption, const char *message) {
     return MessageBoxA(0, message, caption, MB_OK|MB_ICONERROR);
@@ -79,12 +80,17 @@ double Sys_GetTicks() {
 
 static
 HWND GetHwnd() {
-    SDL_SysWMinfo wmi;
-    SDL_VERSION(&wmi.version);
+    struct SDL_SysWMinfo wmInfo;
+    SDL_VERSION(&wmInfo.version);
 
-    if (SDL_GetWMInfo(&wmi) ) {
-        return (HWND)wmi.window;
-    }
+#if SDL_MAJOR_VERSION==1
+    if (SDL_GetWMInfo(&wmInfo))
+        return (HWND)wmInfo.window;
+#else
+    if (SDL_GetWindowWMInfo(sdl_window, &wmInfo) && wmInfo.subsystem == SDL_SYSWM_WINDOWS)
+        return (HWND)wmInfo.info.win.window;
+#endif
+
     return (HWND)0;
 }
 

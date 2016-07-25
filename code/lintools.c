@@ -123,6 +123,10 @@ void Sys_DPrintf(const char *format, ...) {
     va_end(args);
 }
 
+void Sys_OutputDebugString (const char *string) {
+    puts( string );
+}
+
 
 void Sys_Restart(const char *options) {
    execl("../bin/duke3d.sh", options, NULL);

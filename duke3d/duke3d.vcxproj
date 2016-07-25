@@ -1,0 +1,382 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug_CMENU|Win32">
+      <Configuration>Debug_CMENU</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_NOSTEAM|Win32">
+      <Configuration>Debug_NOSTEAM</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{0B353432-DE88-43AD-A116-DCCDB763C7D8}</ProjectGuid>
+    <RootNamespace>duke3d</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_CMENU|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_NOSTEAM|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_CMENU|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_NOSTEAM|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_NOSTEAM|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug_NOSTEAM|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug_NOSTEAM|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_CMENU|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug_CMENU|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug_CMENU|Win32'">true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/J %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)/steamworks_sdk_129a/public;$(Solutiondir)/code/rocket;$(SolutionDir)/code;$(SolutionDir)/jfduke3d;$(SolutionDir)/jfbuild;$(SolutionDir)/jfaudiolib;$(SolutionDir)/jfmact;$(SolutionDir)/thirdparty/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_DEBUG;_WINDOWS;SUPERBUILD=1;POLYMOST=1;USE_OPENGL=1;DYNAMIC_OPENGL=1;KSFORBUILD=1;RENDERTYPESDL=1;HAVE_SDL=1;ENGINE_USING_A_C=1a;NOASM=1;NOCOPYPROTECT=1;GLGUARD=0;STATIC_LIB;STEAM_OVERLAY_WORKAROUND=0;HAVE_VORBIS=1;WIDESCREEN_HACK=1;FONT_HACK=1;NOSTEAM=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>RocketCore.lib;RocketControls.lib;RocketDebugger.lib;ws2_32.lib;opengl32.lib;glu32.lib;winmm.lib;SDL2.lib;SDL2main.lib;steam_api.lib;libcmtd.lib;libcpmtd.lib;freetype2411MT_D.lib;dsound.lib;dinput.lib;ddraw.lib;dxguid.lib;dxerr.lib;oldnames.lib;libogg_static.lib;libvorbis_static.lib;libvorbisfile_static.lib;vpxmtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)/thirdparty/bin-win32/$(Configuration);$(SolutionDir)/steamworks_sdk_126/redistributable_bin;$(SolutionDir)/steamworks_sdk_126/public/steam/lib/win32;$(SolutionDir)/thirdparty/bin-win32/;$(SolutionDir)/thirdparty/sources/support/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/J %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>$(SolutionDir)/steamworks_sdk_129a/public;$(SolutionDir)/code/rocket;$(SolutionDir)/code/manymouse;$(SolutionDir)/code;$(SolutionDir)/jfduke3d;$(SolutionDir)/jfbuild;$(SolutionDir)/jfaudiolib;$(SolutionDir)/jfmact;$(SolutionDir)/thirdparty/include;$(SolutionDir)/thirdparty/dxsdk/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_WINDOWS;SUPERBUILD=1;POLYMOST=1;USE_OPENGL=1;DYNAMIC_OPENGL=1;KSFORBUILD=1;RENDERTYPESDL=1;HAVE_SDL=1;ENGINE_USING_A_C=1a;NOASM=1;NOCOPYPROTECT=1;GLGUARD=0;STEAM_OVERLAY_WORKAROUND=1;HAVE_VORBIS=1;WIDESCREEN_HACK=1;FONT_HACK=1;_NDEBUG=1;NDEBUG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>CrashRpt1402.lib;dsound.lib;RocketCore.lib;RocketControls.lib;RocketDebugger.lib;ws2_32.lib;opengl32.lib;glu32.lib;winmm.lib;SDL2.lib;SDL2main.lib;steam_api.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;vpxmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)/thirdparty/bin-win32/$(Configuration);$(SolutionDir)/steamworks_sdk_129a/redistributable_bin;$(SolutionDir)/steamworks_sdk_129a/public/steam/lib/win32;$(SolutionDir)/thirdparty/bin-win32/;$(SolutionDir)/thirdparty/dxsdk/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <StackReserveSize>8000000</StackReserveSize>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_NOSTEAM|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/J %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)/steamworks_sdk_126/public/steam;$(Solutiondir)/code/rocket;$(SolutionDir)/code;$(SolutionDir)/jfduke3d;$(SolutionDir)/jfbuild;$(SolutionDir)/jfaudiolib;$(SolutionDir)/jfmact;$(SolutionDir)/thirdparty/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_DEBUG;_WINDOWS;SUPERBUILD=1;POLYMOST=1;USE_OPENGL=1;DYNAMIC_OPENGL=1;KSFORBUILD=1;RENDERTYPESDL=1;HAVE_SDL=1;ENGINE_USING_A_C=1a;NOASM=1;NOCOPYPROTECT=1;GLGUARD=0;STATIC_LIB;STEAM_OVERLAY_WORKAROUND=1;HAVE_VORBIS=1;WIDESCREEN_HACK=1;NOSTEAM=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>RocketCore.lib;RocketControls.lib;RocketDebugger.lib;ws2_32.lib;opengl32.lib;glu32.lib;winmm.lib;SDL2.lib;SDL2main.lib;steam_api.lib;libcmtd.lib;libcpmtd.lib;freetype2411MT_D.lib;dsound.lib;dinput.lib;ddraw.lib;dxguid.lib;oldnames.lib;libogg_static.lib;libvorbis_static.lib;libvorbisfile_static.lib;vpxmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)/thirdparty/bin-win32/Debug;$(SolutionDir)/steamworks_sdk_126/redistributable_bin;$(SolutionDir)/steamworks_sdk_126/public/steam/lib/win32;$(SolutionDir)/thirdparty/sources/dxsdk/lib;$(SolutionDir)/thirdparty/sources/support/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_CMENU|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/J %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)/steamworks_sdk_122/public/steam;$(Solutiondir)/code/rocket;$(SolutionDir)/code;$(SolutionDir)/jfduke3d;$(SolutionDir)/jfbuild;$(SolutionDir)/jfaudiolib;$(SolutionDir)/jfmact;$(SolutionDir)/thirdparty/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_DEBUG;_WINDOWS;SUPERBUILD=1;POLYMOST=1;USE_OPENGL=1;DYNAMIC_OPENGL=1;KSFORBUILD=1;RENDERTYPESDL=1;HAVE_SDL=1;ENGINE_USING_A_C=1a;NOASM=1;NOCOPYPROTECT=1;GLGUARD=0;STATIC_LIB;STEAM_OVERLAY_WORKAROUND=1;HAVE_VORBIS=1;NOSTEAM=1;CLASSIC_MENU=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>RocketCore.lib;RocketControls.lib;RocketDebugger.lib;ws2_32.lib;opengl32.lib;glu32.lib;winmm.lib;SDL2.lib;SDL2main.lib;steam_api.lib;libcmtd.lib;libcpmtd.lib;freetype2411MT_D.lib;dsound.lib;dinput.lib;ddraw.lib;dxguid.lib;oldnames.lib;libogg_static.lib;libvorbis_static.lib;libvorbisfile_static.lib;vpxmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)/thirdparty/bin-win32/Debug;$(SolutionDir)/steamworks_sdk_122/redistributable_bin;$(SolutionDir)/steamworks_sdk_122/public/steam/lib/win32;$(SolutionDir)/thirdparty/sources/dxsdk/lib;$(SolutionDir)/thirdparty/sources/support/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\code\crash.h" />
+    <ClInclude Include="..\code\dnMouseInput.h" />
+    <ClInclude Include="..\code\log.h" />
+    <ClInclude Include="..\code\manymouse\manymouse.h" />
+    <ClInclude Include="..\jfmact\_control.h" />
+    <ClInclude Include="..\jfmact\_scrplib.h" />
+    <ClInclude Include="..\jfmact\animlib.h" />
+    <ClInclude Include="..\jfmact\control.h" />
+    <ClInclude Include="..\jfmact\develop.h" />
+    <ClInclude Include="..\jfmact\file_lib.h" />
+    <ClInclude Include="..\jfmact\keyboard.h" />
+    <ClInclude Include="..\jfmact\mathutil.h" />
+    <ClInclude Include="..\jfmact\mouse.h" />
+    <ClInclude Include="..\jfmact\scriplib.h" />
+    <ClInclude Include="..\jfmact\types.h" />
+    <ClInclude Include="..\jfmact\util_lib.h" />
+    <ClInclude Include="..\jfaudiolib\_midi.h" />
+    <ClInclude Include="..\jfaudiolib\_multivc.h" />
+    <ClInclude Include="..\jfaudiolib\asssys.h" />
+    <ClInclude Include="..\jfaudiolib\cd.h" />
+    <ClInclude Include="..\jfaudiolib\driver_directsound.h" />
+    <ClInclude Include="..\jfaudiolib\driver_nosound.h" />
+    <ClInclude Include="..\jfaudiolib\drivers.h" />
+    <ClInclude Include="..\jfaudiolib\dsound_oggplayer.h" />
+    <ClInclude Include="..\jfaudiolib\fx_man.h" />
+    <ClInclude Include="..\jfaudiolib\linklist.h" />
+    <ClInclude Include="..\jfaudiolib\ll_man.h" />
+    <ClInclude Include="..\jfaudiolib\midi.h" />
+    <ClInclude Include="..\jfaudiolib\midifuncs.h" />
+    <ClInclude Include="..\jfaudiolib\multivoc.h" />
+    <ClInclude Include="..\jfaudiolib\music.h" />
+    <ClInclude Include="..\jfaudiolib\OggPlayer.h" />
+    <ClInclude Include="..\jfaudiolib\pitch.h" />
+    <ClInclude Include="..\jfaudiolib\sndcards.h" />
+    <ClInclude Include="..\jfaudiolib\stdint.h" />
+    <ClInclude Include="..\jfbuild\a.h" />
+    <ClInclude Include="..\jfbuild\baselayer.h" />
+    <ClInclude Include="..\jfbuild\build.h" />
+    <ClInclude Include="..\jfbuild\cache1d.h" />
+    <ClInclude Include="..\jfbuild\common_build.h" />
+    <ClInclude Include="..\jfbuild\compat.h" />
+    <ClInclude Include="..\jfbuild\crc32.h" />
+    <ClInclude Include="..\jfbuild\dxdidf.h" />
+    <ClInclude Include="..\jfbuild\editor.h" />
+    <ClInclude Include="..\jfbuild\engine_priv.h" />
+    <ClInclude Include="..\jfbuild\glbuild.h" />
+    <ClInclude Include="..\jfbuild\glext.h" />
+    <ClInclude Include="..\jfbuild\hightile_priv.h" />
+    <ClInclude Include="..\jfbuild\kplib.h" />
+    <ClInclude Include="..\jfbuild\lz4.h" />
+    <ClInclude Include="..\jfbuild\lz4_encoder.h" />
+    <ClInclude Include="..\jfbuild\lzf.h" />
+    <ClInclude Include="..\jfbuild\lzfP.h" />
+    <ClInclude Include="..\jfbuild\lzwnew.h" />
+    <ClInclude Include="..\jfbuild\md4.h" />
+    <ClInclude Include="..\jfbuild\mdsprite_priv.h" />
+    <ClInclude Include="..\jfbuild\mmulti.h" />
+    <ClInclude Include="..\jfbuild\mmultimsgs.h" />
+    <ClInclude Include="..\jfbuild\osd.h" />
+    <ClInclude Include="..\jfbuild\polymost_priv.h" />
+    <ClInclude Include="..\jfbuild\polymosttex_priv.h" />
+    <ClInclude Include="..\jfbuild\polymosttexcache.h" />
+    <ClInclude Include="..\jfbuild\pragmas.h" />
+    <ClInclude Include="..\jfbuild\scriptfile.h" />
+    <ClInclude Include="..\jfbuild\sdlayer.h" />
+    <ClInclude Include="..\jfduke3d\_functio.h" />
+    <ClInclude Include="..\jfduke3d\_rts.h" />
+    <ClInclude Include="..\jfduke3d\config.h" />
+    <ClInclude Include="..\jfduke3d\develop.h" />
+    <ClInclude Include="..\jfduke3d\duke3d.h" />
+    <ClInclude Include="..\jfduke3d\funct.h" />
+    <ClInclude Include="..\jfduke3d\function.h" />
+    <ClInclude Include="..\jfduke3d\gamedefs.h" />
+    <ClInclude Include="..\jfduke3d\GameListSource.game.h" />
+    <ClInclude Include="..\jfduke3d\grpscan.h" />
+    <ClInclude Include="..\jfduke3d\names.h" />
+    <ClInclude Include="..\jfduke3d\osdcmds.h" />
+    <ClInclude Include="..\jfduke3d\osdfuncs.h" />
+    <ClInclude Include="..\jfduke3d\rts.h" />
+    <ClInclude Include="..\jfduke3d\soundefs.h" />
+    <ClInclude Include="..\jfduke3d\sounds.h" />
+    <ClInclude Include="..\code\crc32.h" />
+    <ClInclude Include="..\code\csteam.h" />
+    <ClInclude Include="..\code\dnAchievement.h" />
+    <ClInclude Include="..\code\dnAPI.h" />
+    <ClInclude Include="..\code\dnMulti.h" />
+    <ClInclude Include="..\code\dnSnapshot.h" />
+    <ClInclude Include="..\code\glguard.h" />
+    <ClInclude Include="..\code\gui.h" />
+    <ClInclude Include="..\code\gui_private.h" />
+    <ClInclude Include="..\code\helpers.h" />
+    <ClInclude Include="..\code\miniz.h" />
+    <ClInclude Include="..\code\playvpx\playvpx.h" />
+    <ClInclude Include="..\code\rocket\FrameAnimationDecorator.h" />
+    <ClInclude Include="..\code\rocket\FrameAnimationDecoratorInstancer.h" />
+    <ClInclude Include="..\code\rocket\PluginUtils.h" />
+    <ClInclude Include="..\code\rocket\RocketAnimationPlugin.h" />
+    <ClInclude Include="..\code\rocket\RocketMenuPlugin.h" />
+    <ClInclude Include="..\code\rocket\ShellFileInterface.h" />
+    <ClInclude Include="..\code\rocket\ShellOpenGL.h" />
+    <ClInclude Include="..\code\rocket\ShellRenderInterfaceOpenGL.h" />
+    <ClInclude Include="..\code\rocket\ShellSystemInterface.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\code\crash.cpp" />
+    <ClCompile Include="..\code\dnMouseInput.c" />
+    <ClCompile Include="..\code\log.cpp" />
+    <ClCompile Include="..\code\manymouse\linux_evdev.c" />
+    <ClCompile Include="..\code\manymouse\macosx_hidmanager.c" />
+    <ClCompile Include="..\code\manymouse\macosx_hidutilities.c" />
+    <ClCompile Include="..\code\manymouse\manymouse.c" />
+    <ClCompile Include="..\code\manymouse\windows_wminput.c" />
+    <ClCompile Include="..\code\manymouse\x11_xinput2.c" />
+    <ClCompile Include="..\jfmact\animlib.c" />
+    <ClCompile Include="..\jfmact\control.c" />
+    <ClCompile Include="..\jfmact\file_lib.c" />
+    <ClCompile Include="..\jfmact\keyboard.c" />
+    <ClCompile Include="..\jfmact\mathutil.c" />
+    <ClCompile Include="..\jfmact\mouse.c" />
+    <ClCompile Include="..\jfmact\scriplib.c" />
+    <ClCompile Include="..\jfmact\util_lib.c" />
+    <ClCompile Include="..\jfaudiolib\asssys.c" />
+    <ClCompile Include="..\jfaudiolib\cd.c" />
+    <ClCompile Include="..\jfaudiolib\driver_directsound.c" />
+    <ClCompile Include="..\jfaudiolib\driver_nosound.c" />
+    <ClCompile Include="..\jfaudiolib\drivers.c" />
+    <ClCompile Include="..\jfaudiolib\dsound_oggplayer.cpp" />
+    <ClCompile Include="..\jfaudiolib\fx_man.c" />
+    <ClCompile Include="..\jfaudiolib\midi.c" />
+    <ClCompile Include="..\jfaudiolib\mix.c" />
+    <ClCompile Include="..\jfaudiolib\mixst.c" />
+    <ClCompile Include="..\jfaudiolib\multivoc.c" />
+    <ClCompile Include="..\jfaudiolib\music.c" />
+    <ClCompile Include="..\jfaudiolib\OggPlayer.cpp" />
+    <ClCompile Include="..\jfaudiolib\pitch.c" />
+    <ClCompile Include="..\jfaudiolib\vorbis.c" />
+    <ClCompile Include="..\jfbuild\a-c.c" />
+    <ClCompile Include="..\jfbuild\baselayer.c" />
+    <ClCompile Include="..\jfbuild\cache1d.c" />
+    <ClCompile Include="..\jfbuild\common_build.c" />
+    <ClCompile Include="..\jfbuild\compat.c" />
+    <ClCompile Include="..\jfbuild\crc32.c" />
+    <ClCompile Include="..\jfbuild\defs.c" />
+    <ClCompile Include="..\jfbuild\engine.c" />
+    <ClCompile Include="..\jfbuild\glbuild.c" />
+    <ClCompile Include="..\jfbuild\hightile.c" />
+    <ClCompile Include="..\jfbuild\kplib.c" />
+    <ClCompile Include="..\jfbuild\lz4.c" />
+    <ClCompile Include="..\jfbuild\lzf_c.c" />
+    <ClCompile Include="..\jfbuild\lzf_d.c" />
+    <ClCompile Include="..\jfbuild\lzwnew.c" />
+    <ClCompile Include="..\jfbuild\md4.c" />
+    <ClCompile Include="..\jfbuild\mdsprite.c" />
+    <ClCompile Include="..\jfbuild\mmulti_steam.c" />
+    <ClCompile Include="..\jfbuild\osd.c" />
+    <ClCompile Include="..\jfbuild\polymost.c" />
+    <ClCompile Include="..\jfbuild\polymosttex.c" />
+    <ClCompile Include="..\jfbuild\polymosttexcache.c" />
+    <ClCompile Include="..\jfbuild\pragmas.c" />
+    <ClCompile Include="..\jfbuild\scriptfile.c" />
+    <ClCompile Include="..\jfbuild\sdlayer.c" />
+    <ClCompile Include="..\jfbuild\smalltextfont.c" />
+    <ClCompile Include="..\jfbuild\textfont.c" />
+    <ClCompile Include="..\jfduke3d\actors.c" />
+    <ClCompile Include="..\jfduke3d\build_icon.c" />
+    <ClCompile Include="..\jfduke3d\config.c" />
+    <ClCompile Include="..\jfduke3d\game.c" />
+    <ClCompile Include="..\jfduke3d\gamedef.c" />
+    <ClCompile Include="..\jfduke3d\global.c" />
+    <ClCompile Include="..\jfduke3d\grpscan.c" />
+    <ClCompile Include="..\jfduke3d\menues.c" />
+    <ClCompile Include="..\jfduke3d\osdcmds.c" />
+    <ClCompile Include="..\jfduke3d\osdfuncs.c" />
+    <ClCompile Include="..\jfduke3d\player.c" />
+    <ClCompile Include="..\jfduke3d\premap.c" />
+    <ClCompile Include="..\jfduke3d\rts.c" />
+    <ClCompile Include="..\jfduke3d\sector.c" />
+    <ClCompile Include="..\jfduke3d\sounds.c" />
+    <ClCompile Include="..\jfduke3d\testcd.c" />
+    <ClCompile Include="..\jfduke3d\winbits.c" />
+    <ClCompile Include="..\code\base64.c" />
+    <ClCompile Include="..\code\csteam.cpp" />
+    <ClCompile Include="..\code\dnAchievement.cpp" />
+    <ClCompile Include="..\code\dnAPI.cpp" />
+    <ClCompile Include="..\code\dnAPI_globals.c" />
+    <ClCompile Include="..\code\dnMulti.cpp" />
+    <ClCompile Include="..\code\dnSnapshot.cpp" />
+    <ClCompile Include="..\code\glguard.cpp" />
+    <ClCompile Include="..\code\gui.cpp" />
+    <ClCompile Include="..\code\gui_private.cpp" />
+    <ClCompile Include="..\code\helpers.cpp" />
+    <ClCompile Include="..\code\playvpx\playvpx.cpp" />
+    <ClCompile Include="..\code\wintools.c" />
+    <ClCompile Include="..\code\rocket\FrameAnimationDecorator.cpp" />
+    <ClCompile Include="..\code\rocket\FrameAnimationDectoratorInstancer.cpp" />
+    <ClCompile Include="..\code\rocket\PluginUtils.cpp" />
+    <ClCompile Include="..\code\rocket\RocketAnimationPlugin.cpp" />
+    <ClCompile Include="..\code\rocket\RocketMenuPlugin.cpp" />
+    <ClCompile Include="..\code\rocket\ShellFileInterface.cpp" />
+    <ClCompile Include="..\code\rocket\ShellRenderInterfaceOpenGL.cpp" />
+    <ClCompile Include="..\code\rocket\ShellSystemInterface.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="resource.RES" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

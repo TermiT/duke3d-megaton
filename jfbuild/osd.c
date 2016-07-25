@@ -708,7 +708,11 @@ static inline void linefeed(void)
 	if (osdlines < osdmaxlines) osdlines++;
 }
 
-#if defined(_DEBUG) && defined(WIN32)
+#if defined( _DEBUG ) && defined( WIN32 ) && !defined( WIN32_PRINTF )
+#define WIN32_PRINTF 1
+#endif
+
+#if defined( WIN32_PRINTF )
 void __stdcall OutputDebugStringA(char *lpOutputString);
 #endif
 
@@ -725,7 +729,7 @@ void OSD_Printf(const char *fmt, ...)
 
 	if (osdlog) Bfputs(tmpstr, osdlog);
 
-#if defined(_DEBUG) && defined(WIN32)
+#if defined( WIN32_PRINTF )
 	OutputDebugStringA(tmpstr);
 #endif
 

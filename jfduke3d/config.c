@@ -397,8 +397,8 @@ void CONFIG_ReadKeys( void )
                 keyname1,
                 keyname2
                 );
-               key1 = SDLK_UNKNOWN;
-               key2 = SDLK_UNKNOWN;
+               key1 = SDL_SCANCODE_UNKNOWN;
+               key2 = SDL_SCANCODE_UNKNOWN;
                if (keyname1[0])
                {
                    key1 = dnGetKeyByName( keyname1 );
@@ -720,6 +720,24 @@ int32 CONFIG_ReadSetup( void )
     else
         ymousescale = clamp(ymousescale, 1, 20);
 
+    
+    SCRIPT_GetNumber(scripthandle, "Controls", "GamepadScaleX", &xgamepadscale);
+    if (xgamepadscale == 0)
+        xgamepadscale = 10;
+    else
+        xgamepadscale = clamp(xgamepadscale, 1, 20);
+    
+    SCRIPT_GetNumber(scripthandle, "Controls", "GamepadScaleY", &ygamepadscale);
+    if (ygamepadscale == 0)
+        ygamepadscale = 10;
+    else
+        ygamepadscale = clamp(ygamepadscale, 1, 20);
+    
+    SCRIPT_GetNumber(scripthandle, "Controls", "GamepadRumble", &gamepadrumble);
+    SCRIPT_GetNumber(scripthandle, "Controls", "MoveStickLeft", &movestickleft);
+
+    
+    
 	//SCRIPT_GetNumber( scripthandle, "Controls","GameMouseAiming",(int32 *)&ps[0].aim_mode);	// dupe of below (?)
 	ps[0].aim_mode = ud.mouseaiming;
 	SCRIPT_GetNumber( scripthandle, "Controls","AimingFlag",(int32 *)&myaimmode);	// (if toggle mode) gives state
@@ -879,6 +897,12 @@ void CONFIG_WriteSetup( void )
     SCRIPT_PutNumber(scripthandle, "Controls", "MouseScaleX", xmousescale,false,false);
     SCRIPT_PutNumber(scripthandle, "Controls", "MouseScaleY", ymousescale,false,false);
 
+    SCRIPT_PutNumber(scripthandle, "Controls", "GamepadScaleX", xgamepadscale,false,false);
+    SCRIPT_PutNumber(scripthandle, "Controls", "GamepadScaleY", ygamepadscale,false,false);
+    
+    SCRIPT_PutNumber(scripthandle, "Controls", "GamepadRumble", gamepadrumble,false,false);
+    SCRIPT_PutNumber(scripthandle, "Controls", "MoveStickLeft", movestickleft,false,false);
+    
 
 	for (dummy=0;dummy<MAXJOYBUTTONS;dummy++) {
 		Bsprintf(buf,"JoystickButton%ld",dummy);
@@ -953,8 +977,13 @@ void dnDetectVideoMode() {
     int width, height;
     if (ScreenWidth == 0) {
         Sys_GetScreenSize(&width, &height);
-        ScreenWidth = width;
-        ScreenHeight = height;
+        if (width >= 2880 && height >= 1800) {
+            ScreenWidth = 1920;
+            ScreenHeight = 1080;
+        } else {
+            ScreenWidth = width;
+            ScreenHeight = height;
+        }
         ScreenBPP = 32;
         ScreenMode = 1;
         #ifdef  __APPLE__

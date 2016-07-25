@@ -406,7 +406,7 @@ int		Bclosedir(BDIR *dir);
 # define Bmemchr memchr
 # define Bmemset memset
 # define Bmemcmp memcmp
-# define Bprintf printf
+# define Bprintf Log_Printf
 # define Bsprintf sprintf
 # ifdef _MSC_VER
 #  define Bsnprintf _snprintf

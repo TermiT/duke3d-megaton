@@ -27,6 +27,8 @@ struct RocketMenuDelegate {
     virtual void DidClearItem(Rocket::Core::Element *menu_item) = 0;
     
     virtual void DidRefreshItem(Rocket::Core::Element *menu_item) = 0;
+    
+    virtual void DidResetItem(Rocket::Core::Element *menu_item) = 0;
 
     virtual void DidRequestKey(Rocket::Core::Element *menu_item, int slot) = 0;
     
@@ -40,6 +42,7 @@ enum ItemAction {
 	ItemActionRight,
     ItemActionClear,
     ItemActionRefresh,
+    ItemActionReset,
 };
 
 class RocketMenuPlugin: public Rocket::Core::Plugin, public Rocket::Core::EventListener {
@@ -136,6 +139,8 @@ public:
     virtual void ClearMenuItem(Rocket::Core::Element *menu_item);
     virtual void SetupMenuItem(Rocket::Core::Element *element);
     virtual void RefreshMenuItem(Rocket::Core::Element *menu_item);
+    virtual void ResetMenuItem(Rocket::Core::Element *menu_item);
+
     
     virtual void UpdateFocus(Rocket::Core::Context *context);
     

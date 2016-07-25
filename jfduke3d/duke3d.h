@@ -421,6 +421,9 @@ extern long scaredfallz;
 extern char buf[1024]; //My own generic input buffer
 
 extern int32 xmousescale, ymousescale;
+extern int32 xgamepadscale, ygamepadscale;
+extern int32 gamepadrumble;
+extern int32 movestickleft;
     
 extern char fta_quotes[NUMOFFIRSTTIMEACTIVE][64];
 extern char scantoasc[128],ready2send;

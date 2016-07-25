@@ -2,7 +2,7 @@
 // for the Build Engine
 // by Jonathon Fowler (jf@jonof.id.au)
 //
-// Use SDL1.2 from http://www.libsdl.org
+// Use SDL from http://www.libsdl.org
 
 #define WIN32_LEAN_AND_MEAN
 #include <stdlib.h>
@@ -28,29 +28,20 @@
 
 #include "csteam.h"
 #include "dnAPI.h"
+#include "dnMouseInput.h"
 
 #include "dnSnapshot.h"
 #include "lz4.h"
 #include "mmulti.h"
+#include "log.h"
+#include "crash.h"
 
+#if 0
 static snapshot_t snapshot0 = { 0 };
 static snapshot_t snapshot1 = { 0 };
 
 static int snapshot_number = 0;
-
-#if 1
-
-typedef struct {
-    double x, y;
-} vector2;
-
-vector2 pointer = { 0, 0 };
-vector2 sensitivity = { 10.0, 13.0 };
-vector2 max_velocity = { 1000.0, 1000.0 };
-
 #endif
-
-int skip_next_motion = 0;
 
 int startwin_open(void) { return 0; }
 int startwin_close(void) { return 0; }
@@ -60,6 +51,11 @@ int startwin_settitle(const char *s) { s=s; return 0; }
 int startwin_run(void) {
     return 1;
 }
+
+#define GP_GET_AXIS(AXIS)  SDL_GameControllerGetAxis(gamepad, AXIS)
+#define GP_GET_BUTTON(BUTTON) SDL_GameControllerGetButton(gamepad, BUTTON)
+#define GP_AXIS_DEADZONE   0.27
+#define GP_AXIS_MAX_VALUE  32767
 
 #define SURFACE_FLAGS	(SDL_SWSURFACE|SDL_HWPALETTE|SDL_HWACCEL)
 
@@ -72,8 +68,10 @@ extern long app_main(long argc, char *argv[]);
 
 char quitevent=0, appactive=1;
 
-// video
-static SDL_Surface *sdl_surface;
+static SDL_Surface *sdl_buffersurface=NULL;
+static SDL_Palette *sdl_palptr=NULL;
+// static SDL_Window *sdl_window=NULL;
+static SDL_GLContext sdl_context=NULL;
 long xres=-1, yres=-1, bpp=0, fullscreen=0, bytesperline, imageSize;
 long frameplace=0, lockcount=0;
 char modechange=1;
@@ -96,13 +94,13 @@ long mousex=0,mousey=0,mouseb=0;
 long *joyaxis = NULL, joyb=0, *joyhat = NULL;
 char joyisgamepad=0, joynumaxes=0, joynumbuttons=0, joynumhats=0;
 long joyaxespresent=0;
-
+int gamepadButtonPressed = 0;
 
 void (*keypresscallback)(long,long) = 0;
 void (*mousepresscallback)(long,long) = 0;
 void (*joypresscallback)(long,long) = 0;
 
-static unsigned char keytranslation[SDLK_LAST];
+static char keytranslation[SDL_NUM_SCANCODES];
 static int buildkeytranslationtable(void);
 
 //static SDL_Surface * loadtarga(const char *fn);		// for loading the icon
@@ -117,7 +115,9 @@ int osx_ynbox(char* name, char* buf){
     return 1;
 }
 
-
+#ifdef _WIN32
+extern int Win32_ShowErrorMessage(const char *, const char *);
+#endif
 
 int wm_msgbox(char *name, char *fmt, ...)
 {
@@ -127,6 +127,9 @@ int wm_msgbox(char *name, char *fmt, ...)
 	va_start(va,fmt);
 	vsprintf(buf,fmt,va);
 	va_end(va);
+	
+	Log_Puts( buf );
+	Log_Puts( "\n" );
 
 #if defined(__APPLE__)
 	return osx_msgbox(name, buf);
@@ -134,10 +137,17 @@ int wm_msgbox(char *name, char *fmt, ...)
 	if (gtkbuild_msgbox(name, buf) >= 0) return 1;
 #elif defined _WIN32
 	return Win32_ShowErrorMessage(name, buf);
+#else
+    // Replace all tab chars with spaces because the hand-rolled SDL message
+    // box diplays the former as N/L instead of whitespace.
+    {
+        int32_t i;
+        for (i=0; i<(int32_t)sizeof(buf); i++)
+            if (buf[i] == '\t')
+                buf[i] = ' ';
+    }
+    return SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, name, buf, NULL);
 #endif
-	puts(buf);
-	puts("   (press Enter to continue)");
-	getchar();
 
 	return 0;
 }
@@ -171,8 +181,7 @@ void wm_setapptitle(char *name)
 		Bstrncpy(apptitle, name, sizeof(apptitle)-1);
 		apptitle[ sizeof(apptitle)-1 ] = 0;
 	}
-
-	SDL_WM_SetCaption(apptitle, NULL);
+    SDL_SetWindowTitle(sdl_window, apptitle);
 	startwin_settitle(apptitle);
 }
 
@@ -187,14 +196,17 @@ void wm_setapptitle(char *name)
 //
 //
 
-
-
-
-
+void app_atexit( void ) {
+	CrashHandler_Free();
+}
 
 int main(int argc, char *argv[])
 {
 	int r;
+	
+	CrashHandler_Init();
+	
+	atexit( &app_atexit );
 	
 	if (!CSTEAM_Init()) {
 		wm_msgbox("Error", "Could not initialize Steam. Please check that your Steam client is up and running.");
@@ -220,15 +232,16 @@ int main(int argc, char *argv[])
 	return r;
 }
 
-
 //
 // initsystem() -- init SDL systems
 //
 int initsystem(void)
 {
-	const SDL_version *linked = SDL_Linked_Version();
 	SDL_version compiled;
-	char drvname[32];
+
+    SDL_version linked_;
+    const SDL_version *linked = &linked_;
+    SDL_GetVersion(&linked_);
 
 	SDL_VERSION(&compiled);
 
@@ -246,8 +259,7 @@ int initsystem(void)
 		return -1;
 	}
 
-    SDL_WM_GrabInput(SDL_GRAB_ON);
-    SDL_ShowCursor(SDL_DISABLE);
+    grabmouse(1);
 	atexit(uninitsystem);
 
 	frameplace = 0;
@@ -269,15 +281,17 @@ int initsystem(void)
 		//icon = loadtarga("icon.tga");
 		icon = loadappicon();
 		if (icon) {
-			SDL_WM_SetIcon(icon, 0);
-			SDL_FreeSurface(icon);
+            SDL_SetWindowIcon(sdl_window, icon);
 		}
 	}
 #endif
 */
 
-	if (SDL_VideoDriverName(drvname, 32))
-		initprintf("Using \"%s\" video driver\n", drvname);
+    {
+        const char *drvname = SDL_GetVideoDriver(0);
+        if (drvname)
+            initprintf("Using \"%s\" video driver\n", drvname);
+    }
 
 	// dump a quick summary of the graphics hardware
 #ifdef DEBUGGINGAIDS
@@ -308,6 +322,8 @@ void uninitsystem(void)
 	uninitmouse();
 	uninittimer();
 
+    
+
 	SDL_Quit();
 
 #ifdef USE_OPENGL
@@ -324,15 +340,18 @@ void initprintf(const char *f, ...)
 	va_list va;
 	char buf[1024];
 	
+#if 0
 	va_start(va, f);
 	vprintf(f,va);
 	va_end(va);
-
+#endif
+	
 	va_start(va, f);
 	Bvsnprintf(buf, 1024, f, va);
 	va_end(va);
 	OSD_Printf(buf);
 
+	Log_Puts( buf );
 	startwin_puts(buf);
 	startwin_idle(NULL);
 }
@@ -364,53 +383,154 @@ void debugprintf(const char *f, ...)
 //
 
 static char mouseacquired=0,moustat=0;
-static long joyblast=0;
-static SDL_Joystick *joydev = NULL;
+SDL_GameController *gamepad = NULL;
+SDL_Haptic *haptic = NULL;
+void closegamepad(void) {
+    if (gamepad != NULL) {
+        SDL_GameControllerClose(gamepad);
+        gamepad = NULL;
+    }    
+}
+
+void getgamepad(void) {
+	int i;
+    extern int nogamepad;
+    if (nogamepad) return;
+    closegamepad();
+    for (i = 0; i < SDL_NumJoysticks(); ++i) {
+        if (SDL_IsGameController(i)) {
+            gamepad = SDL_GameControllerOpen(i);
+            if (gamepad) {
+                char const * name = SDL_GameControllerName(gamepad);
+                printf("Gamepad found \"%s\"\n", name);
+                break;
+            } else {
+                fprintf(stderr, "Could not open game gamepad %i: %s\n", i, SDL_GetError());
+            }
+        }
+    }
+    if (gamepad != NULL) {
+        if (SDL_NumHaptics() > 0) {
+            haptic = SDL_HapticOpen(0);
+            if (SDL_HapticRumbleSupported(haptic)) {
+                SDL_HapticRumbleInit(haptic);
+            } else {
+                SDL_HapticClose(haptic);
+                haptic = NULL;
+            }
+
+        }
+    }
+}
+
+
+//Temporary replacment for SDL_GameControllerAddMappingsFromRW for 2.0.1
+#define GameControllerAddMappingsFromFile(file)   GameControllerAddMappingsFromRW(SDL_RWFromFile(file, "rb"), 1)
+#define CONTROLLER_PLATFORM_FIELD "platform:"
+int GameControllerAddMappingsFromRW( SDL_RWops * rw, int freerw )
+{
+    const char *platform = SDL_GetPlatform();
+    int controllers = 0;
+    char *buf, *line, *line_end, *tmp, *comma, line_platform[64];
+    size_t db_size, platform_len;
+    
+    if (rw == NULL) {
+        return SDL_SetError("Invalid RWops");
+    }
+    db_size = (size_t)SDL_RWsize(rw);
+    
+    buf = (char *)SDL_malloc(db_size + 1);
+    if (buf == NULL) {
+        if (freerw) {
+            SDL_RWclose(rw);
+        }
+        return SDL_SetError("Could allocate space to not read DB into memory");
+    }
+    
+    if (SDL_RWread(rw, buf, db_size, 1) != 1) {
+        if (freerw) {
+            SDL_RWclose(rw);
+        }
+        SDL_free(buf);
+        return SDL_SetError("Could not read DB");
+    }
+    
+    if (freerw) {
+        SDL_RWclose(rw);
+    }
+    
+    buf[db_size] = '\0';
+    line = buf;
+    
+    while (line < buf + db_size) {
+        line_end = SDL_strchr( line, '\n' );
+        if (line_end != NULL) {
+            *line_end = '\0';
+        }
+        else {
+            line_end = buf + db_size;
+        }
+        
+        /* Extract and verify the platform */
+        tmp = SDL_strstr(line, CONTROLLER_PLATFORM_FIELD);
+        if ( tmp != NULL ) {
+            tmp += SDL_strlen(CONTROLLER_PLATFORM_FIELD);
+            comma = SDL_strchr(tmp, ',');
+            if (comma != NULL) {
+                platform_len = comma - tmp + 1;
+                if (platform_len + 1 < SDL_arraysize(line_platform)) {
+                    SDL_strlcpy(line_platform, tmp, platform_len);
+                    if(SDL_strncasecmp(line_platform, platform, platform_len) == 0
+                       && SDL_GameControllerAddMapping(line) > 0) {
+                        controllers++;
+                    }
+                }
+            }
+        }
+        
+        line = line_end + 1;
+    }
+    
+    SDL_free(buf);
+    return controllers;
+}
+
+
 
 //
 // initinput() -- init input system
 //
+
+
 int initinput(void)
 {
-	int i,j;
+	int i;
 	
 #ifdef __APPLE__
 	// force OS X to operate in >1 button mouse mode so that LMB isn't adulterated
 	if (!getenv("SDL_HAS3BUTTONMOUSE")) putenv("SDL_HAS3BUTTONMOUSE=1");
 #endif
 	
-	if (SDL_EnableKeyRepeat(250, 30)) initprintf("Error enabling keyboard repeat.\n");
 	inputdevices = 1|2;	// keyboard (1) and mouse (2)
 	mouseacquired = 0;
 
-	SDL_EnableUNICODE(1);	// let's hope this doesn't hit us too hard
-
 	memset(keynames,0,sizeof(keynames));
-	for (i=0; i<SDLK_LAST; i++) {
-		if (!keytranslation[i]) continue;
-		strncpy((char *)keynames[ keytranslation[i] ], SDL_GetKeyName(i), sizeof(keynames[i])-1);
-	}
 
-	if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK)) {
-		i = SDL_NumJoysticks();
-		initprintf("%d joystick(s) found\n",i);
-		for (j=0;j<i;j++) initprintf("  %d. %s\n", j+1, SDL_JoystickName(j));
-		joydev = SDL_JoystickOpen(0);
-		if (joydev) {
-			SDL_JoystickEventState(SDL_ENABLE);
-			inputdevices |= 4;
-
-			joynumaxes    = SDL_JoystickNumAxes(joydev);
-			//joynumbuttons = min(32,SDL_JoystickNumButtons(joydev));
-			joynumhats    = SDL_JoystickNumHats(joydev);
-			initprintf("Joystick 1 has %d axes, %d buttons, and %d hat(s).\n",
-				joynumaxes,joynumbuttons,joynumhats);
-
-			joyaxis = (long *)Bcalloc(joynumaxes, sizeof(long));
-			joyhat = (long *)Bcalloc(joynumhats, sizeof(long));
-		}
-	}
-
+    for (i=0; i<SDL_NUM_SCANCODES; i++)
+    {
+        if (!keytranslation[i]) continue;
+        strncpy((char *)keynames[ keytranslation[i] ], SDL_GetKeyName(SDL_SCANCODE_TO_KEYCODE(i)), sizeof(keynames[i]));
+    }    
+    
+    SDL_Init(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
+    GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
+    
+#if defined( _WIN32 )
+    SDL_GameControllerAddMapping("88880803000000000000504944564944,PS3 Controller,a:b2,b:b1,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b4,leftstick:b9,lefttrigger:b6,leftx:a0,lefty:a1,rightshoulder:b5,rightstick:b10,righttrigger:b7,rightx:a3,righty:a4,start:b11,x:b3,y:b0,platform:Windows");
+    SDL_GameControllerAddMapping("4c056802000000000000504944564944,PS3 Controller,a:b14,b:b13,back:b0,dpdown:b7,dpleft:b8,dpright:b5,dpup:b4,guide:b16,leftshoulder:b10,leftstick:b1,lefttrigger:b8,leftx:a0,lefty:a1,rightshoulder:b11,rightstick:b2,righttrigger:b9,rightx:a2,righty:a3,start:b3,x:b12,y:b15,platform:Windows");
+    SDL_GameControllerAddMapping("25090500000000000000504944564944,PS3 DualShock,a:b2,b:b1,back:b9,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:,leftshoulder:b6,leftstick:b10,lefttrigger:b4,leftx:a0,lefty:a1,rightshoulder:b7,rightstick:b11,righttrigger:b5,rightx:a2,righty:a3,start:b8,x:b3,y:b0,platform:Windows");
+#endif
+    getgamepad();
 	return 0;
 }
 
@@ -420,11 +540,12 @@ int initinput(void)
 void uninitinput(void)
 {
 	uninitmouse();
-
-	if (joydev) {
-		SDL_JoystickClose(joydev);
-		joydev = NULL;
+	if(haptic != NULL) {
+		SDL_HapticClose(haptic);
 	}
+//    if (gamepad != NULL) {
+//        SDL_GameControllerClose(gamepad);
+//    }
 }
 
 const unsigned char *getkeyname(int num)
@@ -472,12 +593,12 @@ unsigned char bgetchar(void)
 
 int bkbhit(void)
 {
-	return (keyasciififoplc != keyasciififoend);
+	return (keyasciififoplc != keyasciififoend) || gamepadButtonPressed;
 }
 
 void bflushchars(void)
 {
-	keyasciififoplc = keyasciififoend = 0;
+	keyasciififoplc = keyasciififoend = gamepadButtonPressed = 0;
 }
 
 
@@ -491,55 +612,54 @@ void setjoypresscallback(void (*callback)(long, long)) { joypresscallback = call
 //
 // initmouse() -- init mouse input
 //
-int initmouse(void)
-{
-	moustat=1;
-	grabmouse(1);
+int initmouse( void ) {
+    dnInitMouseInput();
+	moustat = 1;
+	grabmouse( 1 );
 	return 0;
 }
 
 //
 // uninitmouse() -- uninit mouse input
 //
-void uninitmouse(void)
-{
-	grabmouse(0);
-	moustat=0;
+void uninitmouse( void ) {
+	grabmouse( 0 );
+	moustat = 0;
+    dnShutdownMouseInput();
 }
 
+void dnGrabMouse( int grab ) {
+    SDL_SetWindowGrab( sdl_window, (SDL_bool)grab );
+#if !defined( _WIN32 )
+    SDL_SetRelativeMouseMode( (SDL_bool)grab );
+#else
+    if ( grab ) {
+        if ( dnGetNumberOfMouseInputDevices() == 0 ) {
+            SDL_SetRelativeMouseMode( SDL_TRUE );
+        }
+    } else {
+        SDL_SetRelativeMouseMode( SDL_FALSE );
+    }
+#endif
+}
 
 //
 // grabmouse() -- show/hide mouse cursor
 //
-void grabmouse(char a)
-{
-	if (appactive && moustat) {
-		if (a != mouseacquired) {
-#ifndef DEBUGGINGAIDS
-			SDL_GrabMode g;
-			
-			g = SDL_WM_GrabInput( a ? SDL_GRAB_ON : SDL_GRAB_OFF );
-			mouseacquired = (g == SDL_GRAB_ON);
-
-			SDL_ShowCursor(mouseacquired ? SDL_DISABLE : SDL_ENABLE);
-#else
-			mouseacquired = a;
-#endif
-		}
-	} else {
-		mouseacquired = a;
-	}
-	mousex = mousey = 0;
-	pointer.x = pointer.y = 0;
+void grabmouse(char a) {
+    mouseacquired = 1;
+    mousex = mousey = 0;
 }
-
 
 //
 // readmousexy() -- return mouse motion information
 //
 void readmousexy(long *x, long *y)
 {
-	if (!mouseacquired || !appactive || !moustat) { *x = *y = 0; return; }
+	if (!mouseacquired || !appactive || !moustat) {
+        *x = *y = 0;
+        return;
+    }
 	*x = mousex;
 	*y = mousey;
 	mousex = mousey = 0;
@@ -726,102 +846,168 @@ static int sortmodes(const struct validmode_t *a, const struct validmode_t *b)
 
 	return 0;
 }
+
 static char modeschecked=0;
-void getvalidmodes(void)
-{
-	static int cdepths[] = {
-#ifdef USE_SWRENDER
-		8,
-#endif
-#ifdef USE_OPENGL
-		24,32,
-#endif
-		0 };
-	static int defaultres[][2] = {
-		{1280,1024},{1280,960},{1280,800},{1280,720},{1152,864},{1024,768},{800,600},{640,480},
-		{640,400},{512,384},{480,360},{400,300},{320,240},{320,200},{0,0}
-	};
-	SDL_Rect **modes;
-	SDL_PixelFormat pf = { NULL, 8, 1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0 };
-	int i, j, maxx=0, maxy=0;
 
-	if (modeschecked) return;
+#if 1
 
-	validmodecnt=0;
-	initprintf("Detecting video modes:\n");
-
-#define ADDMODE(x,y,c,f) if (validmodecnt<MAXVALIDMODES) { \
-	int mn; \
-	for(mn=0;mn<validmodecnt;mn++) \
-		if (validmode[mn].xdim==x && validmode[mn].ydim==y && \
-		    validmode[mn].bpp==c  && validmode[mn].fs==f) break; \
-	if (mn==validmodecnt) { \
-		validmode[validmodecnt].xdim=x; \
-		validmode[validmodecnt].ydim=y; \
-		validmode[validmodecnt].bpp=c; \
-		validmode[validmodecnt].fs=f; \
-		validmodecnt++; \
-		initprintf("  - %dx%d %d-bit %s\n", x, y, c, (f&1)?"fullscreen":"windowed"); \
-	} \
-}	
-
-#define CHECK(w,h) if ((w < maxx) && (h < maxy))
-
-	// do fullscreen modes first
-	for (j=0; cdepths[j]; j++) {
-#ifdef USE_OPENGL
-		if (nogl && cdepths[j] > 8) continue;
-#endif
-		pf.BitsPerPixel = cdepths[j];
-		pf.BytesPerPixel = cdepths[j] >> 3;
-
-		modes = SDL_ListModes(&pf, SURFACE_FLAGS | SDL_FULLSCREEN);
-		if (modes == (SDL_Rect **)0) {
-			if (cdepths[j] > 8) cdepths[j] = -1;
-			continue;
+static
+int addmode( int w, int h, int bpp, int fs ) {
+	int i;
+	struct validmode_t *mode;
+	for ( i = 0; i < validmodecnt; i++ ) {
+		mode = &validmode[i];
+		if ( mode->xdim == w && mode->ydim == h && mode->bpp == bpp && mode->fs == fs ) {
+			break;
 		}
+	}
+	if ( i == validmodecnt ) {
+		mode = &validmode[i];
+		memset( (void*)mode, 0, sizeof( struct validmode_t ) );
+		mode->xdim = w;
+		mode->ydim = h;
+		mode->bpp = bpp;
+		mode->fs = fs;
+		validmodecnt++;
+		return 1;
+	}
+	return 0;
+}
 
-		if (modes == (SDL_Rect **)-1) {
-			for (i=0; defaultres[i][0]; i++)
-				ADDMODE(defaultres[i][0],defaultres[i][1],cdepths[j],1)
-		} else {
-			for (i=0; modes[i]; i++) {
-				if ((modes[i]->w > MAXXDIM) || (modes[i]->h > MAXYDIM)) continue;
+struct DisplaySize {
+	int w, h;
+};
 
-				ADDMODE(modes[i]->w, modes[i]->h, cdepths[j], 1)
-
-				if ((modes[i]->w > maxx) && (modes[i]->h > maxy)) {
-					maxx = modes[i]->w;
-					maxy = modes[i]->h;
+void getvalidmodes( void ) {
+    struct DisplaySize defaultres[] = { { 0, 0 },
+        {1920, 1440}, {1920, 1200}, {1920, 1080}, {1680, 1050}, {1600, 1200}, {1600, 900}, {1440, 1080},
+        {1366, 768}, {1360, 768}, {1280, 1024}, {1280, 960}, {1280, 800}, {1152, 864}, {1024, 768}, {1024, 600}, {800, 600},
+        {800, 480}, {640, 480}
+    };
+	int i, nummodes;
+	SDL_DisplayMode mode, closest;
+	SDL_Window *window = SDL_CreateWindow( "", 0, 0, 640, 480, SDL_WINDOW_HIDDEN | SDL_WINDOW_BORDERLESS );
+	int displayIndex = SDL_GetWindowDisplayIndex( window );
+	SDL_DestroyWindow( window );
+		
+	if ( !modeschecked ) {
+		validmodecnt = 0;
+		SDL_GetDesktopDisplayMode( displayIndex, &mode );
+		defaultres[0].w = mode.w;
+		defaultres[0].h = mode.h;
+#if 0
+		
+		for ( i = 0; i < sizeof( defaultres ) / sizeof( defaultres[0] ); i++ ) {
+			memset( (void*)&mode, 0, sizeof( SDL_DisplayMode ) );
+			mode.w = defaultres[i].w;
+			mode.h = defaultres[i].h;
+			if ( SDL_GetClosestDisplayMode( displayIndex, &mode, &closest ) != NULL ) {
+				addmode( mode.w, mode.h, 32, 1 );
+				if ( mode.w < defaultres[0].w ) {
+					addmode( mode.w, mode.h, 32, 0 );
 				}
 			}
 		}
-	}
-
-	if (maxx == 0 && maxy == 0) {
-		initprintf("No fullscreen modes available!\n");
-		maxx = MAXXDIM; maxy = MAXYDIM;
-	}
-
-	// add windowed modes next
-	for (j=0; cdepths[j]; j++) {
-#ifdef USE_OPENGL
-		if (nogl && cdepths[j] > 8) continue;
+#else
+		nummodes = SDL_GetNumDisplayModes( displayIndex );
+		for ( i = 0 ; i < nummodes; i++ ) {
+			memset( (void*)&mode, 0, sizeof( SDL_DisplayMode ) );
+			SDL_GetDisplayMode( displayIndex, i, &mode );
+			addmode( mode.w, mode.h, 32, 1 );
+			if ( mode.w < defaultres[0].w ) {
+				addmode( mode.w, mode.h, 32, 0 );
+			}
+		}
 #endif
-		if (cdepths[j] < 0) continue;
-		for (i=0; defaultres[i][0]; i++)
-			CHECK(defaultres[i][0],defaultres[i][1])
-				ADDMODE(defaultres[i][0],defaultres[i][1],cdepths[j],0)
+		modeschecked = 1;
 	}
+}
+#else
+void getvalidmodes(void)
+{
+    int32_t i, maxx=0, maxy=0;
+
+    int defaultres[][2] =
+    {
+        {1920, 1440}, {1920, 1200}, {1920, 1080}, {1680, 1050}, {1600, 1200}, {1600, 900}, {1440, 1080},
+        {1366, 768}, {1360, 768}, {1280, 1024}, {1280, 960}, {1152, 864}, {1024, 768}, {1024, 600}, {800, 600},
+        {640, 480} /*, {640, 400}, {512, 384}, {480, 360}, {400, 300}, {320, 240}, {320, 200}, {0, 0} */,
+    };
+
+    SDL_DisplayMode dispmode;
+
+    if (modeschecked) return;
+
+    validmodecnt=0;
+//    initprintf("Detecting video modes:\n");
+
+#define ADDMODE(x,y,c,f) do { \
+    if (validmodecnt<MAXVALIDMODES) { \
+        int32_t mn; \
+        for(mn=0;mn<validmodecnt;mn++) \
+            if (validmode[mn].xdim==x && validmode[mn].ydim==y && \
+                validmode[mn].bpp==c  && validmode[mn].fs==f) break; \
+        if (mn==validmodecnt) { \
+            validmode[validmodecnt].xdim=x; \
+            validmode[validmodecnt].ydim=y; \
+            validmode[validmodecnt].bpp=c; \
+            validmode[validmodecnt].fs=f; \
+            validmodecnt++; \
+            /*initprintf("  - %dx%d %d-bit %s\n", x, y, c, (f&1)?"fullscreen":"windowed");*/ \
+        } \
+    } \
+} while (0)
+
+#define CHECK(w,h) if ((w < maxx) && (h < maxy))
+
+    // do fullscreen modes first
+    for (i=0; i<SDL_GetNumDisplayModes(0); i++)
+    {
+        SDL_GetDisplayMode(0, i, &dispmode);
+        if ((dispmode.w > MAXXDIM) || (dispmode.h > MAXYDIM)) continue;
+
+        // HACK: 8-bit == Software, 32-bit == OpenGL
+#ifdef USE_SWRENDER
+        ADDMODE(dispmode.w, dispmode.h, 8, 1);
+#endif
+#ifdef USE_OPENGL
+        if (!nogl)
+            ADDMODE(dispmode.w, dispmode.h, 32, 1);
+#endif
+        if ((dispmode.w > maxx) && (dispmode.h > maxy))
+        {
+            maxx = dispmode.w;
+            maxy = dispmode.h;
+        }
+    }
+    if (maxx == 0 && maxy == 0)
+    {
+        initprintf("No fullscreen modes available!\n");
+        maxx = MAXXDIM; maxy = MAXYDIM;
+    }
+
+    // add windowed modes next
+    for (i=0; defaultres[i][0]; i++)
+        CHECK(defaultres[i][0],defaultres[i][1])
+        {
+            // HACK: 8-bit == Software, 32-bit == OpenGL
+#ifdef USE_SWRENDER
+            ADDMODE(defaultres[i][0],defaultres[i][1],8,0);
+#endif
+#ifdef USE_OPENGL
+            if (!nogl)
+                ADDMODE(defaultres[i][0],defaultres[i][1],32,0);
+#endif
+        }
 
 #undef CHECK
 #undef ADDMODE
 
-	qsort((void*)validmode, validmodecnt, sizeof(struct validmode_t), (int(*)(const void*,const void*))sortmodes);
+    qsort((void *)validmode, validmodecnt, sizeof(struct validmode_t), &sortmodes);
 
-	modeschecked=1;
+    modeschecked=1;
 }
-
+#endif
 
 //
 // checkvideomode() -- makes sure the video mode passed is legal
@@ -877,12 +1063,85 @@ int checkvideomode(int *x, int *y, int c, int fs, int forced)
 	return nearest;		// JBF 20031206: Returns the mode number
 }
 
+static SDL_Color sdlayer_pal[256];
+
+static void destroy_window_resources() {
+	if ( sdl_buffersurface ) {
+		SDL_FreeSurface( sdl_buffersurface );
+	}
+	sdl_buffersurface = NULL;
+	if ( sdl_window ) {
+		SDL_DestroyWindow( sdl_window );
+	}
+	sdl_window = NULL;
+}
+
 //
 // setvideomode() -- set SDL video mode
 //
+
+int setvideomode_new( int x, int y, int c, int fs, int force ) {
+	int regrab = 0;
+	Uint32 flags;
+	
+	initprintf( "[sdlayer] Setting video mode %dx%d@%d, %s%s", x, y, c, fs ? "fullscreen" : "windowed", force ? " (force)" : "" );
+	
+	if ( ( fs == fullscreen ) && ( x == xres ) && ( y == yres)  && ( c == bpp ) && !videomodereset && !force ) {
+		initprintf( "[sdlayer] No need to change mode, we're already there\n" );
+		OSD_ResizeDisplay( xres, yres );
+		return 0;
+	}
+	
+	if ( checkvideomode( &x, &y, c, fs, 0 ) < 0 ) {
+		initprintf( "[sdlayer] Wrong mode\n" );
+		return -1;
+	}
+	
+	if ( mouseacquired ) {
+		regrab = 1;
+		grabmouse( 0 );
+	}
+
+	while ( lockcount ) {
+		enddrawing();
+	}
+	
+	polymost_glreset();
+	
+	if ( sdl_window == NULL ) {
+		flags = SDL_WINDOW_OPENGL;
+		if ( fs ) {
+			flags |= SDL_WINDOW_FULLSCREEN;
+		} else {
+			flags |= SDL_WINDOW_SHOWN;
+		}
+		sdl_window = SDL_CreateWindow( "", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, x, y, flags );
+		sdl_context = SDL_GL_CreateContext( sdl_window );
+		
+		
+		
+	} else {
+		GUI_PreModeChange();
+
+		SDL_SetWindowFullscreen( sdl_window, 0 );
+		SDL_SetWindowSize( sdl_window, x, y );
+		SDL_SetWindowPosition( sdl_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED );
+		
+		if ( fs ) {
+			SDL_SetWindowFullscreen( sdl_window, SDL_WINDOW_FULLSCREEN );
+			SDL_SetWindowDisplayMode( sdl_window, NULL );
+		}
+		
+		GUI_PostModeChange( x, y );
+	}
+}
+
 int setvideomode(int x, int y, int c, int fs, int force)
 {
 	int regrab = 0;
+	SDL_DisplayMode displayMode = { 0 };
+	Uint16 rg, gg, bg;
+	Uint32 flags;
 	
 	if ((fs == fullscreen) && (x == xres) && (y == yres) && (c == bpp) &&
 	    !videomodereset && !force) {
@@ -902,14 +1161,15 @@ int setvideomode(int x, int y, int c, int fs, int force)
 	if (lockcount) while (lockcount) enddrawing();
 
 #if defined(USE_OPENGL)
-	if (bpp > 8 && sdl_surface) polymost_glreset();
+	polymost_glreset();
 #endif
 
-	// restore gamma before we change video modes if it was changed
-	if (sdl_surface && gammabrightness) {
-		SDL_SetGammaRamp(sysgamma[0], sysgamma[1], sysgamma[2]);
-		gammabrightness = 0;	// redetect on next mode switch
-	}
+//	if ( sdl_window != NULL ) {
+//		SDL_SetWindowGammaRamp( sdl_window, sysgamma[0], sysgamma[1], sysgamma[2] );
+//	}
+
+    // deinit
+    //destroy_window_resources();
 	
 #if defined(USE_OPENGL)
 	if (c > 8) {
@@ -934,7 +1194,6 @@ int setvideomode(int x, int y, int c, int fs, int force)
 			{ SDL_GL_DOUBLEBUFFER, 1 },
 			{ SDL_GL_MULTISAMPLEBUFFERS, glmultisample > 0 },
 			{ SDL_GL_MULTISAMPLESAMPLES, glmultisample },
-			{ SDL_GL_SWAP_CONTROL, ud.vsync ? 1 : 0 },
 		};
 
 		if (nogl) return -1;
@@ -942,44 +1201,75 @@ int setvideomode(int x, int y, int c, int fs, int force)
 	
 				x,y,c, ((fs&1) ? "fullscreen" : "windowed"));
 		do {
+			if ( sdl_window == NULL ) {
+				flags = SDL_WINDOW_OPENGL;
+				if ( fs ) {
+					flags |= SDL_WINDOW_FULLSCREEN;
+				} else {
+					flags |= SDL_WINDOW_SHOWN;
+				}
+				sdl_window = SDL_CreateWindow( "", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, x, y, flags );
+				sdl_context = SDL_GL_CreateContext( sdl_window );				
+			} else {
+				GUI_PreModeChange();
+				SDL_SetWindowFullscreen( sdl_window, 0 );
+				SDL_SetWindowSize( sdl_window, x, y );
+				SDL_SetWindowPosition( sdl_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED );
+				
+				if ( fs ) {
+					SDL_SetWindowFullscreen( sdl_window, SDL_WINDOW_FULLSCREEN );
+					SDL_SetWindowDisplayMode( sdl_window, NULL );
+				}
+				
+				GUI_PostModeChange( x, y );
+			}
+			
+			SDL_GL_SetSwapInterval( ud.vsync );
+			
 			for (i=0; i < (int)(sizeof(attributes)/sizeof(attributes[0])); i++) {
 				j = attributes[i].value;
 				if (!multisamplecheck &&
 				    (attributes[i].attr == SDL_GL_MULTISAMPLEBUFFERS ||
 				     attributes[i].attr == SDL_GL_MULTISAMPLESAMPLES)
-				   ) {
+					) {
 					j = 0;
 				}
 				SDL_GL_SetAttribute(attributes[i].attr, j);
 			}
+			
+			dnSetBrightness( ud.brightness );
 
-			if (!fs) {
-				Sys_CenterWindow(x, y);
-			}
-
-			GUI_PreModeChange();
-			sdl_surface = SDL_SetVideoMode(x, y, c, SDL_OPENGL | ((fs&1)?SDL_FULLSCREEN:0));
-			if (!sdl_surface) {
-				if (multisamplecheck) {
-					initprintf("Multisample mode not possible. Retrying without multisampling.\n");
-					glmultisample = 0;
-					continue;
-				}
-				initprintf("Unable to set video mode!\n");
-				return -1;
-			}
-			GUI_PostModeChange(x, y);
 		} while (multisamplecheck--);
 	} else
 #endif
 	{
 		initprintf("Setting video mode %dx%d (%d-bpp %s)\n",
 				x,y,c, ((fs&1) ? "fullscreen" : "windowed"));
-		sdl_surface = SDL_SetVideoMode(x, y, c, SURFACE_FLAGS | ((fs&1)?SDL_FULLSCREEN:0));
-		if (!sdl_surface) {
-			initprintf("Unable to set video mode!\n");
-			return -1;
-		}
+
+        // init
+        sdl_window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,
+                                      x,y, ((fs&1)?SDL_WINDOW_FULLSCREEN:0));
+        if (!sdl_window)
+        {
+            initprintf("Unable to set video mode: SDL_CreateWindow failed: %s\n",
+                       SDL_GetError());
+            return -1;
+        }
+
+        sdl_buffersurface = SDL_CreateRGBSurface(0, x, y, c, 0, 0, 0, 0);
+        if (!sdl_buffersurface)
+        {
+            initprintf("Unable to set video mode: SDL_CreateRGBSurface failed: %s\n",
+                       SDL_GetError());
+            destroy_window_resources();
+            return -1;
+        }
+
+        if (!sdl_palptr)
+            sdl_palptr = SDL_AllocPalette(256);
+
+        if (SDL_SetSurfacePalette(sdl_buffersurface, sdl_palptr) < 0)
+            initprintf("SDL_SetSurfacePalette failed: %s\n", SDL_GetError());
 	}
 
 #if 0
@@ -1009,7 +1299,7 @@ int setvideomode(int x, int y, int c, int fs, int force)
 	{
 		//static char t[384];
 		//sprintf(t, "%s (%dx%d %s)", apptitle, x, y, ((fs) ? "fullscreen" : "windowed"));
-		SDL_WM_SetCaption(apptitle, 0);
+        SDL_SetWindowTitle(sdl_window, apptitle);
 	}
 
 #ifdef USE_OPENGL
@@ -1032,17 +1322,20 @@ int setvideomode(int x, int y, int c, int fs, int force)
 	videomodereset = 0;
 	OSD_ResizeDisplay(xres,yres);
 	
+#if 0
 	// save the current system gamma to determine if gamma is available
 	if (!gammabrightness) {
 		float f = 1.0f + ((float)curbrightness / 10.0f);
-		if (SDL_GetGammaRamp(sysgamma[0], sysgamma[1], sysgamma[2]) >= 0)
-			gammabrightness = 1;
+        if (SDL_GetWindowGammaRamp(sdl_window, sysgamma[0], sysgamma[1], sysgamma[2]) == 0) {
+            gammabrightness = 1;
+		}
 
 		// see if gamma really is working by trying to set the brightness
-		if (gammabrightness && SDL_SetGamma(f,f,f) < 0)
+		if (gammabrightness && sdl_window && SDL_SetWindowBrightness(sdl_window, f) < 0) {
 			gammabrightness = 0;	// nope
+		}
 	}
-
+#endif
 	// setpalettefade will set the palette according to whether gamma worked
 	setpalettefade(palfadergb.r, palfadergb.g, palfadergb.b, palfadedelta);
 	
@@ -1084,20 +1377,7 @@ void begindrawing(void)
 	if (lockcount++ > 0)
 		return;
 
-	if (offscreenrendering) return;
-	
-	if (SDL_MUSTLOCK(sdl_surface)) SDL_LockSurface(sdl_surface);
-	frameplace = (long)sdl_surface->pixels;
-	
-	if (sdl_surface->pitch != bytesperline || modechange) {
-		bytesperline = sdl_surface->pitch;
-		imageSize = bytesperline*yres;
-		setvlinebpl(bytesperline);
-
-		j = 0;
-		for(i=0;i<=ydim;i++) ylookup[i] = j, j += bytesperline;
-		modechange=0;
-	}
+	if (offscreenrendering) return;	
 }
 
 
@@ -1119,7 +1399,6 @@ void enddrawing(void)
 
 	if (offscreenrendering) return;
 
-	if (SDL_MUSTLOCK(sdl_surface)) SDL_UnlockSurface(sdl_surface);
 }
 
 int dnFPS = 0;
@@ -1177,7 +1456,7 @@ void showframe(int w)
 
 		GUI_Render();
 
-		SDL_GL_SwapBuffers();
+        SDL_GL_SwapWindow(sdl_window);
         clearview(0L);
 
 		
@@ -1197,7 +1476,7 @@ void showframe(int w)
 		while (lockcount) enddrawing();
 	}
 
-	SDL_Flip(sdl_surface);
+
 }
 
 
@@ -1206,56 +1485,29 @@ void showframe(int w)
 //
 int setpalette(int start, int num, char *dapal)
 {
-	SDL_Color pal[256];
 	int i,n;
 
 	if (bpp > 8) return 0;	// no palette in opengl
 
-	copybuf(curpalettefaded, pal, 256);
+    Bmemcpy(sdlayer_pal, curpalettefaded, 256*4);
 	
 	for (i=start, n=num; n>0; i++, n--) {
-		/*
-		pal[i].b = dapal[0] << 2;
-		pal[i].g = dapal[1] << 2;
-		pal[i].r = dapal[2] << 2;
-		*/
-		curpalettefaded[i].f = pal[i].unused = 0;
+        curpalettefaded[i].f =
+        sdlayer_pal[i].a
+         = 0;
 		dapal += 4;
 	}
 
-	//return SDL_SetPalette(sdl_surface, SDL_LOGPAL|SDL_PHYSPAL, pal, 0, 256);
-	return SDL_SetColors(sdl_surface, pal, 0, 256);
+    return (SDL_SetPaletteColors(sdl_palptr, sdlayer_pal, 0, 256) != 0);
 }
-
-//
-// getpalette() -- get palette values
-//
-/*
-int getpalette(int start, int num, char *dapal)
-{
-	int i;
-	SDL_Palette *pal;
-
-	// we shouldn't need to lock the surface to get the palette
-	pal = sdl_surface->format->palette;
-
-	for (i=num; i>0; i--, start++) {
-		dapal[0] = pal->colors[start].b >> 2;
-		dapal[1] = pal->colors[start].g >> 2;
-		dapal[2] = pal->colors[start].r >> 2;
-		dapal += 4;
-	}
-
-	return 1;
-}
-*/
 
 //
 // setgamma
 //
 int setgamma(float ro, float go, float bo)
 {
-	return SDL_SetGamma(ro,go,bo);
+    //return SDL_SetWindowBrightness(sdl_window, (ro + go + bo) / 3);
+    return 1;
 }
 
 #ifndef __APPLE__
@@ -1293,6 +1545,189 @@ Uint32 WheelTimerCallback(Uint32 interval, void *param) {
 void DSOP_Update();
 #endif
 
+
+static int MouseTranslate(int button)
+{
+    switch (button)
+    {
+        default:
+            return -1; break;
+        case SDL_BUTTON_LEFT:
+            return 0; break;
+        case SDL_BUTTON_RIGHT:
+            return 1; break;
+        case SDL_BUTTON_MIDDLE:
+            return 2; break;
+
+        // On SDL2/Windows, everything is as it should be.
+        case SDL_BUTTON_X1:
+            return 5; break;
+
+        case SDL_BUTTON_X2:
+            return 6; break;
+    }
+
+    return -1;
+}
+
+static
+float applyDeadZone(float value, float deadZoneSize) {
+    if (value < -deadZoneSize) {
+        value -= deadZoneSize;
+    } else if (value > deadZoneSize) {
+        value += deadZoneSize;
+    } else {
+        return 0.0f;
+    }
+    
+    return value < -1.0 ? -1.0 : (value > 1.0 ? 1.0 : value);
+}
+
+static Uint8 g_keyBuffer0[DN_MAX_KEYS] = { 0 };
+static Uint8 g_keyBuffer1[DN_MAX_KEYS] = { 0 };
+static Uint8 *g_keyBufferPtrCurrent = &g_keyBuffer0[0];
+static Uint8 *g_keyBufferPtrPrevious = &g_keyBuffer1[0];
+
+static
+void updateKeyBuffers( SDL_Event *ev ) {
+	Uint8 *tmp;
+	int numkeys;
+	const Uint8 *keystate;
+	Uint32 buttons;
+	int i = 0;
+	
+	tmp = g_keyBufferPtrCurrent;
+	g_keyBufferPtrCurrent = g_keyBufferPtrPrevious;
+	g_keyBufferPtrPrevious = tmp;
+	
+	keystate = SDL_GetKeyboardState( &numkeys );
+	buttons = SDL_GetMouseState( NULL, NULL );
+	
+	memcpy( g_keyBufferPtrCurrent, keystate, numkeys );
+	memset( g_keyBufferPtrCurrent + numkeys, 0, DN_MAX_KEYS - numkeys );
+	
+	g_keyBufferPtrCurrent[DNK_MENU_NEXT_OPTION] = g_keyBufferPtrCurrent[SDL_SCANCODE_RIGHT] || GP_GET_BUTTON(SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
+	g_keyBufferPtrCurrent[DNK_MENU_PREV_OPTION] = g_keyBufferPtrCurrent[SDL_SCANCODE_LEFT]  ||  GP_GET_BUTTON(SDL_CONTROLLER_BUTTON_DPAD_LEFT);
+	g_keyBufferPtrCurrent[DNK_MENU_UP] = g_keyBufferPtrCurrent[SDL_SCANCODE_UP] || GP_GET_BUTTON(SDL_CONTROLLER_BUTTON_DPAD_UP);
+	g_keyBufferPtrCurrent[DNK_MENU_DOWN] = g_keyBufferPtrCurrent[SDL_SCANCODE_DOWN] || GP_GET_BUTTON(SDL_CONTROLLER_BUTTON_DPAD_DOWN);
+	g_keyBufferPtrCurrent[DNK_MENU_ENTER] = g_keyBufferPtrCurrent[SDL_SCANCODE_RETURN] || g_keyBufferPtrCurrent[SDL_SCANCODE_KP_ENTER] || GP_GET_BUTTON(SDL_CONTROLLER_BUTTON_A);
+	g_keyBufferPtrCurrent[DNK_MENU_CLEAR] = g_keyBufferPtrCurrent[SDL_SCANCODE_BACKSPACE] || g_keyBufferPtrCurrent[SDL_SCANCODE_DELETE] || GP_GET_BUTTON(SDL_CONTROLLER_BUTTON_Y);
+	g_keyBufferPtrCurrent[DNK_MENU_REFRESH] = g_keyBufferPtrCurrent[SDL_SCANCODE_SPACE] || GP_GET_BUTTON(SDL_CONTROLLER_BUTTON_X);
+    g_keyBufferPtrCurrent[DNK_MENU_RESET] = g_keyBufferPtrCurrent[SDL_SCANCODE_F8] || GP_GET_BUTTON(SDL_CONTROLLER_BUTTON_BACK);
+	
+	for (i = 0; i < (DNK_MOUSE_LAST - DNK_MOUSE_FIRST); i++ ) {
+        g_keyBufferPtrCurrent[DNK_MOUSE0 + i] = SDL_BUTTON( i + 1 ) & buttons ? 1 : 0;
+    }
+    
+	if ( ev->type == SDL_MOUSEWHEEL ) {
+		if ( ev->wheel.y > 0 ) {
+			g_keyBufferPtrCurrent[DNK_MOUSE_WHEELUP] = 1;
+            g_keyBufferPtrPrevious[DNK_MOUSE_WHEELUP] = 0;
+		} else if ( ev->wheel.y < 0 ) {
+			g_keyBufferPtrCurrent[DNK_MOUSE_WHEELDOWN] = 1;
+            g_keyBufferPtrPrevious[DNK_MOUSE_WHEELDOWN] = 0;
+		}
+	}
+    
+    for (i = 0; i < DNK_GAMEPAD_LAST - DNK_GAMEPAD_FIRST - 1; i++ ) {
+        if (i == DNK_GAMEPAD_START || i == DNK_GAMEPAD_GUIDE) {
+            continue;
+        } else {
+            g_keyBufferPtrCurrent[DNK_GAMEPAD_FIRST + i] = GP_GET_BUTTON(SDL_CONTROLLER_BUTTON_A + i);
+        }
+	}
+    
+    g_keyBufferPtrCurrent[DNK_GAMEPAD_LT] = (applyDeadZone((float)GP_GET_AXIS(SDL_CONTROLLER_AXIS_TRIGGERLEFT)/GP_AXIS_MAX_VALUE, GP_AXIS_DEADZONE) == 1.0f);
+    g_keyBufferPtrCurrent[DNK_GAMEPAD_RT] = (applyDeadZone((float)GP_GET_AXIS(SDL_CONTROLLER_AXIS_TRIGGERRIGHT)/GP_AXIS_MAX_VALUE, GP_AXIS_DEADZONE) == 1.0f);
+}
+
+#define SetKey(key,state) { \
+keystatus[key] = state; \
+if (state) { \
+keyfifo[keyfifoend] = key; \
+keyfifo[(keyfifoend+1)&(KEYFIFOSIZ-1)] = state; \
+keyfifoend = ((keyfifoend+2)&(KEYFIFOSIZ-1)); \
+} \
+}
+
+static
+void processKeyDown( dnKey scancode ) {
+	int code;
+	
+	if ( scancode == SDL_SCANCODE_ESCAPE || scancode == DNK_GAMEPAD_START ) {
+		keystatus[1] = 1;
+	} else {
+		dnPressKey( scancode );
+	}
+	
+	if (
+		((keyasciififoend+1)&(KEYFIFOSIZ-1)) != keyasciififoplc &&
+		(scancode == SDL_SCANCODE_RETURN ||
+		 scancode == SDL_SCANCODE_KP_ENTER ||
+		 scancode == SDL_SCANCODE_ESCAPE ||
+		 scancode == SDL_SCANCODE_BACKSPACE ||
+		 scancode == SDL_SCANCODE_TAB))
+	{
+		char keyvalue;
+		switch (scancode)
+		{
+			case SDL_SCANCODE_RETURN:
+			case SDL_SCANCODE_KP_ENTER: keyvalue = '\r'; break;
+			case SDL_SCANCODE_ESCAPE: keyvalue = 27; break;
+			case SDL_SCANCODE_BACKSPACE: keyvalue = '\b'; break;
+			case SDL_SCANCODE_TAB: keyvalue = '\t'; break;
+			default: keyvalue = 0; break;
+		}
+		keyasciififo[keyasciififoend] = keyvalue;
+		keyasciififoend = ((keyasciififoend+1)&(KEYFIFOSIZ-1));
+	}
+	
+	code = keytranslation[scancode];
+	if (scancode != SDL_SCANCODE_ESCAPE && code != 1)
+	SetKey(code, 1);
+	if (keypresscallback) {
+		keypresscallback(code, 1);
+	}
+}
+
+static
+void processKeyUp( dnKey scancode ) {
+	int code;
+
+	if ( scancode == SDL_SCANCODE_ESCAPE || scancode == DNK_GAMEPAD_START ) {
+		keystatus[1] = 0;
+	} else {
+		dnReleaseKey( scancode );
+	}
+	code = keytranslation[scancode];
+	SetKey( code, 0 );
+	if ( keypresscallback ) {
+		keypresscallback( code, 0 );
+	}
+}
+
+int dnKeyJustPressed( dnKey key ) {
+	return g_keyBufferPtrPrevious[key] == 0 && g_keyBufferPtrCurrent[key] != 0;
+}
+
+int dnKeyJustReleased( dnKey key ) {
+	return g_keyBufferPtrPrevious[key] != 0 && g_keyBufferPtrCurrent[key] == 0;
+}
+
+static
+void processKeyBuffers( void ) {
+	int i = 0;
+	for (i = 0; i < DN_MAX_KEYS; i++ ) {
+		if ( dnKeyJustPressed( i ) ) {
+			processKeyDown( (dnKey)i );
+		}
+		if ( dnKeyJustReleased( i ) ) {
+			processKeyUp( (dnKey)i );
+		}
+	}
+}
+
+
 //
 // handleevents() -- process the SDL message queue
 //   returns !0 if there was an important event worth checking (like quitting)
@@ -1303,148 +1738,66 @@ int handleevents(void)
 	SDL_Event ev;
 	static int firstcall = 1;
 
-#define SetKey(key,state) { \
-	keystatus[key] = state; \
-		if (state) { \
-	keyfifo[keyfifoend] = key; \
-	keyfifo[(keyfifoend+1)&(KEYFIFOSIZ-1)] = state; \
-	keyfifoend = ((keyfifoend+2)&(KEYFIFOSIZ-1)); \
-		} \
-}
-
+    dnUpdateMouseInput();
 	while (SDL_PollEvent(&ev)) {
+		updateKeyBuffers( &ev );
 		if (GUI_InjectEvent(&ev)) {
 			/* GUI ate the event, don't let it pass through */
-            pointer.x = pointer.y = 0;
 			continue;
 		}
+		processKeyBuffers();
 
 		switch (ev.type) {
-            case SDL_KEYDOWN:
-#if 0
-#pragma message( "to be removed from release version" )
-				if ( ev.key.keysym.sym == SDLK_LEFTBRACKET ) {
-					forcesync();
-				}
-#endif
-                if (ev.key.keysym.sym == SDLK_ESCAPE) {
-                    keystatus[1] = 1;
-                } else {
-                    dnPressKey(ev.key.keysym.sym);
+            case SDL_TEXTINPUT:
+                j = 0;
+                do
+                {
+                    code = ev.text.text[j];
+
+                    if (((keyasciififoend+1)&(KEYFIFOSIZ-1)) != keyasciififoplc)
+                    {
+                        keyasciififo[keyasciififoend] = code;
+                        keyasciififoend = ((keyasciififoend+1)&(KEYFIFOSIZ-1));
+                    }
                 }
-				if (ev.key.keysym.unicode != 0 &&
-				    (ev.key.keysym.unicode & 0xff80) == 0 &&
-				    ((keyasciififoend+1)&(KEYFIFOSIZ-1)) != keyasciififoplc) {
-					keyasciififo[keyasciififoend] = ev.key.keysym.unicode & 0x7f;
-					keyasciififoend = ((keyasciififoend+1)&(KEYFIFOSIZ-1));
-				}
-				code = keytranslation[ev.key.keysym.sym];
-                SetKey(code, 1);
-                if (keypresscallback) {
-                    keypresscallback(code, 1);
-                }
+                while (j < SDL_TEXTINPUTEVENT_TEXT_SIZE && ev.text.text[++j]);
                 break;
-            
+                
+            case SDL_JOYDEVICEADDED:
+            case SDL_JOYDEVICEREMOVED:
+                getgamepad();
+                break;
+                
             case SDL_KEYUP:
-                if (ev.key.keysym.sym == SDLK_ESCAPE) {
-                    keystatus[1] = 0;
-                } else {
-                    dnReleaseKey(ev.key.keysym.sym);
-                }
-                code = keytranslation[ev.key.keysym.sym];
-                SetKey(code, 0);
-                if (keypresscallback) {
-                    keypresscallback(code, 0);
-                }
                 break;
-            
-			case SDL_ACTIVEEVENT:
-				if (ev.active.state & SDL_APPINPUTFOCUS) {
-                    SDL_WM_GrabInput(SDL_GRAB_ON);
-                    SDL_ShowCursor(SDL_DISABLE);
-					appactive = ev.active.gain;
-					if (mouseacquired && moustat) {
-						if (appactive && !GUI_IsEnabled()) {
-//							SDL_WM_GrabInput(SDL_GRAB_ON);
-//							SDL_ShowCursor(SDL_DISABLE);
-						} else {
-//							SDL_WM_GrabInput(SDL_GRAB_OFF);
-//							SDL_ShowCursor(SDL_ENABLE);
-						}
-					}
-					rv=-1;
-				}
-				break;
-                
-            case SDL_MOUSEBUTTONDOWN:
-                dnPressKey(DNK_MOUSE0+ev.button.button-1);
+            case SDL_CONTROLLERBUTTONUP:
+                gamepadButtonPressed = 0;
                 break;
-                
-            case SDL_MOUSEBUTTONUP:
-                if (ev.button.button != 4 && ev.button.button != 5) {
-                    dnReleaseKey(DNK_MOUSE0+ev.button.button-1);
+            case SDL_CONTROLLERBUTTONDOWN:
+                gamepadButtonPressed = 1;
+                break;
+            case SDL_WINDOWEVENT:
+                switch (ev.window.event)
+                {
+                case SDL_WINDOWEVENT_FOCUS_GAINED:
+                    appactive = 1;
+                    grabmouse(1);
+                    break;
+                case SDL_WINDOWEVENT_FOCUS_LOST:
+                    appactive = 0;
+                    grabmouse(0);
+                    break;
                 }
                 break;
 
 			case SDL_MOUSEMOTION:
-                if (0 && skip_next_motion) {
-                    skip_next_motion = 0;
-                } else {
-                    if (!firstcall) {
-                        if (appactive) {
-                            mousex += ev.motion.xrel;
-                            mousey += ev.motion.yrel;
-                            pointer.x += ev.motion.xrel;
-                            pointer.y += ev.motion.yrel;
-                        } else {
-                            pointer.x = pointer.y = 0;
-                        }
+                if (!firstcall) {
+                    if ( appactive ) {
+                        mousex += ev.motion.xrel;
+                        mousey += ev.motion.yrel;
                     }
                 }
-				break;
-
-#if 0
-
-			case SDL_JOYAXISMOTION:
-				if (appactive && ev.jaxis.axis < joynumaxes)
-					joyaxis[ ev.jaxis.axis ] = ev.jaxis.value * 10000 / 32767;
-				break;
-
-			case SDL_JOYHATMOTION: {
-				int hatvals[16] = {
-					-1,	// centre
-					0, 	// up 1
-					9000,	// right 2
-					4500,	// up+right 3
-					18000,	// down 4
-					-1,	// down+up!! 5
-					13500,	// down+right 6
-					-1,	// down+right+up!! 7
-					27000,	// left 8
-					27500,	// left+up 9
-					-1,	// left+right!! 10
-					-1,	// left+right+up!! 11
-					22500,	// left+down 12
-					-1,	// left+down+up!! 13
-					-1,	// left+down+right!! 14
-					-1,	// left+down+right+up!! 15
-				};
-				if (appactive && ev.jhat.hat < joynumhats)
-					joyhat[ ev.jhat.hat ] = hatvals[ ev.jhat.value & 15 ];
-				break;
-			}
-
-			case SDL_JOYBUTTONDOWN:
-			case SDL_JOYBUTTONUP:
-				if (appactive && ev.jbutton.button < joynumbuttons) {
-					if (ev.jbutton.state == SDL_PRESSED)
-						joyb |= 1 << ev.jbutton.button;
-					else
-						joyb &= ~(1 << ev.jbutton.button);
-				}
-				break;
-#endif
-				
+				break;				
 			case SDL_QUIT:
 				quitevent = 1;
 				rv=-1;
@@ -1470,138 +1823,122 @@ int handleevents(void)
 }
 
 
-static int buildkeytranslationtable(void)
+
+static int32_t buildkeytranslationtable(void)
 {
-	memset(keytranslation,0,sizeof(keytranslation));
-	
+    memset(keytranslation,0,sizeof(keytranslation));
+
 #define MAP(x,y) keytranslation[x] = y
-	MAP(SDLK_BACKSPACE,	0xe);
-	MAP(SDLK_TAB,		0xf);
-	MAP(SDLK_RETURN,	0x1c);
-	MAP(SDLK_PAUSE,		0x59);	// 0x1d + 0x45 + 0x9d + 0xc5
-	MAP(SDLK_ESCAPE,	0x1);
-	MAP(SDLK_SPACE,		0x39);
-	MAP(SDLK_EXCLAIM,	0x2);	// '1'
-	MAP(SDLK_QUOTEDBL,	0x28);	// '''
-	MAP(SDLK_HASH,		0x4);	// '3'
-	MAP(SDLK_DOLLAR,	0x5);	// '4'
-	MAP(37,			0x6);	// '5' <-- where's the keysym SDL guys?
-	MAP(SDLK_AMPERSAND,	0x8);	// '7'
-	MAP(SDLK_QUOTE,		0x28);	// '''
-	MAP(SDLK_LEFTPAREN,	0xa);	// '9'
-	MAP(SDLK_RIGHTPAREN,	0xb);	// '0'
-	MAP(SDLK_ASTERISK,	0x9);	// '8'
-	MAP(SDLK_PLUS,		0xd);	// '='
-	MAP(SDLK_COMMA,		0x33);
-	MAP(SDLK_MINUS,		0xc);
-	MAP(SDLK_PERIOD,	0x34);
-	MAP(SDLK_SLASH,		0x35);
-	MAP(SDLK_0,		0xb);
-	MAP(SDLK_1,		0x2);
-	MAP(SDLK_2,		0x3);
-	MAP(SDLK_3,		0x4);
-	MAP(SDLK_4,		0x5);
-	MAP(SDLK_5,		0x6);
-	MAP(SDLK_6,		0x7);
-	MAP(SDLK_7,		0x8);
-	MAP(SDLK_8,		0x9);
-	MAP(SDLK_9,		0xa);
-	MAP(SDLK_COLON,		0x27);
-	MAP(SDLK_SEMICOLON,	0x27);
-	MAP(SDLK_LESS,		0x33);
-	MAP(SDLK_EQUALS,	0xd);
-	MAP(SDLK_GREATER,	0x34);
-	MAP(SDLK_QUESTION,	0x35);
-	MAP(SDLK_AT,		0x3);	// '2'
-	MAP(SDLK_LEFTBRACKET,	0x1a);
-	MAP(SDLK_BACKSLASH,	0x2b);
-	MAP(SDLK_RIGHTBRACKET,	0x1b);
-	MAP(SDLK_CARET,		0x7);	// '7'
-	MAP(SDLK_UNDERSCORE,	0xc);
-	MAP(SDLK_BACKQUOTE,	0x29);
-	MAP(SDLK_a,		0x1e);
-	MAP(SDLK_b,		0x30);
-	MAP(SDLK_c,		0x2e);
-	MAP(SDLK_d,		0x20);
-	MAP(SDLK_e,		0x12);
-	MAP(SDLK_f,		0x21);
-	MAP(SDLK_g,		0x22);
-	MAP(SDLK_h,		0x23);
-	MAP(SDLK_i,		0x17);
-	MAP(SDLK_j,		0x24);
-	MAP(SDLK_k,		0x25);
-	MAP(SDLK_l,		0x26);
-	MAP(SDLK_m,		0x32);
-	MAP(SDLK_n,		0x31);
-	MAP(SDLK_o,		0x18);
-	MAP(SDLK_p,		0x19);
-	MAP(SDLK_q,		0x10);
-	MAP(SDLK_r,		0x13);
-	MAP(SDLK_s,		0x1f);
-	MAP(SDLK_t,		0x14);
-	MAP(SDLK_u,		0x16);
-	MAP(SDLK_v,		0x2f);
-	MAP(SDLK_w,		0x11);
-	MAP(SDLK_x,		0x2d);
-	MAP(SDLK_y,		0x15);
-	MAP(SDLK_z,		0x2c);
-	MAP(SDLK_DELETE,	0xd3);
-	MAP(SDLK_KP0,		0x52);
-	MAP(SDLK_KP1,		0x4f);
-	MAP(SDLK_KP2,		0x50);
-	MAP(SDLK_KP3,		0x51);
-	MAP(SDLK_KP4,		0x4b);
-	MAP(SDLK_KP5,		0x4c);
-	MAP(SDLK_KP6,		0x4d);
-	MAP(SDLK_KP7,		0x47);
-	MAP(SDLK_KP8,		0x48);
-	MAP(SDLK_KP9,		0x49);
-	MAP(SDLK_KP_PERIOD,	0x53);
-	MAP(SDLK_KP_DIVIDE,	0xb5);
-	MAP(SDLK_KP_MULTIPLY,	0x37);
-	MAP(SDLK_KP_MINUS,	0x4a);
-	MAP(SDLK_KP_PLUS,	0x4e);
-	MAP(SDLK_KP_ENTER,	0x9c);
-	//MAP(SDLK_KP_EQUALS,	);
-	MAP(SDLK_UP,		0xc8);
-	MAP(SDLK_DOWN,		0xd0);
-	MAP(SDLK_RIGHT,		0xcd);
-	MAP(SDLK_LEFT,		0xcb);
-	MAP(SDLK_INSERT,	0xd2);
-	MAP(SDLK_HOME,		0xc7);
-	MAP(SDLK_END,		0xcf);
-	MAP(SDLK_PAGEUP,	0xc9);
-	MAP(SDLK_PAGEDOWN,	0xd1);
-	MAP(SDLK_F1,		0x3b);
-	MAP(SDLK_F2,		0x3c);
-	MAP(SDLK_F3,		0x3d);
-	MAP(SDLK_F4,		0x3e);
-	MAP(SDLK_F5,		0x3f);
-	MAP(SDLK_F6,		0x40);
-	MAP(SDLK_F7,		0x41);
-	MAP(SDLK_F8,		0x42);
-	MAP(SDLK_F9,		0x43);
-	MAP(SDLK_F10,		0x44);
-	MAP(SDLK_F11,		0x57);
-	MAP(SDLK_F12,		0x58);
-	MAP(SDLK_NUMLOCK,	0x45);
-	MAP(SDLK_CAPSLOCK,	0x3a);
-	MAP(SDLK_SCROLLOCK,	0x46);
-	MAP(SDLK_RSHIFT,	0x36);
-	MAP(SDLK_LSHIFT,	0x2a);
-	MAP(SDLK_RCTRL,		0x9d);
-	MAP(SDLK_LCTRL,		0x1d);
-	MAP(SDLK_RALT,		0xb8);
-	MAP(SDLK_LALT,		0x38);
-	MAP(SDLK_LSUPER,	0xdb);	// win l
-	MAP(SDLK_RSUPER,	0xdc);	// win r
-	MAP(SDLK_PRINT,		-2);	// 0xaa + 0xb7
-	MAP(SDLK_SYSREQ,	0x54);	// alt+printscr
-	MAP(SDLK_BREAK,		0xb7);	// ctrl+pause
-	MAP(SDLK_MENU,		0xdd);	// win menu?
+    MAP(SDL_SCANCODE_BACKSPACE,	0xe);
+    MAP(SDL_SCANCODE_TAB,		0xf);
+    MAP(SDL_SCANCODE_RETURN,	0x1c);
+    MAP(SDL_SCANCODE_PAUSE,		0x59);	// 0x1d + 0x45 + 0x9d + 0xc5
+    MAP(SDL_SCANCODE_ESCAPE,	0x1);
+    MAP(SDL_SCANCODE_SPACE,		0x39);
+    MAP(SDL_SCANCODE_COMMA,		0x33);
+    MAP(SDL_SCANCODE_MINUS,		0xc);
+    MAP(SDL_SCANCODE_PERIOD,	0x34);
+    MAP(SDL_SCANCODE_SLASH,		0x35);
+    MAP(SDL_SCANCODE_0,		0xb);
+    MAP(SDL_SCANCODE_1,		0x2);
+    MAP(SDL_SCANCODE_2,		0x3);
+    MAP(SDL_SCANCODE_3,		0x4);
+    MAP(SDL_SCANCODE_4,		0x5);
+    MAP(SDL_SCANCODE_5,		0x6);
+    MAP(SDL_SCANCODE_6,		0x7);
+    MAP(SDL_SCANCODE_7,		0x8);
+    MAP(SDL_SCANCODE_8,		0x9);
+    MAP(SDL_SCANCODE_9,		0xa);
+    MAP(SDL_SCANCODE_SEMICOLON,	0x27);
+    MAP(SDL_SCANCODE_APOSTROPHE, 0x28);
+    MAP(SDL_SCANCODE_EQUALS,	0xd);
+    MAP(SDL_SCANCODE_LEFTBRACKET,	0x1a);
+    MAP(SDL_SCANCODE_BACKSLASH,	0x2b);
+    MAP(SDL_SCANCODE_RIGHTBRACKET,	0x1b);
+    MAP(SDL_SCANCODE_A,		0x1e);
+    MAP(SDL_SCANCODE_B,		0x30);
+    MAP(SDL_SCANCODE_C,		0x2e);
+    MAP(SDL_SCANCODE_D,		0x20);
+    MAP(SDL_SCANCODE_E,		0x12);
+    MAP(SDL_SCANCODE_F,		0x21);
+    MAP(SDL_SCANCODE_G,		0x22);
+    MAP(SDL_SCANCODE_H,		0x23);
+    MAP(SDL_SCANCODE_I,		0x17);
+    MAP(SDL_SCANCODE_J,		0x24);
+    MAP(SDL_SCANCODE_K,		0x25);
+    MAP(SDL_SCANCODE_L,		0x26);
+    MAP(SDL_SCANCODE_M,		0x32);
+    MAP(SDL_SCANCODE_N,		0x31);
+    MAP(SDL_SCANCODE_O,		0x18);
+    MAP(SDL_SCANCODE_P,		0x19);
+    MAP(SDL_SCANCODE_Q,		0x10);
+    MAP(SDL_SCANCODE_R,		0x13);
+    MAP(SDL_SCANCODE_S,		0x1f);
+    MAP(SDL_SCANCODE_T,		0x14);
+    MAP(SDL_SCANCODE_U,		0x16);
+    MAP(SDL_SCANCODE_V,		0x2f);
+    MAP(SDL_SCANCODE_W,		0x11);
+    MAP(SDL_SCANCODE_X,		0x2d);
+    MAP(SDL_SCANCODE_Y,		0x15);
+    MAP(SDL_SCANCODE_Z,		0x2c);
+    MAP(SDL_SCANCODE_DELETE,	0xd3);
+    MAP(SDL_SCANCODE_KP_0,		0x52);
+    MAP(SDL_SCANCODE_KP_1,		0x4f);
+    MAP(SDL_SCANCODE_KP_2,		0x50);
+    MAP(SDL_SCANCODE_KP_3,		0x51);
+    MAP(SDL_SCANCODE_KP_4,		0x4b);
+    MAP(SDL_SCANCODE_KP_5,		0x4c);
+    MAP(SDL_SCANCODE_KP_6,		0x4d);
+    MAP(SDL_SCANCODE_KP_7,		0x47);
+    MAP(SDL_SCANCODE_KP_8,		0x48);
+    MAP(SDL_SCANCODE_KP_9,		0x49);
+    MAP(SDL_SCANCODE_KP_PERIOD,	0x53);
+    MAP(SDL_SCANCODE_KP_DIVIDE,	0xb5);
+    MAP(SDL_SCANCODE_KP_MULTIPLY,	0x37);
+    MAP(SDL_SCANCODE_KP_MINUS,	0x4a);
+    MAP(SDL_SCANCODE_KP_PLUS,	0x4e);
+    MAP(SDL_SCANCODE_KP_ENTER,	0x9c);
+    //MAP(SDL_SCANCODE_KP_EQUALS,	);
+    MAP(SDL_SCANCODE_UP,		0xc8);
+    MAP(SDL_SCANCODE_DOWN,		0xd0);
+    MAP(SDL_SCANCODE_RIGHT,		0xcd);
+    MAP(SDL_SCANCODE_LEFT,		0xcb);
+    MAP(SDL_SCANCODE_INSERT,	0xd2);
+    MAP(SDL_SCANCODE_HOME,		0xc7);
+    MAP(SDL_SCANCODE_END,		0xcf);
+    MAP(SDL_SCANCODE_PAGEUP,	0xc9);
+    MAP(SDL_SCANCODE_PAGEDOWN,	0xd1);
+    MAP(SDL_SCANCODE_F1,		0x3b);
+    MAP(SDL_SCANCODE_F2,		0x3c);
+    MAP(SDL_SCANCODE_F3,		0x3d);
+    MAP(SDL_SCANCODE_F4,		0x3e);
+    MAP(SDL_SCANCODE_F5,		0x3f);
+    MAP(SDL_SCANCODE_F6,		0x40);
+    MAP(SDL_SCANCODE_F7,		0x41);
+    MAP(SDL_SCANCODE_F8,		0x42);
+    MAP(SDL_SCANCODE_F9,		0x43);
+    MAP(SDL_SCANCODE_F10,		0x44);
+    MAP(SDL_SCANCODE_F11,		0x57);
+    MAP(SDL_SCANCODE_F12,		0x58);
+    MAP(SDL_SCANCODE_NUMLOCKCLEAR,	0x45);
+    MAP(SDL_SCANCODE_CAPSLOCK,	0x3a);
+    MAP(SDL_SCANCODE_SCROLLLOCK,	0x46);
+    MAP(SDL_SCANCODE_RSHIFT,	0x36);
+    MAP(SDL_SCANCODE_LSHIFT,	0x2a);
+    MAP(SDL_SCANCODE_RCTRL,		0x9d);
+    MAP(SDL_SCANCODE_LCTRL,		0x1d);
+    MAP(SDL_SCANCODE_RALT,		0xb8);
+    MAP(SDL_SCANCODE_LALT,		0x38);
+    MAP(SDL_SCANCODE_LGUI,	0xdb);	// win l
+    MAP(SDL_SCANCODE_RGUI,	0xdc);	// win r
+    MAP(SDL_SCANCODE_PRINTSCREEN,		-2);	// 0xaa + 0xb7
+    MAP(SDL_SCANCODE_SYSREQ,	0x54);	// alt+printscr
+//    MAP(SDL_SCANCODE_PAUSE,		0xb7);	// ctrl+pause
+    MAP(SDL_SCANCODE_MENU,		0xdd);	// win menu?
+    MAP(SDL_SCANCODE_GRAVE,     0x29);  // tilde
 #undef MAP
 
-	return 0;
+    return 0;
 }
 
 #if defined _WIN32
@@ -1643,23 +1980,16 @@ void makeasmwriteable(void)
 /* dnAPI */
 
 void dnGetCurrentVideoMode(VideoMode *videomode) {
+	SDL_DisplayMode displayMode;
 	assert(videomode != NULL);
-	videomode->width = sdl_surface->w;
-	videomode->height = sdl_surface->h;
-	videomode->fullscreen = sdl_surface->flags & SDL_FULLSCREEN ? 1 : 0;
-	videomode->bpp = sdl_surface->format->BitsPerPixel;
+
+	SDL_GetWindowDisplayMode( sdl_window, &displayMode );
+	videomode->fullscreen = (SDL_GetWindowFlags(sdl_window) & SDL_WINDOW_FULLSCREEN) ? 1 : 0;
+	videomode->width = displayMode.w;
+	videomode->height = displayMode.h;
+	videomode->bpp = 32;
 }
 
-/*
-int dnTranslateSDLKey(SDLKey key) {
-    return keytranslation[key];
-}
-
-const char* dnGetKeyName(int key) {
-    const char* name = KB_ScanCodeToString(key);
-    return name[0] ? name : "None";
-}
-*/
 static int clampi(int v, int min, int max) {
     if (v > max) return max;
     if (v < min) return min;
@@ -1672,17 +2002,96 @@ static double clampd(double v, double min, double max) {
     return v;
 }
 
+#define TURBOTURNTIME (TICRATE/8) // 7
+
+void dnOverrideInputGamepadMove(long *vel, long *svel) {
+    SDL_GameControllerAxis leftStickX = SDL_CONTROLLER_AXIS_LEFTX;
+    SDL_GameControllerAxis leftStickY = SDL_CONTROLLER_AXIS_LEFTY;
+    long move_y = 0, move_x = 0;
+    if (!dnGamepadConnected())
+        return;
+    if (movestickleft != 1) {
+        leftStickX = SDL_CONTROLLER_AXIS_RIGHTX;
+        leftStickY = SDL_CONTROLLER_AXIS_RIGHTY;
+    }
+    move_y = (long)clamp((long)(-80*applyDeadZone((float)GP_GET_AXIS(leftStickY)/GP_AXIS_MAX_VALUE, GP_AXIS_DEADZONE)), -80, 80);
+    move_x = (long)clamp((long)(-90*applyDeadZone((float)GP_GET_AXIS(leftStickX)/GP_AXIS_MAX_VALUE, GP_AXIS_DEADZONE)), -90, 90);
+    if (move_y != 0) *vel = move_y;
+    if (move_x != 0) *svel = move_x;
+}
+
+typedef struct {
+    double x, y;
+} vector2;
+
+vector2 sensitivity = { 10.0, 13.0 };
+vector2 max_velocity = { 1000.0, 1000.0 };
+
 void dnOverrideInput(input *loc) {
     
+    extern long totalclock;
+    static int32 heldlooktime = 0;
+    static int32 tics = 0;
+    static int32 lastcontroltime = 0;
+
     vector2 total_velocity = { 0.0, 0.0 };
     vector2 mouse_velocity = { 0.0, 0.0 };
-       
+    vector2 gamepad_velocity = { 0.0, 0.0 };
+    vector2 pointer = { 0.0, 0.0 };
+    int imousex, imousey;
+    long lmousex, lmousey;
+    
+    float xsaturation, ysaturation;
+    SDL_GameControllerAxis rightStickX = SDL_CONTROLLER_AXIS_RIGHTX;
+    SDL_GameControllerAxis rightStickY = SDL_CONTROLLER_AXIS_RIGHTY;
+    if (movestickleft != 1) {
+        rightStickX = SDL_CONTROLLER_AXIS_LEFTX;
+        rightStickY = SDL_CONTROLLER_AXIS_LEFTY;
+    }
+
+    if ( dnGetNumberOfMouseInputDevices() > 0 ) { 
+        dnGetMouseInput( &imousex, &imousey, 0 );
+        pointer.x = imousex;
+        pointer.y = imousey;
+    } else {
+        readmousexy( &lmousex, &lmousey );
+        pointer.x = lmousex;
+        pointer.y = lmousey;
+    }
+        
+    if (dnGamepadConnected()) {
+        xsaturation = applyDeadZone((float)GP_GET_AXIS(rightStickX)/GP_AXIS_MAX_VALUE, GP_AXIS_DEADZONE);
+        gamepad_velocity.x = 127 * (xgamepadscale/10.0) * xsaturation;
+    }
     mouse_velocity.x = pointer.x*sensitivity.x*(xmousescale/10.0);
     if (ps[myconnectindex].aim_mode) {
-         mouse_velocity.y = pointer.y*sensitivity.y*(((double)xdim)/((double)ydim))*(ymousescale/10.0);
+        mouse_velocity.y = pointer.y*sensitivity.y*(((double)xdim)/((double)ydim))*(ymousescale/10.0);
+        if (dnGamepadConnected()) {
+            ysaturation = applyDeadZone((float)GP_GET_AXIS(rightStickY)/GP_AXIS_MAX_VALUE, GP_AXIS_DEADZONE);
+            gamepad_velocity.y = 127 * (ygamepadscale/10.0) * ysaturation;
+        }
     } else {
         loc->horz = 1;
     }
+
+    if (dnGamepadConnected()) {
+        if (gamepad_velocity.x != 0 && ((xsaturation >= 1.0f) || (xsaturation <= -1.0f))) {
+            heldlooktime += tics;
+            if (heldlooktime > (TURBOTURNTIME * 2)) {
+                gamepad_velocity.x += gamepad_velocity.x/2;
+            }
+        } else if (gamepad_velocity.y != 0 && ((ysaturation >= 1.0f) || (ysaturation <= -1.0f))) {
+            heldlooktime += tics;
+            if (heldlooktime > (TURBOTURNTIME * 2)) {
+                gamepad_velocity.y += gamepad_velocity.y/2;
+            }
+        } else {
+            heldlooktime = 0;
+        }
+        total_velocity.x += gamepad_velocity.x;
+        total_velocity.y += gamepad_velocity.y;
+    }
+    
     total_velocity.x += mouse_velocity.x;
     total_velocity.y += mouse_velocity.y;
 
@@ -1701,6 +2110,8 @@ void dnOverrideInput(input *loc) {
     if (!ud.mouseflip) {
         loc->horz *= -1;
     }
+    tics = totalclock-lastcontroltime;
+    lastcontroltime = totalclock;
 }
 
 void dnSetMouseSensitivity(int sens) {
@@ -1711,10 +2122,3 @@ void dnSetMouseSensitivity(int sens) {
 int dnGetMouseSensitivity() {
     return (int)((sensitivity.x-1.0)*65536.0/16.0);
 }
-
-void dnResetMouse() {
-	pointer.x = pointer.y = 0;
-}
-
-
-

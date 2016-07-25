@@ -52,24 +52,33 @@ void ShellRenderInterfaceOpenGL::RenderGeometry(Rocket::Core::Vertex* vertices, 
 	glPushMatrix();
 	glTranslatef(translation.x, translation.y, 0);
 
-	glVertexPointer(2, GL_FLOAT, sizeof(Rocket::Core::Vertex), &vertices[0].position);
-	glEnableClientState(GL_COLOR_ARRAY);
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Rocket::Core::Vertex), &vertices[0].colour);
 
 	if (!texture)
 	{
 		glDisable(GL_TEXTURE_2D);
-		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		glBegin(GL_TRIANGLES);
+		for (int i = 0; i < num_indices; i++) {
+			Rocket::Core::Vertex *v = &vertices[indices[i]];
+			glColor4ub(v->colour.red, v->colour.green, v->colour.blue, v->colour.alpha);
+			glVertex2f(v->position.x, v->position.y);
+		}
+		glEnd();
+		glEnable(GL_TEXTURE_2D);
 	}
 	else
 	{
+		glVertexPointer(2, GL_FLOAT, sizeof(Rocket::Core::Vertex), &vertices[0].position);
+		glEnableClientState(GL_COLOR_ARRAY);
+		glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Rocket::Core::Vertex), &vertices[0].colour);
+
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, (GLuint) texture);
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		glTexCoordPointer(2, GL_FLOAT, sizeof(Rocket::Core::Vertex), &vertices[0].tex_coord);
+
+		glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, indices);
 	}
 
-	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, indices);
 
 	glPopMatrix();
 }
@@ -264,21 +273,27 @@ void ShellRenderInterfaceOpenGL::DownloadTexture(GLuint texture_id, GLsizei *wid
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, *pixels);
 }
 
+#define DO_GRAB_TEXTURES 1
+
 void ShellRenderInterfaceOpenGL::GrabTextures() {
+#if DO_GRAB_TEXTURES
 	for (std::map<GLuint, GrabbedTexture*>::iterator i = m_textures.begin(); i != m_textures.end(); i++) {
 		GrabbedTexture *gt = new GrabbedTexture();
 		DownloadTexture(i->first, &gt->width, &gt->height, &gt->pixels);
 		i->second = gt;
 	}
+#endif
 }
 
 void ShellRenderInterfaceOpenGL::RestoreTextures() {
+#if DO_GRAB_TEXTURES
 	for (std::map<GLuint, GrabbedTexture*>::iterator i = m_textures.begin(); i != m_textures.end(); i++) {
 		UploadTexture(i->first, i->second->width, i->second->height, i->second->pixels);
 		free(i->second->pixels);
 		delete i->second;
 		i->second = NULL;
 	}
+#endif
 }
 
 bool ShellRenderInterfaceOpenGL::HasTexture(GLuint texture_id) {

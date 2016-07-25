@@ -26,7 +26,10 @@
 #define DIRECTSOUND_VERSION  0x0700
 #include <windows.h>
 #include <mmsystem.h>
+
+#define INITGUID
 #include <dsound.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 

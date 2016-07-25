@@ -39,7 +39,7 @@ typedef struct {
     int owner;
 } player_info_t;
 
-#define MPVERSION 80
+#define MPVERSION 90
     
 typedef struct {
     int version;
@@ -110,6 +110,7 @@ typedef enum {
     N_PONG,
 	N_WORKSHOP_UPDATE,
 	N_WORKSHOP_SUBSCRIBED,
+    N_BIGPICTURE_GAMEPAD_TEXT_UPDATE,
 } CSTEAM_Notification_t;
 
 typedef void (*CSTEAM_NotificationHandler_t)(CSTEAM_Notification_t notification, int status, void *data, void *context);
@@ -122,6 +123,10 @@ void CSTEAM_JoinLobby(steam_id_t lobby_id);
 void CSTEAM_StartLobby(steam_id_t lobby_id);
 void CSTEAM_LeaveLobby(steam_id_t lobby_id);
 void CSTEAM_InviteFriends(steam_id_t lobby_id);
+    
+int CSTEAM_ShowGamepadTextInput (const char * defaultText, int maxChars);
+int CSTEAM_GetEnteredGamepadTextLength ();
+int CSTEAM_GetEnteredGamepadTextInput (char *pchText, int cchText);
     
 steam_id_t CSTEAM_GetOwnLobbyId();
 steam_id_t CSTEAM_LobbyOwner(steam_id_t lobby_id);
@@ -146,6 +151,9 @@ int  CSTEAM_IsPacketAvailable(unsigned int *bufsize, int channel);
 int  CSTEAM_ReadPacket(void *buffer, unsigned int bufsize, unsigned int *msgsize, steam_id_t *remote, int channel);
 void CSTEAM_CloseP2P(steam_id_t remote);
 void CSTEAM_DrainQueue();
+    
+void CSTEAM_SetPlayedWith(steam_id_t playerid);
+
     
 const char* CSTEAM_FormatId(steam_id_t steam_id);
     

@@ -23,6 +23,7 @@
 #include "csteam.h"
 #include "dnAPI.h"
 #include "dnMulti.h"
+#include "dnMouseInput.h"
 //#include "duke3d.h"
 //#include "glguard.h"
 
@@ -46,12 +47,14 @@ extern "C" {
 #define MAX_FAILED_ATTEMPTS 3
 #define MAX_PING 180
 
+
 extern "C" {
 void Sys_DPrintf(const char *format, ...);
 double Sys_GetTicks();
 extern int32_t r_usenewshading;
 extern int32_t r_usetileshades;
 extern int AccurateLighting;
+extern SDL_GameController *gamepad;
 }
 
 void encode(std::string& data) {
@@ -149,7 +152,8 @@ void NotificationCallback(CSTEAM_Notification_t notification, int status, void *
 			}
 			case N_WORKSHOP_SUBSCRIBED: {
 				gui->OnWorkshopSubscribe((workshop_item_t*)data, status);
-			}
+                break;
+            }
 			default: {
 				break;
             }
@@ -162,7 +166,12 @@ void NotificationCallback(CSTEAM_Notification_t notification, int status, void *
             }
 			case N_WORKSHOP_SUBSCRIBED: {
 				gui->OnWorkshopSubscribe((workshop_item_t*)data, status);
+                break;
 			}
+            case N_BIGPICTURE_GAMEPAD_TEXT_UPDATE: {
+                gui->OnBigPictureTextUpdate((const char*)data, status);
+                break;
+            }
 			default:
 				break;
 		}
@@ -441,6 +450,7 @@ void GUI::LoadDocuments() {
 	LoadDocument("data/game.rml");
 	LoadDocument("data/sound.rml");
     LoadDocument("data/mouse.rml");
+    LoadDocument("data/gamepad.rml");
 	LoadDocument("data/keys.rml");
     LoadDocument("data/keyprompt.rml");
     LoadDocument("data/yesno.rml");
@@ -574,6 +584,8 @@ GUI::GUI(int width, int height):m_enabled(false),m_width(width),m_height(height)
 	m_workshopRequestManager = new WorkshopRequestManager();
 	
     exittotitle = 1;
+    m_setBrightness = -1;
+    m_lastBrightnessUpdate = Sys_GetTicks();
 }
 
 /*
@@ -1107,6 +1119,9 @@ void GUI::UpdateLobbyPage(lobby_info_t *lobby_info) {
             encode(player_name);
             element->SetInnerRML(player_name.c_str());
             member_div->AppendChild(element);
+            if (lobby_info->players[i].id != CSTEAM_MyID()) {
+                CSTEAM_SetPlayedWith(lobby_info->players[i].id);
+            }
         }
     }
     char buffer[100];
@@ -1236,6 +1251,12 @@ void GUI::OnWorkshopSubscribe(workshop_item_t *item, int status) {
 	m_workshopRequestManager->onWorkshopSubscribe( item, status );
 }
 
+void GUI::OnBigPictureTextUpdate(const char* data, int status) {
+    if (dnGamepadConnected()) {
+        CSTEAM_SendLobbyMessage(m_lobby_id, data);
+    }
+}
+
 void GUI::OnLobbyDataUpdate(lobby_info_t *lobby_info, int status) {
     if (lobby_info->version == 0) { /* empty lobby_info, the code below tends to dereference NULL pointers */
         return;
@@ -1309,6 +1330,10 @@ void GUI::Render() {
         if (m_draw_strips && m_menu_offset_y > 0) {
 			DrawStrips();
         }
+        if ( m_setBrightness != -1 && m_setBrightness != ud.brightness && Sys_GetTicks() - m_lastBrightnessUpdate > 500 ) {
+            dnSetBrightness( m_setBrightness );
+            m_lastBrightnessUpdate = Sys_GetTicks();
+        }
 	}
     if (fogOn == GL_TRUE) {
         glEnable(GL_FOG);
@@ -1319,9 +1344,10 @@ void GUI::Enable(bool v) {
 	if (v != m_enabled) {
 		KB_FlushKeyboardQueue();
 		KB_ClearKeysDown();
-		dnResetMouse();
 		m_enabled = v;
 		if (m_enabled) {
+            dnSetMouseInputMode( DN_MOUSE_SDL );
+            dnGrabMouse( 0 );
             if (dnGameModeSet()) {
                 m_menu->ShowDocument(m_context, menu_to_open, false);
                 if (menu_to_open == "menu-ingame" ) {
@@ -1370,6 +1396,8 @@ void GUI::Enable(bool v) {
                         
             ResetMouse();
 		} else {
+            dnSetMouseInputMode( DN_MOUSE_RAW );
+            dnGrabMouse( 1 );
 			m_context->ShowMouseCursor(false);
 		}
 	}
@@ -1389,7 +1417,7 @@ bool in_range(T v, T min, T max, int *offset) {
 }
 
 static bool
-TranslateRange(SDLKey min, SDLKey max, SDLKey key, Rocket::Core::Input::KeyIdentifier base, Rocket::Core::Input::KeyIdentifier *result) {
+TranslateRange(dnKey min, dnKey max, dnKey key, Rocket::Core::Input::KeyIdentifier base, Rocket::Core::Input::KeyIdentifier *result) {
 	int offset;
 	if (in_range(min, max, key, &offset)) {
 		*result = (Rocket::Core::Input::KeyIdentifier)(base + offset);
@@ -1399,53 +1427,57 @@ TranslateRange(SDLKey min, SDLKey max, SDLKey key, Rocket::Core::Input::KeyIdent
 }
 
 static Rocket::Core::Input::KeyIdentifier
-translateKey(SDLKey key) {
+translateKey(dnKey key) {
 	using namespace Rocket::Core::Input;
 	KeyIdentifier result;
-	if (TranslateRange(SDLK_0, SDLK_9, key, KI_0, &result)) { return result; }
-	if (TranslateRange(SDLK_F1, SDLK_F12, key, KI_F1, &result)) { return result; }
-	if (TranslateRange(SDLK_a, SDLK_z, key, KI_A, &result)) { return result; }
-	if (key == SDLK_CAPSLOCK) { return KI_CAPITAL; }
-	if (key == SDLK_TAB) { return KI_TAB; }
-    if (key == SDLK_HOME) { return KI_HOME; }
-    if (key == SDLK_END) { return KI_END; }
-    if (key == SDLK_LEFT) { return KI_LEFT; }
-    if (key == SDLK_RIGHT) { return KI_RIGHT; }
-    if (key == SDLK_BACKSPACE) { return KI_BACK; }
+	if (TranslateRange(SDL_SCANCODE_0, SDL_SCANCODE_9, key, KI_0, &result)) { return result; }
+	if (TranslateRange(SDL_SCANCODE_KP_0, SDL_SCANCODE_KP_9, key, KI_0, &result)) { return result; }
+	if (TranslateRange(SDL_SCANCODE_F1, SDL_SCANCODE_F12, key, KI_F1, &result)) { return result; }
+	if (TranslateRange(SDL_SCANCODE_A, SDL_SCANCODE_Z, key, KI_A, &result)) { return result; }
+	if (key == SDL_SCANCODE_CAPSLOCK) { return KI_CAPITAL; }
+	if (key == SDL_SCANCODE_TAB) { return KI_TAB; }
+    if (key == SDL_SCANCODE_HOME) { return KI_HOME; }
+    if (key == SDL_SCANCODE_END) { return KI_END; }
+    if (key == SDL_SCANCODE_LEFT) { return KI_LEFT; }
+    if (key == SDL_SCANCODE_RIGHT) { return KI_RIGHT; }
+    if (key == SDL_SCANCODE_BACKSPACE) { return KI_BACK; }
 	return KI_UNKNOWN;
 }
 
 #define KEYDOWN(ev, k) (ev->type == SDL_KEYDOWN && ev->key.keysym.sym == k)
 
+static int MouseButtonID( int button ) {
+    if ( button < 4 ) {
+        return button - 1;
+	}
+    else {
+        return button + 1;
+	}
+}
+
+void GUI::ProcessKeyDown( dnKey key ) {
+	
+}
+
+extern "C" void dnReleaseKey(dnKey key);
+
 bool GUI::InjectEvent(SDL_Event *ev) {
 	bool retval = false;
-
-    if (ev->type == SDL_USEREVENT) {
-    }
-    
-#if 0
-	if (ev->type == SDL_KEYDOWN && ev->key.keysym.sym == SDLK_BACKQUOTE) {
-		if (isEnabled()) {
-			if (!m_menu->GoBack(m_context)) {
-				enable(false);
-			}
-		} else {
-			enable(true);
-		}
-		return true;
-	}
-#endif
+        
 #if !CLASSIC_MENU
-	if (KEYDOWN(ev, SDLK_ESCAPE) || (ev->type == SDL_MOUSEBUTTONDOWN && ev->button.button == 3 && !m_waiting_for_key)) {
+	if ( dnKeyJustPressed( SDL_SCANCODE_ESCAPE ) || ((dnKeyJustPressed((dnKey)DNK_GAMEPAD_B)) && !m_waiting_for_key) || (ev->type == SDL_MOUSEBUTTONDOWN && ev->button.button == SDL_BUTTON_RIGHT && !m_waiting_for_key)) {
         if (m_waiting_for_key) {
             m_context->GetDocument("key-prompt")->Hide();
             m_waiting_for_key = false;
 		} else 	{
 			m_draw_strips = false;
             
-			if (!m_menu->GoBack(m_context)) {
-                menu_to_open = "menu-ingame";
-				dnHideMenu();
+			if ( dnMenuModeSet() ) {
+				if (!m_menu->GoBack(m_context)) {
+					menu_to_open = "menu-ingame";
+					dnHideMenu();
+				}
+				return true;
 			}
 		}
 	}
@@ -1459,34 +1491,112 @@ bool GUI::InjectEvent(SDL_Event *ev) {
 	if (IsEnabled()) {
 		retval = true;
 
-        if (m_waiting_for_key) {
-            switch (ev->type) {
-                case SDL_MOUSEBUTTONDOWN:
-                    m_pressed_key = (dnKey)(DNK_MOUSE0+ev->button.button-1);
-                    break;
-                case SDL_MOUSEBUTTONUP:
-                    if (m_pressed_key == DNK_MOUSE0+ev->button.button-1) {
+        if ( m_waiting_for_key ) {
+			for ( int i = 0; i < DN_MAX_KEYS; i++ ) {
+				dnKey key = (dnKey)i;
+				if ( dnKeyJustPressed( key ) ) {
+					m_pressed_key = key;
+                    if (ev->type == SDL_MOUSEWHEEL) {
                         HideKeyPrompt();
-                        const char *id = dnGetKeyName(m_pressed_key);
+						const char *id = dnGetKeyName(m_pressed_key);
                         AssignFunctionKey(m_waiting_menu_item->GetId(), id, m_waiting_slot);
                         InitKeysSetupPage(m_context->GetDocument("menu-keys-setup"));
                     }
                     break;
-                case SDL_KEYDOWN:
-                   m_pressed_key = ev->key.keysym.sym;
-                    break;
-                case SDL_KEYUP:
-                    if (m_pressed_key == ev->key.keysym.sym) {
-                        HideKeyPrompt();
-                        const char *id = dnGetKeyName(m_pressed_key);
+				} else if ( dnKeyJustReleased( key ) ) {
+					if ( m_pressed_key == key ) {
+						HideKeyPrompt();
+						const char *id = dnGetKeyName(m_pressed_key);
                         AssignFunctionKey(m_waiting_menu_item->GetId(), id, m_waiting_slot);
                         InitKeysSetupPage(m_context->GetDocument("menu-keys-setup"));
-                    }
-                    break;
-                default:
-                    break;
-            }
+					}
+					break;
+				}
+			}
         } else {
+			
+			/* process keys */
+			for ( int i = 0; i < DN_MAX_KEYS; i++ ) {
+				dnKey key = (dnKey)i;
+				
+				if ( dnKeyJustPressed( key ) ) {
+					/* process mouse buttons */
+					if ( key >= DNK_MOUSE_FIRST && key < DNK_MOUSE4 ) {
+						int mouseButton = key - DNK_MOUSE_FIRST;
+						if ( mouseButton == 1 || mouseButton == 2 ) {
+							mouseButton = 2 - mouseButton;
+						}
+						m_context->ProcessMouseButtonDown( mouseButton, 0 );
+					}
+					/* process rest of the keys */
+					Rocket::Core::Element *focus_target = m_menu->GetFocusTarget( m_menu->GetHighlightedItem( m_menu->GetCurrentPage( m_context ) ) );
+                    if ( focus_target != NULL ) {
+                        if ( key == SDL_SCANCODE_LEFT ) {
+                            m_context->ProcessKeyDown( Rocket::Core::Input::KI_LEFT, 0 );
+                        } else if ( key == SDL_SCANCODE_RIGHT) {
+                            m_context->ProcessKeyDown( Rocket::Core::Input::KI_RIGHT,  0);
+                        } else if ( key == SDL_SCANCODE_HOME) {
+                            m_context->ProcessKeyDown( Rocket::Core::Input::KI_HOME, 0 );
+                        } else if ( key == SDL_SCANCODE_END) {
+                            m_context->ProcessKeyDown( Rocket::Core::Input::KI_END, 0 );
+                        } else if ( key == SDL_SCANCODE_RETURN || key == DNK_GAMEPAD_A) {
+                            dnReleaseKey((dnKey)DNK_GAMEPAD_A);
+                            m_menu->DoItemAction( ItemActionEnter, m_context);
+                        } else if ( key == SDL_SCANCODE_DELETE ) {
+                            m_context->ProcessKeyDown( Rocket::Core::Input::KI_DELETE, 0 );
+                        } else if ( key == SDL_SCANCODE_BACKSPACE ) {
+                            m_context->ProcessKeyDown( Rocket::Core::Input::KI_BACK, 0 );
+                        } else if ( key == DNK_MENU_DOWN ) {
+                            m_menu->HighlightNextItem( m_context );
+                        } else if ( key == DNK_MENU_UP ) {
+                            m_menu->HighlightPreviousItem( m_context );
+                        } else {
+                            m_menu->UpdateFocus( m_context );
+                        }
+                    } else {
+						if ( key == SDL_SCANCODE_LEFT ) {
+                            m_context->ProcessKeyDown( Rocket::Core::Input::KI_LEFT, 0 );
+						} else if  ( key == DNK_MENU_PREV_OPTION ) {
+                            m_menu->SetPreviousItemValue( m_context );
+                        } else if ( key == SDL_SCANCODE_RIGHT ) {
+                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_RIGHT, 0);
+						} else if ( key == DNK_MENU_NEXT_OPTION ) {
+                            m_menu->SetNextItemValue( m_context );
+                        } else if ( key == SDL_SCANCODE_HOME ) {
+                            m_context->ProcessKeyDown( Rocket::Core::Input::KI_HOME, 0 );
+                        } else if ( key == SDL_SCANCODE_END ) {
+                            m_context->ProcessKeyDown( Rocket::Core::Input::KI_END, 0 );
+                        } else if ( key == DNK_MENU_DOWN ) {
+                            m_menu->HighlightNextItem( m_context );
+                        } else if ( key == DNK_MENU_UP ) {
+                            m_menu->HighlightPreviousItem( m_context );
+                        } else if ( key == DNK_MENU_ENTER ) {
+                            m_menu->DoItemAction( ItemActionEnter, m_context );
+                        } else if ( key == DNK_MENU_CLEAR ) {
+                            m_menu->DoItemAction( ItemActionClear, m_context );
+                        } else if ( key == DNK_MENU_REFRESH ) {
+                            m_menu->DoItemAction( ItemActionRefresh, m_context );
+                        } else if ( key == DNK_MENU_RESET ) {
+                            m_menu->DoItemAction( ItemActionReset, m_context );
+                        } else {
+                            m_menu->UpdateFocus( m_context );
+                        }
+                    }
+				} else if ( dnKeyJustReleased( key ) ) {
+					/* process mouse buttons */
+					if ( key >= DNK_MOUSE_FIRST && key < DNK_MOUSE4 ) {
+						int mouseButton = key - DNK_MOUSE_FIRST;
+						if ( mouseButton == 1 || mouseButton == 2 ) {
+							mouseButton = 2 - mouseButton;
+						}
+						m_context->ProcessMouseButtonUp( mouseButton, 0 );
+					} else {
+						m_context->ProcessKeyUp( translateKey( key ), 0 );
+					}
+				}
+			}
+			
+			/* process other events */
             switch (ev->type) {
                 case SDL_USEREVENT: {
                     if (ev->user.code == 1) {
@@ -1498,89 +1608,39 @@ bool GUI::InjectEvent(SDL_Event *ev) {
                 }
 
                 case SDL_MOUSEMOTION: {
-                    m_context->ShowMouseCursor(true);
-                    int xrel = ev->motion.xrel;
-                    int yrel = ev->motion.yrel;
-                    if (abs(xrel) < 200 && abs(yrel) < 200) { // jerk filter
-                        m_mouse_x = clamp(m_mouse_x+xrel, 0, m_width);
-						m_mouse_y = clamp(m_mouse_y+yrel, 0, m_height == 1200 ? 1080 : m_height);
-                        Rocket::Core::Vector2i mpos = TranslateMouse(m_mouse_x, m_mouse_y);
-                        m_context->ProcessMouseMove(mpos.x, mpos.y, 0);
-                    }
+                    m_context->ShowMouseCursor( true );
+                    SDL_GetMouseState( &m_mouse_x, &m_mouse_y );
+                    Rocket::Core::Vector2i mpos = TranslateMouse( m_mouse_x, m_mouse_y );
+                    m_context->ProcessMouseMove( mpos.x, mpos.y, 0 );
                     break;
                 }
-                case SDL_MOUSEBUTTONDOWN:
-                    if (ev->button.button < 4) {
-                        m_context->ProcessMouseButtonDown(ev->button.button-1, 0);
-                    } else if (ev->button.button == 4) {
+					
+                case SDL_MOUSEWHEEL:
+                    if (ev->wheel.y > 0)
                         m_context->ProcessMouseWheel(-2, 0);
-                    } else if (ev->button.button == 5) {
+                    if (ev->wheel.y < 0)
                         m_context->ProcessMouseWheel(2, 0);
-                    }
                     break;
-                case SDL_MOUSEBUTTONUP:
-                    if (ev->button.button < 4) {
-                        m_context->ProcessMouseButtonUp(ev->button.button-1, 0);
-                    }
-                    break;
-                case SDL_KEYDOWN: {
+					 
+                case SDL_TEXTINPUT:
+                {
                     Rocket::Core::Element *focus_target = m_menu->GetFocusTarget(m_menu->GetHighlightedItem(m_menu->GetCurrentPage(m_context)));
                     if (focus_target != NULL) {
-                        if (ev->key.keysym.sym == SDLK_LEFT) {
-                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_LEFT, 0);
-                        } else if (ev->key.keysym.sym == SDLK_RIGHT) {
-                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_RIGHT, 0);
-                        } else if (ev->key.keysym.sym == SDLK_HOME) {
-                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_HOME, 0);
-                        } else if (ev->key.keysym.sym == SDLK_END) {
-                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_END, 0);
-                        } else if (ev->key.keysym.sym == SDLK_RETURN) {
-                            m_menu->DoItemAction(ItemActionEnter, m_context);
-                        } else if (ev->key.keysym.sym == SDLK_DELETE) {
-                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_DELETE, 0);
-                        } else if (ev->key.keysym.sym == SDLK_BACKSPACE) {
-                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_BACK, 0);
-                        } else if (ev->key.keysym.sym == SDLK_SPACE) {
-                            m_context->ProcessTextInput(' ');
-                        } else if (ev->key.keysym.sym == SDLK_DOWN) {
-                            m_menu->HighlightNextItem(m_context);
-                        } else if (ev->key.keysym.sym == SDLK_UP) {
-                            m_menu->HighlightPreviousItem(m_context);
-                        } else {
-                            m_menu->UpdateFocus(m_context);
-                            m_context->ProcessTextInput(ev->key.keysym.unicode);
-                        }
-                    } else {
-                        if (ev->key.keysym.sym == SDLK_LEFT) {
-                            m_menu->SetPreviousItemValue(m_context);
-                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_LEFT, 0);
-                        } else if (ev->key.keysym.sym == SDLK_RIGHT) {
-                            m_menu->SetNextItemValue(m_context);
-                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_RIGHT, 0);
-                        } else if (ev->key.keysym.sym == SDLK_HOME) {
-                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_HOME, 0);
-                        } else if (ev->key.keysym.sym == SDLK_END) {
-                            m_context->ProcessKeyDown(Rocket::Core::Input::KI_END, 0);
-                        } else if (ev->key.keysym.sym == SDLK_DOWN) {
-                            m_menu->HighlightNextItem(m_context);
-                        } else if (ev->key.keysym.sym == SDLK_UP) {
-                            m_menu->HighlightPreviousItem(m_context);
-                        } else if (ev->key.keysym.sym == SDLK_RETURN) {
-                            m_menu->DoItemAction(ItemActionEnter, m_context);
-                        } else if (ev->key.keysym.sym == SDLK_DELETE || ev->key.keysym.sym == SDLK_BACKSPACE) {
-                            m_menu->DoItemAction(ItemActionClear, m_context);
-                        } else if (ev->key.keysym.sym == SDLK_SPACE) {
-                            m_menu->DoItemAction(ItemActionRefresh, m_context);
-                        } else {
-                            retval = m_context->ProcessKeyDown(translateKey(ev->key.keysym.sym), 0);
-                            m_menu->UpdateFocus(m_context);
-                        }
+                        int j = 0;
+                        m_menu->UpdateFocus(m_context);
+#if UNICODE_INPUT
+						m_context->ProcessTextInput( ev->text.text );
+#else
+						/* ASCII filter, we don't have unicode fonts */
+						for ( const char *p = ev->text.text; *p != 0; p++ ) {
+							if ( *p < '\x80' ) {
+								m_context->ProcessTextInput( *p );
+							}
+						}
+#endif
                     }
                     break;
                 }
-                case SDL_KEYUP:
-                    retval = m_context->ProcessKeyUp(translateKey(ev->key.keysym.sym), 0);
-                    break;
                 default:
                     retval = false;
                     break;
@@ -1600,7 +1660,7 @@ void GUI::TimePulse() {
 
 Rocket::Core::Vector2i GUI::TranslateMouse(int x, int y) {
 	int nx = (int)(x/m_menu_scale - m_menu_offset_x);
-	int ny = (int)(y/m_menu_scale);
+	int ny = (int)(y/m_menu_scale - m_menu_offset_y);
 	return Rocket::Core::Vector2i(nx, ny);
 }
 
@@ -1810,6 +1870,7 @@ bool GUI::DoCommand(Rocket::Core::Element *element, const Rocket::Core::String& 
         CSTEAM_OpenCummunityHub();
     } else if (command == "start") {
         m_show_press_enter = false;
+		//printf(NULL);
     } else if (command == "load-workshopitem") {
         Rocket::Core::ElementDocument *doc = m_context->GetDocument("menu-usermaps");
         Rocket::Core::Element *map = m_menu->GetHighlightedItem(doc);
@@ -1860,19 +1921,17 @@ bool GUI::DoCommand(Rocket::Core::Element *element, const Rocket::Core::String& 
     } else if (command == "send-chat-message") {
         Rocket::Core::Element *focus_target = m_menu->GetFocusTarget(element);
         if (focus_target != NULL) {
-            Rocket::Core::Variant *value = focus_target->GetAttribute("value");
-            if (value != NULL) {
-                Rocket::Core::String message = focus_target->GetAttribute("value")->Get<Rocket::Core::String>();
-//                Sys_DPrintf("[OUTGOING] %s\n", message.CString());
-                focus_target->SetAttribute("value", "");
-                CSTEAM_SendLobbyMessage(m_lobby_id, message.CString());
-            }
+//            if (dnGamepadConnected() && CSTEAM_ShowGamepadTextInput("", 140)) {
+//            } else {
+                Rocket::Core::Variant *value = focus_target->GetAttribute("value");
+                if (value != NULL) {
+                    Rocket::Core::String message = focus_target->GetAttribute("value")->Get<Rocket::Core::String>();
+                    focus_target->SetAttribute("value", "");
+                    CSTEAM_SendLobbyMessage(m_lobby_id, message.CString());
+                }
+//            }
         }
-    } else if (command == "test-msgbox") {
-		m_messageBoxManager->showMessageBox( "Test Q?", "Yes", "No", NULL );
-		m_messageBoxManager->wait();
-		printf( "Status: %d\n", m_messageBoxManager->getStatus() );
-	}
+    }
     return result;
 }
 	
@@ -2090,10 +2149,18 @@ void GUI::DidOpenMenuPage(Rocket::Core::ElementDocument *menu_page) {
                 vscrn();
             }
         }
+        Rocket::Core::Element *gamepad = menu_page->GetElementById("gamepad-setup");
+        if (dnGamepadConnected()) {
+            gamepad->SetClass("disabled", false);
+        } else {
+            gamepad->SetClass("disabled", true);
+        }
     } else if (page_id == "menu-keys-setup") {
         InitKeysSetupPage(menu_page);
     } else if (page_id == "menu-mouse-setup") {
         InitMouseSetupPage(menu_page);
+    } else if (page_id == "menu-gamepad-setup") {
+        InitGamepadSetupPage(menu_page);
     } else if (page_id == "menu-load" || page_id == "menu-save") {
         InitLoadPage(menu_page);
     } else if (page_id == "menu-usermaps") {
@@ -2136,6 +2203,11 @@ void GUI::DidOpenMenuPage(Rocket::Core::ElementDocument *menu_page) {
         textarea->SetAttribute("value", "");
         Rocket::Core::Element * input =  menu_page->GetElementById("message-input");
         input->SetAttribute("value", "");
+    } else if (page_id == "menu-start") {
+        if (dnGamepadConnected()) {
+            Rocket::Core::Element * start_text =  menu_page->GetElementById("start");
+            start_text->SetInnerRML("PRESS \"A\"");
+        }
     }
 }
 
@@ -2175,6 +2247,39 @@ void GUI::InitMouseSetupPage(Rocket::Core::ElementDocument *menu_page) {
     m_menu->SetRangeValue(m_menu->GetMenuItem(menu_page, "y-mouse-scale"), (float)ymousescale);
 
 }
+
+void GUI::InitGamepadSetupPage(Rocket::Core::ElementDocument *menu_page) {
+    Rocket::Core::Element *rumble = menu_page->GetElementById("gamepad-rumble");
+    
+    m_menu->ActivateOption(m_menu->GetMenuItem(menu_page, "invert-y-axis"),
+                           ud.mouseflip ? "invert-y-on" : "invert-y-off",
+                           false);
+    m_menu->ActivateOption(m_menu->GetMenuItem(menu_page, "lock-y-axis"),
+                           myaimmode ? "lock-y-off" : "lock-y-on",
+                           false);
+    m_menu->SetRangeValue(m_menu->GetMenuItem(menu_page, "x-gamepad-scale"), (float)xgamepadscale);
+    m_menu->SetRangeValue(m_menu->GetMenuItem(menu_page, "y-gamepad-scale"), (float)ygamepadscale);
+    m_menu->ActivateOption(m_menu->GetMenuItem(menu_page, "gamepad-move-stick"),
+                           movestickleft ? "gamepad-move-stick-left" : "gamepad-move-stick-right",
+                           false);
+    m_menu->ActivateOption(m_menu->GetMenuItem(menu_page, "gamepad-rumble"),
+                           gamepadrumble ? "gamepad-rumble-on" : "gamepad-rumble-off",
+                           false);
+    
+    if ( rumble != NULL) {
+        if (dnCanVibrate()) {
+            rumble->SetClass("disabled", false);
+            m_menu->ActivateOption(m_menu->GetMenuItem(menu_page, "gamepad-rumble"),
+                                   gamepadrumble ? "gamepad-rumble-on" : "gamepad-rumble-off",
+                                   false);
+        } else {
+            rumble->SetClass("disabled", true);
+            m_menu->ActivateOption(m_menu->GetMenuItem(menu_page, "gamepad-rumble"),
+                                  "gamepad-rumble-off", false);
+        }
+    }
+}
+
 
 void GUI::InitVideoOptionsPage(Rocket::Core::ElementDocument *page) {
     char buf[10];
@@ -2226,22 +2331,29 @@ void GUI::InitLobbyFilterPage(Rocket::Core::ElementDocument *page) {
 }
 
 void GUI::InitKeysSetupPage(Rocket::Core::ElementDocument *page) {
+    Rocket::Core::Element *hint = page->GetElementById("hint");
     for (int i = 0, n = m_menu->GetNumMenuItems(page); i != n; i++) {
-            Rocket::Core::Element *menu_item = m_menu->GetMenuItem(page, i);
-            const Rocket::Core::String& gamefunc = menu_item->GetId();
-            int func_num = CONFIG_FunctionNameToNum(gamefunc.CString());
-            if (func_num == -1) {
-                m_menu->SetKeyChooserValue(menu_item, 0, "???", "???");
-                m_menu->SetKeyChooserValue(menu_item, 1, "???", "???");
-            } else {
-                dnKey key0 = dnGetFunctionBinding(func_num, 0);
-                dnKey key1 = dnGetFunctionBinding(func_num, 1);
-                const char *key0_name = dnGetKeyName(key0);
-                const char *key1_name = dnGetKeyName(key1);
-                m_menu->SetKeyChooserValue(menu_item, 0, key0_name, key0_name);
-                m_menu->SetKeyChooserValue(menu_item, 1, key1_name, key1_name);
-            }
+        Rocket::Core::Element *menu_item = m_menu->GetMenuItem(page, i);
+        const Rocket::Core::String& gamefunc = menu_item->GetId();
+        int func_num = CONFIG_FunctionNameToNum(gamefunc.CString());
+        if (func_num == -1) {
+            m_menu->SetKeyChooserValue(menu_item, 0, "???", "???");
+            m_menu->SetKeyChooserValue(menu_item, 1, "???", "???");
+        } else {
+            dnKey key0 = dnGetFunctionBinding(func_num, 0);
+            dnKey key1 = dnGetFunctionBinding(func_num, 1);
+            const char *key0_name = dnGetKeyName(key0);
+            const char *key1_name = dnGetKeyName(key1);
+            m_menu->SetKeyChooserValue(menu_item, 0, key0_name, key0_name);
+            m_menu->SetKeyChooserValue(menu_item, 1, key1_name, key1_name);
         }
+    }
+    if (dnGamepadConnected()) {
+        hint->SetInnerRML("Press BACK to reset bindings");
+    } else {
+        hint->SetInnerRML("Press F8 to reset bindings");
+    }
+
 }
 
 
@@ -2433,8 +2545,14 @@ void GUI::InitMpMapsPage(Rocket::Core::ElementDocument *menu_page) {
 void GUI::InitLobbyList(Rocket::Core::ElementDocument *menu_page) {
     UpdateLobbyList();
     Rocket::Core::Element *menu = menu_page->GetElementById("menu");
+    Rocket::Core::Element *hint = menu_page->GetElementById("hint");
     menu->SetInnerRML("<div id='stub' noanim class='empty'>Updating...</div>");
     m_menu->HighlightItem(menu_page, "stub");
+    if (dnGamepadConnected()) {
+        hint->SetInnerRML("Press X to refresh");
+    } else {
+        hint->SetInnerRML("Press SPACE to refresh");
+    }
 }
 
 
@@ -2469,6 +2587,20 @@ void GUI::DidCloseMenuPage(Rocket::Core::ElementDocument *menu_page) {
         }
         myaimmode = lock_y ? 0 : 1;
     } else if (page_id == "menu-multiplayer-lobby") {
+    } else if (page_id == "menu-gamepad-setup") {
+        bool invert_y = m_menu->GetActiveOption(m_menu->GetMenuItem(menu_page, "invert-y-axis"))->GetId() == "invert-y-on";
+        ud.mouseflip = invert_y ? 1 : 0;
+        bool lock_y = m_menu->GetActiveOption(m_menu->GetMenuItem(menu_page, "lock-y-axis"))->GetId() == "lock-y-on";
+        if (lock_y) {
+            ps[myconnectindex].horiz = 100;
+            AutoAim = 1;
+            ps[myconnectindex].auto_aim = AutoAim;
+            myaimmode = 0;
+        } else {
+            myaimmode = 1;
+        }
+        myaimmode = lock_y ? 0 : 1;
+
     }
 }
 
@@ -2618,6 +2750,10 @@ void GUI::DidChangeOptionValue(Rocket::Core::Element *menu_item, Rocket::Core::E
 		ud.crosshair = ( value_id == "crosshair-on" ? 1 : 0 );
 	} else if (item_id == "level-stats") {
 		ud.levelstats = ( value_id == "stats-on" ? 1 : 0 );
+    } else if (item_id == "gamepad-rumble") {
+		gamepadrumble = ( value_id == "gamepad-rumble-on" ? 1 : 0 );
+    } else if (item_id == "gamepad-move-stick") {
+		movestickleft = ( value_id == "gamepad-move-stick-left" ? 1 : 0 );
 	} else if (item_id == "auto-aiming") {
         if (ud.multimode < 2) {
             AutoAim = ( value_id == "autoaim-on" ? 1 : 0 );
@@ -2683,8 +2819,7 @@ void GUI::DidChangeOptionValue(Rocket::Core::Element *menu_item, Rocket::Core::E
 void GUI::DidChangeRangeValue(Rocket::Core::Element *menu_item, float new_value) {
 	Rocket::Core::String item_id(menu_item->GetId());
 	if (item_id == "gamma") {
-		int brightness = clamp((int)new_value, 0, 63);
-		dnSetBrightness(brightness);
+		m_setBrightness = clamp((int)new_value, 0, 63);
 	} else if (item_id == "sound-volume") {
 		dnSetSoundVolume(clamp((int)new_value, 0, 255));
 	} else if (item_id == "music-volume") {
@@ -2693,12 +2828,17 @@ void GUI::DidChangeRangeValue(Rocket::Core::Element *menu_item, float new_value)
         xmousescale = clamp((int)new_value, 1, 20);
     } else if (item_id == "y-mouse-scale") {
         ymousescale = clamp((int)new_value, 1, 20);
+	} else if (item_id == "x-gamepad-scale") {
+        xgamepadscale = clamp((int)new_value, 1, 20);
+    } else if (item_id == "y-gamepad-scale") {
+        ygamepadscale = clamp((int)new_value, 1, 20);
     }
+
 }
 
 void GUI::DidRequestKey(Rocket::Core::Element *menu_item, int slot) {
     m_waiting_for_key = true;
-    m_pressed_key = SDLK_UNKNOWN;
+    m_pressed_key = SDL_SCANCODE_UNKNOWN;
     m_waiting_menu_item = menu_item;
     m_waiting_slot = slot;
     m_context->GetDocument("key-prompt")->Show();
@@ -2758,6 +2898,9 @@ void GUI::DidActivateItem(Rocket::Core::Element *menu_item) {
             thumbnail->SetInnerRML(thumb_rml);
             level->SetInnerRML(level_rml);
         }
+    } else if (item_id == "message") {
+//        if (dnGamepadConnected())
+//            CSTEAM_ShowGamepadTextInput("", 140);
     }
 }
 
@@ -2813,6 +2956,14 @@ void GUI::DidRefreshItem(Rocket::Core::Element *menu_item) {
     Rocket::Core::ElementDocument *doc = menu_item->GetOwnerDocument();
     if (doc->GetElementById("menu-multiplayer-join") != NULL) {
         InitLobbyList(doc);
+    }
+}
+
+void GUI::DidResetItem(Rocket::Core::Element *menu_item) {
+    Rocket::Core::ElementDocument *doc = menu_item->GetOwnerDocument();
+    if (doc->GetElementById("menu-keys-setup") != NULL) {
+        dnResetBindings();
+        InitKeysSetupPage(doc);
     }
 }
 
